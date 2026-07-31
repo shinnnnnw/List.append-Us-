@@ -1,213 +1,261 @@
-* {
+/* ============================================
+   Aî 智慧社區服務平台 - 全站共用樣式
+   ============================================ */
+
+/* --- CSS Variables --- */
+:root {
+  --primary: #4CAF50;
+  --primary-dark: #388E3C;
+  --primary-light: #C8E6C9;
+  --accent: #FF5722;
+  --accent-light: #FFCCBC;
+  --bg: #F8F9FA;
+  --bg-card: #FFFFFF;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border: #E0E0E0;
+  --border-light: #EEEEEE;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-full: 50px;
+  --max-width: 480px;
+  --nav-height: 56px;
+  --header-height: 60px;
+}
+
+/* --- Reset --- */
+*, *::before, *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  margin: 0;
   font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
-}
-
-.view.hidden {
-  display: none;
-}
-
-/* ---------- 登入畫面 ---------- */
-
-#view-login {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.5;
   min-height: 100vh;
-  background-color: #F4F6F8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
 }
 
-.login-container {
-  width: 100%;
-  max-width: 420px;
+a {
+  color: var(--primary);
+  text-decoration: none;
 }
 
-.logo-container {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.logo-text {
-  font-size: 28px;
-  font-weight: bold;
-  color: #4CAF50;
-  margin: 0 0 10px;
-}
-
-.sub-text {
-  font-size: 14px;
-  color: #666;
-  margin: 0;
-}
-
-.card {
-  background-color: #fff;
-  padding: 25px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.card-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  margin: 0 0 8px;
-  text-align: center;
-}
-
-.card-desc {
-  font-size: 13px;
-  color: #777;
-  line-height: 20px;
-  text-align: center;
-  margin: 0 0 25px;
-}
-
-.login-button {
+img {
+  max-width: 100%;
+  height: auto;
   display: block;
-  width: 100%;
-  background-color: #FF5722;
-  color: #fff;
-  font-size: 15px;
-  font-weight: bold;
-  padding: 14px;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
   border: none;
-  border-radius: 25px;
-  cursor: pointer;
+  outline: none;
 }
 
-.login-button:hover {
-  opacity: 0.9;
+input, select, textarea {
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
 }
 
-/* ---------- 主控台畫面 ---------- */
-
-#view-dashboard {
+/* --- Layout --- */
+.page-wrapper {
+  max-width: var(--max-width);
+  margin: 0 auto;
   min-height: 100vh;
-  background-color: #F8F9FA;
-  display: flex;
-  justify-content: center;
+  background-color: var(--bg);
+  position: relative;
+  padding-bottom: var(--nav-height);
 }
 
-.dashboard-container {
+.page-content {
+  padding: 15px;
+  padding-top: var(--header-height);
+}
+
+/* --- Header --- */
+.page-header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
-  min-height: 100vh;
-  background-color: #F8F9FA;
+  max-width: var(--max-width);
+  height: var(--header-height);
+  background-color: var(--primary);
   display: flex;
-  flex-direction: column;
-}
-
-.header {
-  padding: 20px;
-  background-color: #4CAF50;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-}
-
-.header-title {
-  color: #fff;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.points-text {
-  color: #FFF9C4;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.section-title {
-  font-size: 15px;
-  font-weight: bold;
-  margin: 15px 15px 0;
-  color: #333;
-}
-
-.service-grid {
-  display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  padding: 10px;
+  padding: 0 15px;
+  z-index: 100;
 }
 
-.service-button {
-  width: 31%;
-  padding: 12px 0;
-  border-radius: 8px;
-  text-align: center;
-  margin-bottom: 10px;
-  border: 1px solid #eee;
-  cursor: pointer;
-  font-size: 14px;
+.page-header .header-title {
+  color: #fff;
+  font-size: 17px;
   font-weight: bold;
+}
+
+.page-header .header-back {
+  color: #fff;
+  font-size: 20px;
+  padding: 8px;
   background: none;
 }
 
-.chat-container {
-  flex: 1;
-  padding: 0 15px;
-  overflow-y: auto;
-}
-
-.message-bubble {
-  padding: 12px;
-  border-radius: 12px;
-  margin: 6px 0;
-  max-width: 80%;
-  font-size: 15px;
-}
-
-.message-bubble.user {
-  background-color: #4CAF50;
+.page-header .header-action {
   color: #fff;
-  margin-left: auto;
-  border-bottom-right-radius: 2px;
+  font-size: 14px;
+  background: none;
+  padding: 8px;
 }
 
-.message-bubble.ai {
-  background-color: #fff;
-  color: #333;
-  line-height: 22px;
-  border: 1px solid #E0E0E0;
-  border-bottom-left-radius: 2px;
-}
-
-.input-container {
+/* --- Bottom Navigation --- */
+.nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--max-width);
+  height: var(--nav-height);
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 10px;
-  background-color: #fff;
-  border-top: 1px solid #E0E0E0;
+  justify-content: space-around;
+  z-index: 100;
 }
 
-.chat-input {
-  flex: 1;
-  height: 40px;
-  border: 1px solid #E0E0E0;
-  border-radius: 20px;
-  padding: 0 15px;
-  background-color: #FAFAFA;
-  margin-right: 10px;
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-item.active {
+  color: var(--primary);
+}
+
+.nav-item .nav-icon {
+  font-size: 20px;
+}
+
+/* --- Card --- */
+.card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+/* --- Button --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
   font-size: 14px;
-}
-
-.send-button {
-  background-color: #4CAF50;
-  color: #fff;
   font-weight: bold;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
+  transition: opacity 0.2s;
 }
 
-.send-button:hover {
-  opacity: 0.9;
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+.btn-accent {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-block {
+  display: block;
+  width: 100%;
+}
+
+/* --- Badge / Tag --- */
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-success { background-color: #E8F5E9; color: #2E7D32; }
+.badge-warning { background-color: #FFF8E1; color: #F57F17; }
+.badge-info    { background-color: #E3F2FD; color: #1565C0; }
+.badge-danger  { background-color: #FFEBEE; color: #C62828; }
+.badge-muted   { background-color: #F5F5F5; color: #757575; }
+
+/* --- Section Title --- */
+.section-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 15px 0 10px;
+}
+
+/* --- Empty State --- */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+/* --- Loading --- */
+.loading {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-muted);
+}
+
+/* --- Hidden --- */
+.hidden {
+  display: none !important;
+}
+
+/* --- View Toggle (SPA) --- */
+.view {
+  display: none;
+}
+.view.active {
+  display: block;
 }

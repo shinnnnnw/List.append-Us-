@@ -1,0 +1,280 @@
+/* ============================================
+   訂單相關樣式
+   ============================================ */
+
+/* --- 狀態篩選 Tab --- */
+.order-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 15px;
+}
+
+.order-tab {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: none;
+}
+
+.order-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* --- 訂單卡片 --- */
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 15px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.order-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.order-card-header .order-no {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.order-card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-card-body .order-service {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.order-card-body .order-amount {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.order-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+}
+
+.order-card-footer .order-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.order-card-footer .order-action-btn {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+  background: none;
+  padding: 4px 8px;
+}
+
+/* --- 訂單詳情 --- */
+.order-detail-section {
+  margin-bottom: 20px;
+}
+
+.order-detail-section h3 {
+  font-size: 15px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.order-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+}
+
+.order-info-row .info-label {
+  color: var(--text-secondary);
+}
+
+.order-info-row .info-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* --- 時間軸 --- */
+.order-timeline {
+  position: relative;
+  padding-left: 20px;
+}
+
+.order-timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--border-light);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 10px 0;
+  padding-left: 15px;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -17px;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--border);
+}
+
+.timeline-item.active::before {
+  background-color: var(--primary);
+}
+
+.timeline-item.current::before {
+  background-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.timeline-item .timeline-status {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.timeline-item .timeline-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* --- 訂單項目明細 --- */
+.order-items {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.order-item-row:last-child {
+  border-bottom: none;
+}
+
+.order-item-row.total {
+  background-color: #F5F5F5;
+  font-weight: bold;
+}
+
+/* --- 個人中心 --- */
+.profile-header {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0 auto 10px;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.profile-points {
+  font-size: 14px;
+  color: var(--primary);
+  margin-top: 4px;
+}
+
+.profile-menu {
+  list-style: none;
+}
+
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.profile-menu-item:hover {
+  background-color: #F9F9F9;
+}
+
+.profile-menu-item .menu-arrow {
+  color: var(--text-muted);
+}
+
+.logout-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-full);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: bold;
+  background: none;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background-color: #FFF3F0;
+}

@@ -1,529 +1,96 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Aî 智慧社區服務平台</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:-apple-system,"Segoe UI","Microsoft JhengHei","PingFang TC",sans-serif;background:#F5F7FA;color:#263238;}
-.view{display:none;}
-.view.active{display:flex;}
-
-/* ── 手機外框 ── */
-.phone-wrap{width:100%;min-height:100vh;display:flex;justify-content:center;background:#E8EDF2;}
-.phone{width:100%;max-width:430px;min-height:100vh;background:#F5F7FA;display:flex;flex-direction:column;position:relative;overflow:hidden;}
-
-/* ── 登入 ── */
-#view-login{align-items:center;justify-content:center;min-height:100vh;background:#F4F6F8;padding:24px;}
-.login-wrap{width:100%;max-width:380px;}
-.login-logo{text-align:center;margin-bottom:36px;}
-.login-logo h1{font-size:26px;font-weight:800;color:#2E7D32;letter-spacing:-0.5px;}
-.login-logo p{font-size:13px;color:#78909C;margin-top:6px;}
-.login-card{background:#fff;border-radius:20px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.08);}
-.login-card h2{font-size:17px;font-weight:700;color:#263238;text-align:center;margin-bottom:6px;}
-.login-card p{font-size:13px;color:#90A4AE;text-align:center;line-height:1.6;margin-bottom:24px;}
-.login-btn{display:block;width:100%;background:#FF5722;color:#fff;font-size:15px;font-weight:700;padding:15px;border:none;border-radius:30px;cursor:pointer;transition:opacity .15s;}
-.login-btn:hover{opacity:.9;}
-.login-divider{display:flex;align-items:center;gap:12px;margin:20px 0;}
-.login-divider span{flex:1;height:1px;background:#ECEFF1;}
-.login-divider p{font-size:12px;color:#B0BEC5;}
-
-/* ── 主畫面 ── */
-#view-dashboard{flex-direction:column;height:100vh;}
-.dash-header{background:#2E7D32;padding:16px 20px;padding-top:44px;display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0;}
-.dash-header-left h2{color:#fff;font-size:18px;font-weight:700;}
-.dash-header-left p{color:rgba(255,255,255,.7);font-size:12px;margin-top:2px;}
-.points-badge{background:rgba(255,255,255,.2);border-radius:12px;padding:8px 12px;text-align:center;}
-.points-badge .num{color:#fff;font-size:20px;font-weight:800;line-height:1;}
-.points-badge .lbl{color:rgba(255,255,255,.7);font-size:10px;}
-
-.svc-row{display:flex;background:#fff;border-bottom:1px solid #ECEFF1;flex-shrink:0;}
-.svc-btn{flex:1;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:none;background:none;cursor:pointer;}
-.svc-btn:hover{background:#F5F7FA;}
-.svc-icon{font-size:22px;}
-.svc-label{font-size:11px;font-weight:600;}
-
-.chat-area{flex:1;overflow-y:auto;padding:14px 14px 8px;}
-.msg-row{display:flex;margin-bottom:12px;align-items:flex-end;gap:8px;}
-.msg-row.user{justify-content:flex-end;}
-.avatar{width:28px;height:28px;border-radius:50%;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-.bubble{padding:12px 14px;border-radius:16px;max-width:78%;font-size:14px;line-height:1.6;}
-.bubble.ai{background:#fff;color:#263238;border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:1px solid #ECEFF1;}
-.bubble.user{background:#2E7D32;color:#fff;border-bottom-right-radius:4px;}
-.form-trigger{margin-top:10px;background:#E8F5E9;border:none;border-radius:8px;padding:10px 14px;width:100%;text-align:left;cursor:pointer;font-size:13px;font-weight:600;color:#2E7D32;display:flex;align-items:center;gap:6px;}
-.form-trigger:hover{background:#C8E6C9;}
-
-.input-bar{display:flex;padding:10px 12px;background:#fff;border-top:1px solid #ECEFF1;gap:8px;align-items:flex-end;flex-shrink:0;}
-.chat-input{flex:1;border:1px solid #CFD8DC;border-radius:20px;padding:10px 16px;font-size:14px;background:#FAFAFA;resize:none;max-height:80px;font-family:inherit;}
-.chat-input:focus{outline:none;border-color:#2E7D32;}
-.send-btn{background:#2E7D32;color:#fff;border:none;border-radius:20px;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;}
-.send-btn:hover{background:#1B5E20;}
-
-/* ── 表單頁 ── */
-#view-form{flex-direction:column;height:100vh;}
-.form-header{padding:16px 20px;padding-top:44px;display:flex;align-items:flex-end;gap:14px;flex-shrink:0;}
-.back-btn{background:rgba(255,255,255,.25);border:none;border-radius:50%;width:34px;height:34px;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.form-header-text h2{color:#fff;font-size:20px;font-weight:700;}
-.form-header-text p{color:rgba(255,255,255,.75);font-size:12px;margin-top:2px;}
-.form-scroll{flex:1;overflow-y:auto;padding:16px;}
-.form-card{background:#fff;border-radius:14px;padding:20px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
-.group-title{font-size:12px;font-weight:700;color:#90A4AE;text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px;}
-.topic{margin-bottom:20px;}
-.topic:last-child{margin-bottom:0;}
-.topic-label{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.topic-label span{font-size:14px;font-weight:500;color:#37474F;flex:1;}
-.required-tag{font-size:10px;color:#E53935;background:#FFEBEE;padding:2px 7px;border-radius:4px;font-weight:700;}
-input[type=text],input[type=tel],input[type=email],textarea,select{width:100%;border:1px solid #CFD8DC;border-radius:8px;padding:11px 13px;font-size:14px;color:#263238;background:#FAFAFA;font-family:inherit;}
-input:focus,textarea:focus,select:focus{outline:none;border-color:#2E7D32;background:#fff;}
-textarea{resize:vertical;min-height:90px;}
-.opt-list{display:flex;flex-direction:column;gap:8px;}
-.opt-btn{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid #CFD8DC;border-radius:8px;background:#FAFAFA;cursor:pointer;font-size:14px;color:#546E7A;text-align:left;transition:all .15s;}
-.opt-btn.selected{border-color:#2E7D32;background:#E8F5E9;color:#1B5E20;font-weight:600;}
-.radio-circle{width:18px;height:18px;border-radius:50%;border:2px solid #B0BEC5;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.radio-circle.on{border-color:#2E7D32;}
-.radio-dot{width:9px;height:9px;border-radius:50%;background:#2E7D32;}
-.check-box{width:18px;height:18px;border-radius:4px;border:2px solid #B0BEC5;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
-.check-box.on{background:#2E7D32;border-color:#2E7D32;color:#fff;}
-.upload-zone{border:2px dashed #CFD8DC;border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;background:#FAFAFA;}
-.upload-zone:hover{border-color:#2E7D32;}
-.contact-fields{display:flex;flex-direction:column;gap:10px;}
-.submit-wrap{padding:16px;flex-shrink:0;}
-.submit-btn{display:block;width:100%;padding:16px;border:none;border-radius:14px;font-size:16px;font-weight:700;color:#fff;cursor:pointer;transition:opacity .15s;}
-.submit-btn:hover{opacity:.9;}
-.submit-note{text-align:center;font-size:12px;color:#90A4AE;margin-top:8px;line-height:1.6;}
-
-/* ── 訂單追蹤 ── */
-#view-orders{flex-direction:column;height:100vh;}
-.orders-header{background:#1565C0;padding:16px 20px;padding-top:44px;display:flex;align-items:flex-end;gap:14px;flex-shrink:0;}
-.orders-header h2{color:#fff;font-size:20px;font-weight:700;}
-.orders-scroll{flex:1;overflow-y:auto;padding:16px;}
-.order-card{background:#fff;border-radius:14px;padding:18px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
-.order-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.order-no{font-size:11px;color:#90A4AE;font-family:monospace;}
-.order-title{font-size:15px;font-weight:600;color:#263238;margin-top:3px;}
-.status-pill{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;}
-.status-pill.pending{background:#FFF3E0;color:#E65100;}
-.status-pill.processing{background:#E3F2FD;color:#1565C0;}
-.status-pill.done{background:#E8F5E9;color:#2E7D32;}
-.order-timeline{margin-top:12px;padding-left:16px;border-left:2px solid #ECEFF1;}
-.tl-item{position:relative;padding-left:12px;margin-bottom:8px;}
-.tl-item::before{content:'';position:absolute;left:-6px;top:5px;width:10px;height:10px;border-radius:50%;background:#2E7D32;border:2px solid #fff;box-shadow:0 0 0 1px #2E7D32;}
-.tl-time{font-size:11px;color:#90A4AE;}
-.tl-text{font-size:13px;color:#546E7A;margin-top:1px;}
-.review-row{margin-top:12px;padding-top:12px;border-top:1px solid #ECEFF1;display:flex;align-items:center;justify-content:space-between;}
-.stars{color:#F9A825;font-size:18px;letter-spacing:2px;}
-.review-btn{background:#E8F5E9;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:#2E7D32;cursor:pointer;}
-
-/* ── 成功畫面 ── */
-#view-success{flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:32px;text-align:center;}
-.success-icon{font-size:64px;margin-bottom:20px;}
-.success-title{font-size:22px;font-weight:800;color:#2E7D32;margin-bottom:8px;}
-.success-no{font-size:12px;color:#90A4AE;font-family:monospace;margin-bottom:16px;}
-.success-desc{font-size:14px;color:#546E7A;line-height:1.7;margin-bottom:32px;}
-.success-actions{display:flex;flex-direction:column;gap:10px;width:100%;}
-.btn-solid{padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
-.btn-outline{padding:14px;border:2px solid #2E7D32;border-radius:12px;font-size:15px;font-weight:700;background:#fff;color:#2E7D32;cursor:pointer;}
-
-/* ── 底部 Tab ── */
-.tab-bar{display:flex;background:#fff;border-top:1px solid #ECEFF1;flex-shrink:0;}
-.tab-item{flex:1;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;cursor:pointer;font-size:10px;color:#90A4AE;font-weight:600;}
-.tab-item.active{color:#2E7D32;}
-.tab-icon{font-size:20px;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aî 智慧社區服務平台</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/chat.css">
+  <link rel="stylesheet" href="css/services.css">
 </head>
 <body>
-<div class="phone-wrap">
-<div class="phone" id="app">
 
-<!-- ── 登入 ── -->
-<div id="view-login" class="view active" style="display:flex">
-  <div class="login-wrap">
-    <div class="login-logo">
-      <h1>Aî 智慧管家</h1>
-      <p>智慧社區服務平台 · 一站搞定生活大小事</p>
-    </div>
-    <div class="login-card">
-      <h2>使用 uniopen 帳號登入</h2>
-      <p>整合零售、物流、餐飲、居家修繕<br>單一帳號，免切換 App</p>
-      <button class="login-btn" onclick="doLogin()">🔑 OpenPî / uniopen 一鍵授權登入</button>
-      <div class="login-divider"><span></span><p>平台代號 OP APP · 01</p><span></span></div>
-      <p style="font-size:11px;color:#B0BEC5;text-align:center;">Demo 帳號：王小明 · 0912-345-001</p>
+<!-- ===== 登入畫面 ===== -->
+<div id="view-login" class="view active">
+  <div class="login-view">
+    <div class="login-container">
+      <div class="login-logo">
+        <h1>Aî 智慧社區服務平台</h1>
+        <p>— 智慧管家，一站搞定生活大小事 —</p>
+      </div>
+      <div class="login-card">
+        <h2>使用 uniopen 帳號登入</h2>
+        <p class="login-desc">整合零售、物流、餐飲、生活，單一帳號免切換 App。</p>
+        <button id="login-btn" class="login-btn">OpenPî / uniopen 一鍵授權登入</button>
+        <ul class="login-features">
+          <li>AI 智慧管家即時服務</li>
+          <li>一站整合六大生活服務</li>
+          <li>消費累積點數回饋</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ── 主畫面 ── -->
-<div id="view-dashboard" class="view" style="display:none;flex-direction:column;height:100vh;">
-  <div class="dash-header">
-    <div class="dash-header-left">
-      <h2 id="dash-greeting">嗨，住戶！</h2>
-      <p>AI 智慧管家在線上</p>
+<!-- ===== 主控台畫面 ===== -->
+<div id="view-dashboard" class="view">
+  <div class="page-wrapper">
+    <!-- Header -->
+    <div class="page-header">
+      <span id="header-title" class="header-title">嗨，住戶！AI 智慧管家在線上</span>
+      <span id="points-text" class="header-action">50 P</span>
     </div>
-    <div class="points-badge">
-      <div class="num">50</div>
-      <div class="lbl">點數 P</div>
+
+    <!-- 頁面內容 -->
+    <div class="page-content">
+      <!-- 快捷服務 -->
+      <h3 class="section-title">一站搞定生活大小事</h3>
+      <div id="service-grid" class="service-grid"></div>
+
+      <!-- AI 聊天 -->
+      <div class="chat-section">
+        <div id="chat-container" class="chat-container"></div>
+        <div class="chat-input-bar">
+          <input id="chat-input" type="text" placeholder="輸入您的生活需求... (例如：我想訂明天晚上的餐廳)">
+          <button id="chat-send-btn" class="chat-send-btn">發送</button>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="svc-row" id="svc-row"></div>
-
-  <div class="chat-area" id="chat-area"></div>
-
-  <div class="input-bar">
-    <textarea class="chat-input" id="chat-input" placeholder="輸入您的生活需求..." rows="1"
-      oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
-    <button class="send-btn" onclick="sendMsg()">送出</button>
-  </div>
-
-  <div class="tab-bar">
-    <button class="tab-item active" onclick="showView('dashboard')"><span class="tab-icon">🏠</span>首頁</button>
-    <button class="tab-item" onclick="showView('orders')"><span class="tab-icon">📋</span>我的訂單</button>
-  </div>
-</div>
-
-<!-- ── 表單頁 ── -->
-<div id="view-form" class="view" style="display:none;flex-direction:column;height:100vh;">
-  <div class="form-header" id="form-header">
-    <button class="back-btn" onclick="showView('dashboard')">←</button>
-    <div class="form-header-text">
-      <h2 id="form-title">表單</h2>
-      <p>AI 智慧管家已為您準備專屬表單</p>
-    </div>
-  </div>
-  <div class="form-scroll" id="form-body"></div>
-  <div class="submit-wrap">
-    <button class="submit-btn" id="submit-btn" onclick="submitForm()">送出諮詢單</button>
-    <p class="submit-note">送出後，AI 將自動媒合最適合的服務廠商<br>廠商將於 24 小時內與您聯繫</p>
+    <!-- 底部導覽列 -->
+    <nav class="nav-bar hidden">
+      <a href="index.html" class="nav-item active">
+        <span class="nav-icon">🏠</span>
+        <span>首頁</span>
+      </a>
+      <a href="services.html" class="nav-item">
+        <span class="nav-icon">🛎️</span>
+        <span>服務</span>
+      </a>
+      <a href="orders.html" class="nav-item">
+        <span class="nav-icon">📋</span>
+        <span>訂單</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="nav-icon">👤</span>
+        <span>我的</span>
+      </a>
+    </nav>
   </div>
 </div>
 
-<!-- ── 訂單追蹤 ── -->
-<div id="view-orders" class="view" style="display:none;flex-direction:column;height:100vh;">
-  <div class="orders-header">
-    <button class="back-btn" onclick="showView('dashboard')">←</button>
-    <h2>我的諮詢與訂單</h2>
-  </div>
-  <div class="orders-scroll" id="orders-body"></div>
-  <div class="tab-bar">
-    <button class="tab-item" onclick="showView('dashboard')"><span class="tab-icon">🏠</span>首頁</button>
-    <button class="tab-item active" onclick="showView('orders')"><span class="tab-icon">📋</span>我的訂單</button>
-  </div>
-</div>
-
-<!-- ── 送出成功 ── -->
-<div id="view-success" class="view" style="display:none;flex-direction:column;">
-  <div class="success-icon">✅</div>
-  <div class="success-title">諮詢單送出成功！</div>
-  <div class="success-no" id="success-no">FB20250801-001</div>
-  <div class="success-desc">AI 正在為您媒合評分最高的服務廠商<br>廠商將於 <strong>24 小時內</strong> 透過電話與您聯繫<br>您可以在「我的訂單」追蹤進度</div>
-  <div class="success-actions">
-    <button class="btn-solid" style="background:#2E7D32;color:#fff;" onclick="showView('orders')">📋 查看訂單進度</button>
-    <button class="btn-outline" onclick="showView('dashboard')">返回首頁</button>
-  </div>
-</div>
-
-</div><!-- /phone -->
-</div><!-- /phone-wrap -->
-
+<!-- Scripts -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/app.js"></script>
 <script>
-// ── 資料 ──────────────────────────────────────────────
-let user = null;
-let msgs = [];
-let answers = {};
-let currentFormId = null;
-let orders = [];
-
-const SERVICES = [
-  { name:'外送', formId:'1', color:'#FF5722', emoji:'🛵' },
-  { name:'訂位', formId:'1', color:'#4CAF50', emoji:'🍽️' },
-  { name:'清潔', formId:'3', color:'#2196F3', emoji:'🧹' },
-  { name:'修繕', formId:'3', color:'#FFC107', emoji:'🔧' },
-  { name:'宅配', formId:'4', color:'#9C27B0', emoji:'📦' },
-  { name:'購物', formId:'2', color:'#E91E63', emoji:'🛍️' },
-];
-
-const INTENT = [
-  { kw:['吃','訂位','餐廳','火鍋','燒烤','晚餐','午餐','吃飯','用餐'], formId:'1',
-    reply:'🍽️ 辨識到您想訂餐廳！我已為您準備好專屬訂位表單，只需填寫用餐日期、人數等資訊，餐廳將盡快確認。', label:'填寫餐廳訂位需求單' },
-  { kw:['買','購物','商品','購買','網購','優惠','禮券'], formId:'2',
-    reply:'🛍️ 辨識到您有購物需求！請填寫想購買的商品資訊，AI 將為您媒合最優惠的推薦。', label:'填寫商品需求單' },
-  { kw:['清潔','打掃','清洗','家事','冷氣','漏水','修','水電','水管','裝','修繕'], formId:'3',
-    reply:'🔧 辨識到您需要居家服務！請填寫服務類型和詳細描述，我們將媒合評分最高的在地廠商。', label:'填寫居家服務需求單' },
-  { kw:['寄','包裹','快遞','宅配','送件'], formId:'4',
-    reply:'📦 辨識到您需要寄件服務！請填寫包裹資訊，到府收件最快今日安排。', label:'填寫寄件需求單' },
-];
-
-const FORMS = {
-  '1': { title:'餐廳訂位', color:'#4CAF50',
-    groups:[
-      { name:'訂位資訊', topics:[
-        { id:'date', type:'text', label:'希望訂位日期', ph:'例：2025-08-10', req:true },
-        { id:'pax',  type:'num',  label:'用餐人數（位）', ph:'請輸入數字', req:true },
-        { id:'time', type:'radio', label:'用餐時段', req:true,
-          opts:['午餐 11:30','午餐 12:00','晚餐 17:30','晚餐 18:00','晚餐 18:30','晚餐 19:00'] },
-        { id:'special', type:'check', label:'特殊需求（可複選）', req:false,
-          opts:['兒童椅','無障礙座位','包廂','生日蛋糕','素食'] },
-        { id:'note', type:'textarea', label:'備註（過敏食材或其他需求）', ph:'選填', req:false },
-      ]},
-      { name:'聯絡資料', topics:[{ id:'contact', type:'contact', label:'聯絡資料', req:true }] }
-    ]},
-  '2': { title:'商城購物', color:'#E91E63',
-    groups:[
-      { name:'商品需求', topics:[
-        { id:'item',   type:'text',     label:'想購買的商品名稱或類別', ph:'例：咖啡禮券、藍芽耳機', req:true },
-        { id:'desc',   type:'textarea', label:'詳細需求描述', ph:'規格、顏色、數量等', req:true },
-        { id:'budget', type:'num',      label:'預算上限（元）', ph:'選填', req:false },
-        { id:'ship',   type:'radio',    label:'期望收貨方式', req:true,
-          opts:['宅配到府','超商取貨','門市自取'] },
-      ]},
-      { name:'配送地址', topics:[{ id:'contact', type:'contact-full', label:'聯絡與配送資料', req:true }] }
-    ]},
-  '3': { title:'居家服務', color:'#2196F3',
-    groups:[
-      { name:'服務需求', topics:[
-        { id:'stype', type:'radio', label:'服務類型', req:true,
-          opts:['一般居家清潔','家電清洗','水電修繕','冷氣安裝','油漆粉刷'] },
-        { id:'size',  type:'num',   label:'坪數（約幾坪）', ph:'選填', req:false },
-        { id:'urgency', type:'radio', label:'希望服務時段', req:true,
-          opts:['越快越好（緊急）','本週內','彈性配合'] },
-        { id:'desc',  type:'textarea', label:'問題描述（請盡量詳細）', ph:'例：廚房水管漏水，從昨天開始...', req:true },
-      ]},
-      { name:'服務地址與聯絡', topics:[{ id:'contact', type:'contact-full', label:'聯絡與服務地址', req:true }] }
-    ]},
-  '4': { title:'包裹寄送', color:'#9C27B0',
-    groups:[
-      { name:'寄件資訊', topics:[
-        { id:'size', type:'radio', label:'包裹大小', req:true,
-          opts:['小型（鞋盒以下）','中型（鞋盒～洗衣機）','大型（洗衣機以上）'] },
-        { id:'weight', type:'num', label:'預估重量（公斤）', ph:'選填', req:false },
-        { id:'pickup', type:'radio', label:'收件方式', req:true, opts:['到府收件','自行送至門市'] },
-        { id:'note', type:'textarea', label:'寄件備註', ph:'易碎物品、特殊標示等', req:false },
-      ]},
-      { name:'寄件人資料', topics:[{ id:'contact', type:'contact', label:'寄件聯絡資料', req:true }] }
-    ]},
-};
-
-// ── 登入 ──────────────────────────────────────────────
-function doLogin() {
-  user = { inbr_account_id:'c0000000-0000-0000-0000-000000000001', name:'王小明', phone:'0912-345-001', email:'wang01@example.com' };
-  orders = [
-    { no:'FB20250731-009', title:'熱水器無法點火', type:'水電修繕', status:'done',
-      timeline:[
-        { time:'07/31 16:55', text:'提交諮詢單，AI 自動媒合廠商' },
-        { time:'07/31 17:30', text:'廠商「孟志龍水電」受理，電話確認時間' },
-        { time:'08/01 10:00', text:'服務完成，住戶確認驗收' },
-      ], rating:5 },
-    { no:'FB20250801-002', title:'浴室燈具更換', type:'水電修繕', status:'processing',
-      timeline:[
-        { time:'08/01 09:45', text:'提交諮詢單，AI 自動媒合廠商' },
-        { time:'08/01 10:12', text:'廠商受理，約定下午 2 點到場評估' },
-      ] },
-    { no:'FB20250801-007', title:'餐廳訂位 - 4 人晚餐', type:'餐廳訂位', status:'pending',
-      timeline:[{ time:'08/01 11:30', text:'提交諮詢單，等待廠商確認' }] },
-  ];
-  showView('dashboard');
-}
-
-// ── 畫面切換 ──────────────────────────────────────────
-function showView(name) {
-  ['login','dashboard','form','orders','success'].forEach(v => {
-    const el = document.getElementById('view-'+v);
-    if (el) el.style.display = 'none';
+  document.addEventListener('DOMContentLoaded', () => {
+    App.initIndex();
   });
-  const target = document.getElementById('view-'+name);
-  if (!target) return;
-  target.style.display = 'flex';
-
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'orders') renderOrders();
-}
-
-// ── Dashboard ──────────────────────────────────────────
-function renderDashboard() {
-  document.getElementById('dash-greeting').textContent = `嗨，${user?.name || '住戶'}！`;
-
-  // 服務按鈕
-  const row = document.getElementById('svc-row');
-  row.innerHTML = SERVICES.map(s => `
-    <button class="svc-btn" onclick="openForm('${s.formId}')">
-      <span class="svc-icon">${s.emoji}</span>
-      <span class="svc-label" style="color:${s.color}">${s.name}</span>
-    </button>`).join('');
-
-  // 歡迎訊息（只加一次）
-  if (msgs.length === 0) {
-    msgs.push({ sender:'ai', text:`你好，${user.name}！我是您的 AI 智慧社區管家 🏠\n\n告訴我您今天有什麼需求，例如：\n• 「我想訂明晚六點的餐廳，4 人」\n• 「客廳水管漏水，需要緊急修繕」\n• 「幫我買一張咖啡禮券」\n\n或直接點選上方的服務快捷鍵！` });
-  }
-  renderMsgs();
-}
-
-function renderMsgs() {
-  const area = document.getElementById('chat-area');
-  area.innerHTML = msgs.map(m => {
-    const isAI = m.sender === 'ai';
-    const bubbleClass = isAI ? 'ai' : 'user';
-    const avatar = isAI ? '<div class="avatar">🤖</div>' : '';
-    const trigger = (m.formId && m.label) ? `<button class="form-trigger" onclick="openForm('${m.formId}')">📋 ${m.label} →</button>` : '';
-    const textHtml = m.text.replace(/\n/g,'<br>');
-    const rowClass = isAI ? 'msg-row' : 'msg-row user';
-    return `<div class="${rowClass}">${avatar}<div class="bubble ${bubbleClass}">${textHtml}${trigger}</div></div>`;
-  }).join('');
-  area.scrollTop = area.scrollHeight;
-}
-
-function sendMsg() {
-  const inp = document.getElementById('chat-input');
-  const text = inp.value.trim();
-  if (!text) return;
-  inp.value = ''; inp.style.height = 'auto';
-
-  msgs.push({ sender:'user', text });
-  renderMsgs();
-
-  setTimeout(() => {
-    const matched = INTENT.find(i => i.kw.some(k => text.includes(k)));
-    msgs.push({
-      sender:'ai',
-      text: matched ? matched.reply : '收到您的需求！請問您是需要餐廳訂位、居家服務、購物還是寄件呢？可以描述得更具體，或直接點選上方的快捷服務。',
-      formId: matched?.formId,
-      label: matched?.label,
-    });
-    renderMsgs();
-  }, 700);
-}
-
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
-}
-
-// ── 表單 ──────────────────────────────────────────────
-function openForm(formId) {
-  currentFormId = formId;
-  answers = { name: user?.name||'', phone: user?.phone||'', email: user?.email||'', addr:'' };
-  const form = FORMS[formId];
-  if (!form) return;
-
-  document.getElementById('form-title').textContent = form.title;
-  document.getElementById('form-header').style.background = form.color;
-  document.getElementById('submit-btn').style.background = form.color;
-
-  const body = document.getElementById('form-body');
-  body.innerHTML = form.groups.map(g => `
-    <div class="form-card">
-      <div class="group-title">${g.name}</div>
-      ${g.topics.map(t => renderTopic(t)).join('')}
-    </div>`).join('');
-
-  showView('form');
-}
-
-function renderTopic(t) {
-  const req = t.req ? '<span class="required-tag">必填</span>' : '';
-  const label = `<div class="topic-label"><span>${t.label}</span>${req}</div>`;
-
-  let field = '';
-  if (t.type === 'text' || t.type === 'num') {
-    field = `<input type="text" inputmode="${t.type==='num'?'numeric':'text'}" placeholder="${t.ph||''}" 
-      value="${answers[t.id]||''}" onchange="answers['${t.id}']=this.value">`;
-  } else if (t.type === 'textarea') {
-    field = `<textarea placeholder="${t.ph||''}" onchange="answers['${t.id}']=this.value">${answers[t.id]||''}</textarea>`;
-  } else if (t.type === 'radio') {
-    field = `<div class="opt-list">${t.opts.map(o => `
-      <button class="opt-btn ${answers[t.id]===o?'selected':''}" onclick="pickRadio('${t.id}',this,event)">
-        <div class="radio-circle ${answers[t.id]===o?'on':''}">${answers[t.id]===o?'<div class="radio-dot"></div>':''}</div>${o}
-      </button>`).join('')}</div>`;
-  } else if (t.type === 'check') {
-    field = `<div class="opt-list">${t.opts.map(o => {
-      const sel = (answers[t.id]||[]).includes(o);
-      return `<button class="opt-btn ${sel?'selected':''}" onclick="toggleCheck('${t.id}',this,event,'${o}')">
-        <div class="check-box ${sel?'on':''}">${sel?'✓':''}</div>${o}
-      </button>`;
-    }).join('')}</div>`;
-  } else if (t.type === 'contact' || t.type === 'contact-full') {
-    field = `<div class="contact-fields">
-      <input type="text" placeholder="姓名（必填）" value="${answers.name||''}" onchange="answers.name=this.value">
-      <input type="tel" placeholder="手機號碼（必填）" value="${answers.phone||''}" onchange="answers.phone=this.value">
-      <input type="email" placeholder="Email（選填）" value="${answers.email||''}" onchange="answers.email=this.value">
-      ${t.type==='contact-full'?`<input type="text" placeholder="詳細地址（必填）" value="${answers.addr||''}" onchange="answers.addr=this.value">`:''}
-    </div>`;
-  } else if (t.type === 'upload') {
-    field = `<div class="upload-zone" onclick="alert('（Demo 模式，實際功能串接 S3）')">
-      <span style="font-size:28px">📷</span><span style="font-size:13px;color:#90A4AE">點擊上傳照片（選填）</span>
-    </div>`;
-  }
-  return `<div class="topic">${label}${field}</div>`;
-}
-
-function pickRadio(id, btn, e) {
-  e.preventDefault();
-  const list = btn.parentElement;
-  answers[id] = btn.textContent.trim();
-  list.querySelectorAll('.opt-btn').forEach(b => {
-    const on = b === btn;
-    b.classList.toggle('selected', on);
-    const circle = b.querySelector('.radio-circle');
-    circle.classList.toggle('on', on);
-    circle.innerHTML = on ? '<div class="radio-dot"></div>' : '';
-  });
-}
-
-function toggleCheck(id, btn, e, val) {
-  e.preventDefault();
-  if (!answers[id]) answers[id] = [];
-  const idx = answers[id].indexOf(val);
-  if (idx > -1) answers[id].splice(idx,1); else answers[id].push(val);
-  const on = answers[id].includes(val);
-  btn.classList.toggle('selected', on);
-  const box = btn.querySelector('.check-box');
-  box.classList.toggle('on', on);
-  box.textContent = on ? '✓' : '';
-}
-
-function submitForm() {
-  if (!answers.name?.trim() || !answers.phone?.trim()) {
-    alert('請填寫姓名與手機號碼');
-    return;
-  }
-  const no = 'FB' + Date.now().toString().slice(-8);
-  const form = FORMS[currentFormId];
-  orders.unshift({
-    no, title: form.title + ' 諮詢單', type: form.title, status:'pending',
-    timeline:[{ time:new Date().toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}), text:'提交諮詢單，AI 自動媒合廠商中...' }]
-  });
-  document.getElementById('success-no').textContent = '諮詢單號：' + no;
-  showView('success');
-}
-
-// ── 訂單 ──────────────────────────────────────────────
-function renderOrders() {
-  const statusMap = { pending:['待媒合','pending'], processing:['處理中','processing'], done:['已完成','done'] };
-  const body = document.getElementById('orders-body');
-  body.innerHTML = orders.length === 0
-    ? '<div style="text-align:center;padding:40px;color:#90A4AE">目前還沒有諮詢單<br><br><button onclick="showView(\'dashboard\')" style="background:#2E7D32;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">去提交需求</button></div>'
-    : orders.map(o => {
-        const [slabel, scls] = statusMap[o.status] || ['未知',''];
-        const tl = o.timeline.map(t => `<div class="tl-item"><div class="tl-time">${t.time}</div><div class="tl-text">${t.text}</div></div>`).join('');
-        const review = o.rating ? `<div class="review-row"><div><div style="font-size:12px;color:#90A4AE;margin-bottom:2px">您的評價</div><div class="stars">${'★'.repeat(o.rating)}${'☆'.repeat(5-o.rating)}</div></div></div>` :
-          (o.status==='done' ? `<div class="review-row"><span style="font-size:13px;color:#546E7A">服務完成，滿意嗎？</span><button class="review-btn" onclick="doReview(this)">⭐ 評價</button></div>` : '');
-        return `<div class="order-card">
-          <div class="order-top">
-            <div><div class="order-no">${o.no}</div><div class="order-title">${o.title}</div></div>
-            <span class="status-pill ${scls}">${slabel}</span>
-          </div>
-          <div class="order-timeline">${tl}</div>${review}
-        </div>`;
-      }).join('');
-}
-
-function doReview(btn) {
-  const stars = prompt('請輸入評分（1-5 顆星）：');
-  if (stars && +stars >= 1 && +stars <= 5) {
-    alert('謝謝您的評價！⭐'.repeat(+stars));
-    btn.closest('.order-card').querySelector('.review-row').innerHTML = `<div class="stars">${'★'.repeat(+stars)}${'☆'.repeat(5-+stars)}</div>`;
-  }
-}
 </script>
 </body>
 </html>

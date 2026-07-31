@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>個人中心 - Aî 智慧社區</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/orders.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <!-- Header -->
+  <div class="page-header">
+    <span class="header-title">個人中心</span>
+    <span></span>
+  </div>
+
+  <!-- 頁面內容 -->
+  <div class="page-content">
+    <!-- 用戶頭像與名稱 -->
+    <div class="profile-header">
+      <div class="profile-avatar" id="profile-avatar">王</div>
+      <div class="profile-name" id="profile-name">王小明</div>
+      <div class="profile-points" id="profile-points">累積點數：50 P</div>
+    </div>
+
+    <!-- 功能選單 -->
+    <div class="card">
+      <ul class="profile-menu">
+        <li class="profile-menu-item" onclick="Utils.navigate('orders.html')">
+          <span>📋 我的訂單</span>
+          <span class="menu-arrow">→</span>
+        </li>
+        <li class="profile-menu-item" onclick="Utils.toast('點數紀錄功能開發中')">
+          <span>🎁 點數紀錄</span>
+          <span class="menu-arrow">→</span>
+        </li>
+        <li class="profile-menu-item" onclick="Utils.toast('通知設定功能開發中')">
+          <span>🔔 通知設定</span>
+          <span class="menu-arrow">→</span>
+        </li>
+        <li class="profile-menu-item" onclick="Utils.toast('聯絡客服功能開發中')">
+          <span>💬 聯絡客服</span>
+          <span class="menu-arrow">→</span>
+        </li>
+        <li class="profile-menu-item" onclick="Utils.toast('關於我們')">
+          <span>ℹ️ 關於平台</span>
+          <span class="menu-arrow">→</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 帳號資訊 -->
+    <div class="card" style="margin-top:12px">
+      <h3 class="section-title" style="margin-top:0">帳號資訊</h3>
+      <div id="profile-info">
+        <div class="order-info-row">
+          <span class="info-label">姓名</span>
+          <span class="info-value" id="info-name">-</span>
+        </div>
+        <div class="order-info-row">
+          <span class="info-label">手機</span>
+          <span class="info-value" id="info-phone">-</span>
+        </div>
+        <div class="order-info-row">
+          <span class="info-label">Email</span>
+          <span class="info-value" id="info-email">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 登出按鈕 -->
+    <button class="logout-btn" id="logout-btn">登出</button>
+  </div>
+
+  <!-- 底部導覽列 -->
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span>首頁</span>
+    </a>
+    <a href="services.html" class="nav-item">
+      <span class="nav-icon">🛎️</span>
+      <span>服務</span>
+    </a>
+    <a href="orders.html" class="nav-item">
+      <span class="nav-icon">📋</span>
+      <span>訂單</span>
+    </a>
+    <a href="profile.html" class="nav-item active">
+      <span class="nav-icon">👤</span>
+      <span>我的</span>
+    </a>
+  </nav>
+</div>
+
+<!-- Scripts -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!Auth.requireAuth()) return;
+
+    const user = Auth.getUser();
+    if (user) {
+      // 頭像（取姓氏第一個字）
+      const avatar = Utils.$('#profile-avatar');
+      if (avatar) avatar.textContent = (user.name || '?')[0];
+
+      // 名稱
+      const name = Utils.$('#profile-name');
+      if (name) name.textContent = user.name || '-';
+
+      // 點數
+      const points = Utils.$('#profile-points');
+      if (points) points.textContent = `累積點數：${user.points || 0} P`;
+
+      // 帳號資訊
+      Utils.$('#info-name').textContent = user.name || '-';
+      Utils.$('#info-phone').textContent = user.phone || '-';
+      Utils.$('#info-email').textContent = user.email || '-';
+    }
+
+    // 登出
+    Utils.$('#logout-btn').addEventListener('click', () => {
+      if (Utils.confirm('確定要登出嗎？')) {
+        Auth.logout();
+      }
+    });
+  });
+</script>
+</body>
+</html>
