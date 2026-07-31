@@ -1,0 +1,257 @@
+/* ============================================
+   動態表單樣式
+   ============================================ */
+
+.form-container {
+  padding-bottom: 80px;
+}
+
+/* --- 表單 Header --- */
+.form-header {
+  margin-bottom: 15px;
+}
+
+.form-header h2 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.form-header .form-intro {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 20px;
+}
+
+/* --- 注意事項 --- */
+.form-notice {
+  background-color: #FFF8E1;
+  border-left: 3px solid #FFC107;
+  padding: 12px 15px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: 15px;
+  font-size: 13px;
+  color: #5D4037;
+  line-height: 20px;
+}
+
+.form-notice ol, .form-notice ul {
+  padding-left: 18px;
+}
+
+/* --- 題組 --- */
+.form-group-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--text-primary);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 12px;
+}
+
+/* --- 題目區塊 --- */
+.form-field {
+  margin-bottom: 18px;
+}
+
+.form-field .field-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.form-field .field-label .required {
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.form-field .field-remark {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+/* --- Input 共用 --- */
+.form-input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-size: 14px;
+  background-color: #FAFAFA;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--primary);
+  background-color: #fff;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  background-color: #FAFAFA;
+  resize: vertical;
+}
+
+.form-textarea:focus {
+  border-color: var(--primary);
+  background-color: #fff;
+}
+
+/* --- Select --- */
+.form-select {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-size: 14px;
+  background-color: #FAFAFA;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+/* --- Radio / Checkbox --- */
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.option-item:hover {
+  border-color: var(--primary-light);
+  background-color: #F1F8E9;
+}
+
+.option-item input[type="radio"],
+.option-item input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+}
+
+.option-item label {
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+
+/* --- 地區選單 --- */
+.district-selects {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.district-selects select {
+  flex: 1;
+}
+
+/* --- 圖片上傳 --- */
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.upload-area:hover {
+  border-color: var(--primary);
+}
+
+.upload-area .upload-icon {
+  font-size: 32px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.upload-area .upload-text {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.upload-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.upload-preview img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+/* --- 驗證提示 --- */
+.field-error {
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+.form-input.invalid,
+.form-textarea.invalid,
+.form-select.invalid {
+  border-color: var(--accent);
+}
+
+/* --- 條款 --- */
+.form-terms {
+  padding: 12px 15px;
+  background-color: #F5F5F5;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 18px;
+  margin-bottom: 15px;
+}
+
+.form-terms-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+/* --- 送出按鈕 --- */
+.form-submit-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--max-width);
+  padding: 12px 15px;
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-light);
+}

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>服務總覽 - Aî 智慧社區</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/services.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <!-- Header -->
+  <div class="page-header">
+    <span class="header-title">服務總覽</span>
+    <span></span>
+  </div>
+
+  <!-- 頁面內容 -->
+  <div class="page-content">
+    <!-- 分類 Tab -->
+    <div id="service-categories" class="category-tabs"></div>
+
+    <!-- 服務列表 -->
+    <div id="service-list" class="service-list">
+      <div class="loading">載入中...</div>
+    </div>
+  </div>
+
+  <!-- 底部導覽列 -->
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span>首頁</span>
+    </a>
+    <a href="services.html" class="nav-item active">
+      <span class="nav-icon">🛎️</span>
+      <span>服務</span>
+    </a>
+    <a href="orders.html" class="nav-item">
+      <span class="nav-icon">📋</span>
+      <span>訂單</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <span class="nav-icon">👤</span>
+      <span>我的</span>
+    </a>
+  </nav>
+</div>
+
+<!-- Scripts -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/services.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    Services.init();
+  });
+</script>
+</body>
+</html>
