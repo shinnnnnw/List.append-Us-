@@ -25,10 +25,9 @@ const API = {
       const data = await response.json();
 
       if (response.status === 401) {
-        // 未登入，導回登入頁
-        Auth.clearUser();
-        Utils.navigate('index.html');
-        return null;
+        // 未登入，但不強制導向（前端用 localStorage 管理登入狀態）
+        console.warn('API 回傳 401:', endpoint);
+        return data;
       }
 
       return data;

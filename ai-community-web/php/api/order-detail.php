@@ -4,11 +4,12 @@
  * GET ?id=X — 回傳單筆訂單完整資訊
  */
 require_once __DIR__ . '/../db.php';
-require_once __DIR__ . '/../middleware/auth-check.php';
-
-/** @var array $currentUser 由 auth-check.php 提供 */
+require_once __DIR__ . '/../config.php';
 
 header('Content-Type: application/json; charset=utf-8');
+
+// 嘗試取得登入用戶（不強制 401）
+$currentUser = $_SESSION['user'] ?? null;
 
 $orderId = $_GET['id'] ?? null;
 
