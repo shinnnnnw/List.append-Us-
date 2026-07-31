@@ -33,15 +33,17 @@ const Auth = {
   },
 
   /**
-   * 執行登入
+   * 執行登入（免驗證，任何人皆可直接登入）
    */
   async login() {
-    const result = await API.login();
-    if (result && result.success) {
-      this.saveUser(result.data);
-      return result.data;
-    }
-    return null;
+    const defaultUser = {
+      id: 1,
+      name: '住戶',
+      phone: '0900000000',
+      points: 50,
+    };
+    this.saveUser(defaultUser);
+    return defaultUser;
   },
 
   /**
