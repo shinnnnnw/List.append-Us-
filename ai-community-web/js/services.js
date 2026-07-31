@@ -75,7 +75,13 @@ const Services = {
 
     var filtered = this.vendors;
 
-    // 未來若要依類型篩選，可在此加 filter 邏輯
+    // 依服務類型篩選
+    if (this.currentType) {
+      var typeCode = this.currentType;
+      filtered = this.vendors.filter(function(v) {
+        return v.service_types && v.service_types.indexOf(typeCode) >= 0;
+      });
+    }
 
     if (filtered.length === 0) {
       container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>目前沒有服務項目</p></div>';
