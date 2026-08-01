@@ -25,10 +25,9 @@ const API = {
       const data = await response.json();
 
       if (response.status === 401) {
-        // 未登入，導回登入頁
+        // 未登入，回傳錯誤讓呼叫端自行處理
         Auth.clearUser();
-        Utils.navigate('index.html');
-        return null;
+        return { success: false, data: null, message: '未登入或登入已過期', _unauthorized: true };
       }
 
       return data;
