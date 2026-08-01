@@ -240,15 +240,28 @@ async function handleVendorDetail(vendorId) {
   const item = await dbGet('cms_service_vendor', { vendor_id: vendorId });
   if (!item) return fail('找不到該服務商', 404);
 
+  // service_areas 優先用 DynamoDB 裡的結構化資料，fallback 用 service_counties
+  let areas = [];
+  if (item.service_areas && Array.isArray(item.service_areas)) {
+    areas = item.service_areas.map(a => ({
+      county_name: a.county_name || '',
+      district_name: a.district_name || '',
+    }));
+  } else if (item.service_counties && Array.isArray(item.service_counties)) {
+    areas = item.service_counties.map(c => ({ county_name: c }));
+  }
+
   return ok({
-    vendor_id:    item.vendor_id,
-    vendor_name:  item.name,
-    service_type: String(item.service_type),
-    description:  item.description,
-    rating_avg:   item.rating_avg ? Number(item.rating_avg).toFixed(1) : null,
-    rating_count: Number(item.rating_count) || 0,
+    vendor_id:     item.vendor_id,
+    vendor_name:   item.name,
+    service_type:  String(item.service_type),
+    description:   item.description,
+    rating_avg:    item.rating_avg ? Number(item.rating_avg).toFixed(1) : null,
+    rating_count:  Number(item.rating_count) || 0,
+    contact_name:  item.contact_name || '',
+    contact_phone: item.contact_phone || '',
     service_types: [String(item.service_type)],
-    service_areas: (item.service_counties || []).map(c => ({ county_name: c })),
+    service_areas: areas,
   });
 }
 
