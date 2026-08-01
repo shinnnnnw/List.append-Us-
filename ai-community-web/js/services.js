@@ -30,7 +30,7 @@ const Services = {
   },
 
   /**
-   * 渲染分類 Tab
+   * 渲染分類下拉選單
    */
   renderCategories() {
     const container = Utils.$('#service-categories');
@@ -38,23 +38,31 @@ const Services = {
 
     container.innerHTML = '';
 
-    // 「全部」Tab
-    const allTab = Utils.createElement('button', {
-      className: 'category-tab' + (!this.currentType ? ' active' : ''),
-      onClick: function() { Services.filterByType(null); },
-    }, '全部');
-    container.appendChild(allTab);
-
-    // 依服務類型產生 Tab
-    var typeMap = this.serviceTypeMap;
-    Object.keys(typeMap).forEach(function(typeCode) {
-      var typeName = typeMap[typeCode];
-      var tab = Utils.createElement('button', {
-        className: 'category-tab' + (Services.currentType === typeCode ? ' active' : ''),
-        onClick: function() { Services.filterByType(typeCode); },
-      }, typeName);
-      container.appendChild(tab);
+    const select = document.createElement('select');
+    select.className = 'category-select';
+    select.addEventListener('change', function() {
+      const val = select.value;
+      Services.filterByType(val || null);
     });
+
+    // 「全部」選項
+    const allOpt = document.createElement('option');
+    allOpt.value = '';
+    allOpt.textContent = '全部分類';
+    if (!this.currentType) allOpt.selected = true;
+    select.appendChild(allOpt);
+
+    // 依服務類型產生選項
+    const typeMap = this.serviceTypeMap;
+    Object.keys(typeMap).forEach((typeCode) => {
+      const opt = document.createElement('option');
+      opt.value = typeCode;
+      opt.textContent = typeMap[typeCode];
+      if (Services.currentType === typeCode) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    container.appendChild(select);
   },
 
   /**
