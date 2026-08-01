@@ -23,6 +23,8 @@
   max-width: 80%;
   font-size: 14px;
   line-height: 20px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
   animation: fadeIn 0.3s ease;
 }
 
