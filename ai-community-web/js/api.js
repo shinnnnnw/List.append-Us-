@@ -182,9 +182,16 @@ const API = {
     return this.get('/districts');
   },
 
-  // AI 對話（AWS Lambda Bedrock）
-  chatConversation(message, history = []) {
-    return this.post('/ai/chat', { text: message, history: history });
+  // AI 對話（AWS Lambda Bedrock，支援圖片多模態）
+  chatConversation(message, history = [], imageBase64 = null) {
+    const body = { text: message, history: history };
+    if (imageBase64) {
+      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      const mediaType = imageBase64.match(/^data:(image\/\w+);base64,/);
+      body.image = base64Data;
+      body.image_media_type = mediaType ? mediaType[1] : 'image/jpeg';
+    }
+    return this.post('/ai/chat', body);
   },
 
   chat(message, history = []) {

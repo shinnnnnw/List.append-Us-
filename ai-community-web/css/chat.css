@@ -219,3 +219,70 @@
 .form-guide-btn:active {
   transform: translateY(0);
 }
+
+
+/* 圖片上傳按鈕 */
+.chat-image-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  border: 1px solid var(--border);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.chat-image-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* 圖片預覽區 */
+.chat-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-light);
+}
+
+.chat-image-preview img {
+  max-width: 120px;
+  max-height: 80px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.chat-image-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ff4444;
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-image-remove:hover {
+  background-color: #cc0000;
+}
+
+/* 聊天中上傳的圖片縮圖 */
+.chat-uploaded-img {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  margin-bottom: 6px;
+  display: block;
+}

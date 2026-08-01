@@ -21,10 +21,11 @@ const Chat = {
 
     // 清空歷史
     this.conversationHistory = [];
+    this.pendingImage = null; // 暫存待送出的圖片 base64
 
     // 預設 AI 歡迎訊息
     this.messages = [
-      { id: 1, sender: 'ai', text: '你好！我是您的 AI 智慧社區管家。有什麼我能幫您的嗎？不論是餐廳訂位、居家清潔、水電修繕、包裹寄送，或是任何生活問題，直接跟我說就好！' },
+      { id: 1, sender: 'ai', text: '你好！我是您的 AI 智慧社區管家。有什麼我能幫您的嗎？不論是餐廳訂位、居家清潔、水電修繕、包裹寄送，或是任何生活問題，直接跟我說就好！\n\n💡 小提示：修繕或清潔相關問題，您可以直接拍照上傳，AI 會幫您辨識問題並預估報價喔！' },
     ];
     this.render();
 
@@ -40,8 +41,73 @@ const Chat = {
       }
     });
 
+    // 初始化圖片上傳
+    this.initImageUpload();
+
     // 初始化語音輸入
     this.initVoice();
+  },
+
+  /**
+   * 初始化圖片上傳功能
+   */
+  initImageUpload() {
+    const imageInput = Utils.$('#chat-image-input');
+    const removeBtn = Utils.$('#chat-image-remove');
+
+    if (imageInput) {
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // 檢查檔案大小（限制 5MB）
+        if (file.size > 5 * 1024 * 1024) {
+          alert('圖片大小不能超過 5MB，請重新選擇');
+          imageInput.value = '';
+          return;
+        }
+
+        // 轉 base64 並預覽
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target.result;
+          this.pendingImage = base64;
+          this.showImagePreview(base64);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        this.clearImagePreview();
+      });
+    }
+  },
+
+  /**
+   * 顯示圖片預覽
+   */
+  showImagePreview(base64) {
+    const previewContainer = Utils.$('#chat-image-preview');
+    const previewImg = Utils.$('#chat-preview-img');
+    if (previewContainer && previewImg) {
+      previewImg.src = base64;
+      previewContainer.style.display = 'flex';
+    }
+  },
+
+  /**
+   * 清除圖片預覽
+   */
+  clearImagePreview() {
+    const previewContainer = Utils.$('#chat-image-preview');
+    const previewImg = Utils.$('#chat-preview-img');
+    const imageInput = Utils.$('#chat-image-input');
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (previewImg) previewImg.src = '';
+    if (imageInput) imageInput.value = '';
+    this.pendingImage = null;
   },
 
   /**
@@ -121,20 +187,29 @@ const Chat = {
    */
   async handleSend() {
     const text = this.input.value.trim();
-    if (!text) return;
+    const hasImage = !!this.pendingImage;
 
-    // 新增使用者訊息到 UI
-    this.addMessage('user', text, false);
+    if (!text && !hasImage) return;
+
+    // 新增使用者訊息到 UI（含圖片縮圖）
+    if (hasImage) {
+      this.addImageMessage('user', this.pendingImage, text);
+    } else {
+      this.addMessage('user', text, false);
+    }
     this.input.value = '';
 
     // 顯示打字動畫
     this.showTyping();
 
-    // 呼叫 AI API，帶入「目前為止」的對話歷史
-    const result = await API.chatConversation(text, this.conversationHistory);
+    // 呼叫 AI API，帶入圖片（如果有）
+    const imageData = hasImage ? this.pendingImage : null;
+    this.clearImagePreview();
+
+    const result = await API.chatConversation(text || '請分析這張照片的問題', this.conversationHistory, imageData);
 
     // 把這輪 user 訊息加入歷史
-    this.conversationHistory.push({ role: 'user', content: text });
+    this.conversationHistory.push({ role: 'user', content: text || '[上傳照片]' });
 
     // 移除打字動畫
     this.hideTyping();
@@ -143,21 +218,36 @@ const Chat = {
       const data = result.data;
       const replyText = data.reply || '';
 
-      // 顯示 AI 回覆（允許 HTML）
-      this.addMessage('ai', replyText, true);
+      // 顯示 AI 回覆
+      this.addMessage('ai', replyText, false);
 
-      // 根據狀態決定下一步
-      if (data.status === 'confirmed' && data.has_form && data.form_id) {
-        // AI 收集完資訊且用戶已確認 → 顯示送出按鈕
-        this.addSubmitButton(data.form_id, data.service);
+      // 收集完成 → PHP 已自動建立訂單，顯示成功卡片
+      if (data.status === 'complete' && data.feedback_no) {
+        this.addOrderConfirmCard(data.feedback_no, data.intent, data.collected);
+      } else if (data.has_form && data.form_id) {
+        // fallback：Bedrock 不可用時顯示表單按鈕
+        this.addFormButton(data.form_id, data.service);
       }
 
-      // 加入對話歷史（存純文字）
-      const plainReply = replyText.replace(/<[^>]*>/g, '');
-      this.conversationHistory.push({ role: 'assistant', content: plainReply });
+      // 加入對話歷史
+      this.conversationHistory.push({ role: 'assistant', content: replyText });
     } else {
       this.addMessage('ai', '抱歉，目前系統忙碌中，請稍後再試。', false);
     }
+  },
+
+  /**
+   * 新增含圖片的使用者訊息
+   */
+  addImageMessage(sender, imageSrc, text) {
+    this.messages.push({
+      id: Date.now(),
+      sender,
+      text: text || '',
+      isHtml: true,
+      imageHtml: `<img src="${imageSrc}" class="chat-uploaded-img" alt="上傳的照片">${text ? '<br>' + text : ''}`,
+    });
+    this.render();
   },
 
   /**
@@ -192,6 +282,67 @@ const Chat = {
       </button>
     `;
     this.container.appendChild(btn);
+    this.container.scrollTop = this.container.scrollHeight;
+  },
+
+  /**
+   * 附加確認送出按鈕（fallback 用，Bedrock 不可用時）
+   * @param {number} formId
+   * @param {string} serviceName
+   */
+  addFormButton(formId, serviceName) {
+    if (!this.container) return;
+    const btn = document.createElement('div');
+    btn.className = 'message-form-action';
+    btn.setAttribute('role', 'region');
+    btn.setAttribute('aria-label', '填寫表單');
+    btn.innerHTML = `
+      <button class="btn-primary form-guide-btn"
+              onclick="Utils.navigate('form.html?form_id=${formId}&service=${encodeURIComponent(serviceName || '')}')">
+        📋 填寫${serviceName ? ' ' + serviceName : ''}需求表單
+      </button>
+    `;
+    this.container.appendChild(btn);
+    this.container.scrollTop = this.container.scrollHeight;
+  },
+
+  /**
+   * 顯示建單成功確認卡片（AI 收集完畢，PHP 已自動建單）
+   * @param {string} feedbackNo  - 諮詢單號
+   * @param {string} intent      - 服務類型代碼
+   * @param {Object} collected   - AI 收集到的資料
+   */
+  addOrderConfirmCard(feedbackNo, intent, collected) {
+    if (!this.container) return;
+
+    const intentLabels = {
+      restaurant_booking: '餐廳訂位',
+      shopping:           '商品購買',
+      cleaning:           '居家清潔',
+      repair:             '水電修繕',
+      appliance:          '家電清洗',
+      delivery:           '包裹寄件',
+    };
+    const serviceLabel = intentLabels[intent] || '服務需求';
+
+    const card = document.createElement('div');
+    card.className = 'order-confirm-card';
+    card.setAttribute('role', 'region');
+    card.setAttribute('aria-label', '建單成功');
+    card.innerHTML = `
+      <div class="confirm-icon" aria-hidden="true">✅</div>
+      <div class="confirm-title">${serviceLabel}需求已建立</div>
+      <div class="confirm-no">單號：${feedbackNo || '已記錄'}</div>
+      <div class="confirm-detail">
+        ${collected && collected.name  ? `<span>姓名：${collected.name}</span><br>` : ''}
+        ${collected && collected.phone ? `<span>手機：${collected.phone}</span>` : ''}
+      </div>
+      <p class="confirm-hint">廠商將在 24 小時內與您聯繫確認細節。</p>
+      <button class="btn-primary form-guide-btn" onclick="Utils.navigate('orders.html')">
+        📋 查看我的訂單
+      </button>
+    `;
+    this.container.appendChild(card);
     this.container.scrollTop = this.container.scrollHeight;
   },
 
@@ -255,7 +406,9 @@ const Chat = {
     this.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = `message-bubble ${msg.sender}`;
-      if (msg.isHtml) {
+      if (msg.imageHtml) {
+        bubble.innerHTML = msg.imageHtml;
+      } else if (msg.isHtml) {
         // 將換行符轉為 <br>，讓 AI 回覆正確換行顯示
         bubble.innerHTML = msg.text.replace(/\n/g, '<br>');
       } else {
