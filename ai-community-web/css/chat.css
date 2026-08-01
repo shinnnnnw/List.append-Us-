@@ -5,8 +5,9 @@
 .chat-section {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--header-height) - var(--nav-height) - 160px);
-  min-height: 250px;
+  flex: 1;
+  min-height: 200px;
+  overflow: hidden;
 }
 
 .chat-container {
