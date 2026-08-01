@@ -466,7 +466,7 @@ async function handleOrderDetail(orderId, qs) {
   // 先用 Scan 找（record_id 是 PK，但 DynamoDB GetItem 需精確 key type）
   const items = await dbScan('mms_order_record',
     'record_id = :rid',
-    { ':rid': orderId }
+    { ':rid': Number(orderId) }  // record_id 是 N 型別，orderId 從路徑取得是字串，需轉數字才能比對
   );
 
   if (!items.length) return fail('找不到該訂單', 404);
