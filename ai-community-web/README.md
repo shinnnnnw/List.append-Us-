@@ -30,25 +30,22 @@ Aî 智慧社區服務平台讓住戶透過自然語言對話，輕鬆提出各�
 
 ## 快速開始 - 本地開發
 
-本專案前端為純靜態頁面，可直接以 XAMPP 或任何 HTTP Server 啟動：
+本專案前端為純靜態頁面，API 統一呼叫雲端 AWS Lambda（不需要本機後端伺服器）：
 
 ```bash
-# 方法一：XAMPP
-# 1. 將專案放置於 C:\xampp\htdocs\ 下
-# 2. 啟動 Apache
-# 3. 瀏覽器開啟 http://localhost/List.append-Us-/ai-community-web/
+# 方法一：VS Code Live Server
+# 安裝 Live Server 擴充套件 → 對 index.html 按右鍵 → Open with Live Server
 
-# 方法二：VS Code Live Server
-# 1. 安裝 Live Server 擴充套件
-# 2. 對 index.html 按右鍵 → Open with Live Server
-
-# 方法三：Python HTTP Server
+# 方法二：Python HTTP Server
 cd ai-community-web
 python -m http.server 8080
 # 瀏覽器開啟 http://localhost:8080
+
+# 方法三：Node.js http-server
+npx http-server ai-community-web -p 8080
 ```
 
-> 注意：本地開發時 API 呼叫會指向 `js/config.js` 中設定的後端位址。若需測試 AI 對話功能，需部署 Lambda 或使用 PHP 本地後端。
+> 所有 API 呼叫直接走雲端 Lambda 端點（`CONFIG.API_BASE`），不需要啟動任何本地後端服務。
 
 ## 快速開始 - AWS 部署
 
@@ -97,10 +94,6 @@ ai-community-web/
 │   ├── seed-data.js        # 範例資料
 │   ├── table-definitions.js # 資料表 Schema
 │   └── api-service.js      # 查詢服務模組
-├── php/                    # PHP 本地後端（XAMPP 開發用）
-│   ├── api/                # REST API 端點
-│   ├── config.php          # PHP 設定
-│   └── db.php              # 資料庫連線
 ├── sql/                    # SQL Schema（MySQL 參考用）
 ├── AWS_DEPLOYMENT.md       # AWS 部署指南
 ├── ARCHITECTURE.md         # 系統架構文件
