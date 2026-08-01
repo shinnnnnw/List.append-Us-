@@ -242,7 +242,12 @@ async function handleVendors(qs) {
 }
 
 async function handleVendorDetail(vendorId) {
-  const item = await dbGet('cms_service_vendor', { vendor_id: Number(vendorId) });
+  // 直接用 GetItemCommand，手動指定 key 為 Number
+  const result = await ddb.send(new GetItemCommand({
+    TableName: 'cms_service_vendor',
+    Key: { vendor_id: { N: String(vendorId) } },
+  }));
+  const item = result.Item ? unmarshall(result.Item) : null;
   if (!item) return fail('找不到該服務商', 404);
 
   // service_areas 優先用 DynamoDB 裡的結構化資料，fallback 用 service_counties
