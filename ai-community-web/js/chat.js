@@ -90,6 +90,9 @@ const Chat = {
 
     // 初始化語音輸入
     this.initVoice();
+
+    // 檢查再次預約參數
+    this.checkReorder();
   },
 
   /**
@@ -179,6 +182,33 @@ const Chat = {
     if (previewImg) previewImg.src = '';
     if (imageInput) imageInput.value = '';
     this.pendingImage = null;
+  },
+
+  /**
+   * 偵測 URL reorder 參數，自動送出再次預約訊息
+   */
+  async checkReorder() {
+    const reorderId = Utils.getUrlParam('reorder');
+    if (!reorderId) return;
+
+    try {
+      const result = await API.getOrderDetail(reorderId);
+      if (!result || !result.success || !result.data) {
+        console.error('[Reorder] 無法取得原訂單:', reorderId);
+        return;
+      }
+
+      const order = result.data;
+      const serviceName = order.service_name || order.remark || '上次的服務';
+      const message = `我想再次預約：${serviceName}`;
+
+      this.input.value = message;
+      this.handleSend();
+
+      window.history.replaceState({}, '', 'index.html');
+    } catch (e) {
+      console.error('[Reorder] Error:', e);
+    }
   },
 
   /**

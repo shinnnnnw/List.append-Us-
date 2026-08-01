@@ -202,7 +202,7 @@ const Orders = {
         actionsHtml += `<button class="btn btn-outline btn-block" onclick="Orders.cancelOrder('${order.record_id}')">取消訂單</button>`;
       }
       if (order.order_status === '80') {
-        actionsHtml += `<button class="btn btn-primary btn-block" onclick="Utils.navigate('form.html?form_id=${order.service_id}')">再次預約</button>`;
+        actionsHtml += `<button class="btn btn-primary btn-block" onclick="Utils.navigate('index.html?reorder=${order.record_id}')">再次預約</button>`;
       }
       actionsSection.innerHTML = actionsHtml;
     }
