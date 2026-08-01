@@ -635,12 +635,18 @@ const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、
 
 7. 使用者確認「沒問題」「確認」「OK」「對」等肯定回覆後，在末尾加上：
 [SUBMIT:服務類型]
+然後回覆「已為您送出需求！」之後，接著問：
+「要把這次的聯絡資訊（地址/電話/付款方式）存為常用資訊嗎？下次就不用再輸入了 😊」
 
-8. 如果使用者說要修改某項，詢問新的內容後重新整理確認單
-9. 不涉及服務的閒聊正常聊天，不加任何標記
-10. 回覆純文字，不加 markdown 語法（不要用 **粗體** 或 # 標題）
-11. 若使用者上傳照片不清晰，請提示重新上傳
-12. 領藥服務涉及敏感事項，請加上免責提示`;
+8. 若使用者同意儲存常用資訊（回覆「好」「要」「存」等肯定詞），在回覆末尾加上標記：
+[SAVE_PREFS:{"address":"完整地址","phone":"電話號碼","contactName":"聯絡人姓名","paymentMethod":"付款方式"}]
+只存使用者在本次對話中實際提供過的欄位，沒提供的不要放進去。地址必須是完整的門牌地址（如：新北市板橋區中山路二段50號3樓），不要包含多餘的文字。
+
+9. 如果使用者說要修改某項，詢問新的內容後重新整理確認單
+10. 不涉及服務的閒聊正常聊天，不加任何標記
+11. 回覆純文字，不加 markdown 語法（不要用 **粗體** 或 # 標題）
+12. 若使用者上傳照片不清晰，請提示重新上傳
+13. 領藥服務涉及敏感事項，請加上免責提示`;
 
 async function handleChat(body) {
   const text    = (body.text || '').trim();
@@ -798,39 +804,32 @@ ${prefsLines.join('\n')}`;
       status  = 'collecting';
     }
 
-    // 從對話歷史中提取住戶偏好（從用戶回覆中辨識地址、電話等資訊）
-    const extractedPrefs = {};
-    const fullConversation = messages.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
-    
-    // 提取電話號碼
-    const phoneMatch = fullConversation.match(/09\d{2}[\s-]?\d{3}[\s-]?\d{3}/);
-    if (phoneMatch) extractedPrefs.phone = phoneMatch[0].replace(/[\s-]/g, '');
-
-    // 提取付款方式
-    if (/信用卡|刷卡/.test(fullConversation)) extractedPrefs.paymentMethod = '信用卡';
-    else if (/付現|現金/.test(fullConversation)) extractedPrefs.paymentMethod = '付現';
-    else if (/行動支付|Line Pay|街口/.test(fullConversation)) extractedPrefs.paymentMethod = '行動支付';
-
-    // 提取地址（簡易：含有「路」「街」「巷」「號」的片段）
-    const addrMatch = fullConversation.match(/[\u4e00-\u9fff]+(?:路|街|大道|巷|弄|號|樓)[\u4e00-\u9fff0-9\-]+(?:號|樓)?/);
-    if (addrMatch) extractedPrefs.address = addrMatch[0];
-
-    // 若有提取到新偏好且有 account_id，寫回 DynamoDB
-    if (accountId && Object.keys(extractedPrefs).length > 0) {
+    // 偏好儲存由 AI 在訂單確認後主動詢問用戶，不再自動提取
+    // AI 會在回覆中加上 [SAVE_PREFS:JSON] 標記表示用戶同意儲存
+    const prefsMatch = raw.match(/\[SAVE_PREFS:(.*?)\]/s);
+    let extractedPrefs = null;
+    if (prefsMatch) {
       try {
-        const merged = { ...userPrefs, ...extractedPrefs };
-        await dbPut('user_preferences', {
-          inbr_account_id: accountId,
-          ...merged,
-          updated_at: new Date().toISOString(),
-        });
+        extractedPrefs = JSON.parse(prefsMatch[1]);
+        // 寫入 DynamoDB
+        if (accountId && extractedPrefs) {
+          const merged = { ...userPrefs, ...extractedPrefs };
+          await dbPut('user_preferences', {
+            inbr_account_id: accountId,
+            ...merged,
+            updated_at: new Date().toISOString(),
+          });
+        }
       } catch (e) {
-        console.error('[Prefs write error]', e);
+        console.error('[Prefs save error]', e);
       }
     }
 
+    // 清除標記
+    const cleanReply = reply.replace(/\[SAVE_PREFS:.*?\]/s, '').trim();
+
     return ok({
-      reply,
+      reply: cleanReply,
       intent:      (confirmMatch || submitMatch) ? 'service' : 'none',
       status,
       has_form:    false,
@@ -838,7 +837,7 @@ ${prefsLines.join('\n')}`;
       service,
       feedback_no: feedbackNo,
       collected,
-      preferences: Object.keys(extractedPrefs).length > 0 ? extractedPrefs : undefined,
+      preferences: extractedPrefs || undefined,
       source:      'bedrock',
     });
   } catch (err) {
