@@ -140,6 +140,10 @@ export async function handler(event) {
     // Districts
     if (path === '/districts' && method === 'GET')      return handleDistricts(qs);
 
+    // Preferences（住戶偏好）
+    if (path === '/preferences' && method === 'GET')    return handleGetPreferences(qs);
+    if (path === '/preferences' && method === 'PUT')    return handlePutPreferences(body);
+
     return fail('找不到路由', 404);
   } catch (err) {
     console.error('[Handler Error]', err);
@@ -482,6 +486,37 @@ async function handleDistricts(qs) {
   return ok(districts);
 }
 
+// ─── Preferences（住戶偏好）────────────────────────────────────────────────────
+
+async function handleGetPreferences(qs) {
+  const accountId = qs.account_id || '';
+  if (!accountId) return fail('缺少 account_id', 400);
+
+  const item = await dbGet('user_preferences', { inbr_account_id: accountId });
+  if (!item) return ok({});
+
+  // 移除 DynamoDB 主鍵，只回傳偏好資料
+  const { inbr_account_id, ...prefs } = item;
+  return ok(prefs);
+}
+
+async function handlePutPreferences(body) {
+  const accountId = body.account_id || '';
+  if (!accountId) return fail('缺少 account_id', 400);
+
+  const prefs = body.preferences || {};
+  if (!Object.keys(prefs).length) return fail('偏好資料為空', 400);
+
+  const item = {
+    inbr_account_id: accountId,
+    ...prefs,
+    updated_at: new Date().toISOString(),
+  };
+
+  await dbPut('user_preferences', item);
+  return ok(item, '偏好已儲存');
+}
+
 // ─── AI Chat ─────────────────────────────────────────────────────────────────
 
 const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、專業的 AI 助手，服務於社區住戶。
@@ -580,6 +615,22 @@ async function handleChat(body) {
   const image   = body.image || null; // base64 encoded image
   const imageMediaType = body.image_media_type || 'image/jpeg';
   const history = (body.history || []).slice(-30);
+  const preferences = body.preferences || {};
+  const accountId = body.account_id || '';
+
+  // 如果前端沒帶偏好但有 account_id，從 DynamoDB 讀取
+  let userPrefs = preferences;
+  if (accountId && Object.keys(preferences).length === 0) {
+    try {
+      const stored = await dbGet('user_preferences', { inbr_account_id: accountId });
+      if (stored) {
+        const { inbr_account_id, updated_at, ...rest } = stored;
+        userPrefs = rest;
+      }
+    } catch (e) {
+      console.error('[Prefs read error]', e);
+    }
+  }
 
   if (!text && !image) return fail('訊息不能為空');
 
@@ -607,9 +658,28 @@ async function handleChat(body) {
     }
   }
 
+  // 組合住戶偏好提示
+  let prefsPrompt = '';
+  if (Object.keys(userPrefs).length > 0) {
+    const prefsLines = [];
+    if (userPrefs.address) prefsLines.push(`常用地址：${userPrefs.address}`);
+    if (userPrefs.phone) prefsLines.push(`聯絡電話：${userPrefs.phone}`);
+    if (userPrefs.contactName) prefsLines.push(`聯絡人姓名：${userPrefs.contactName}`);
+    if (userPrefs.paymentMethod) prefsLines.push(`慣用付款方式：${userPrefs.paymentMethod}`);
+    if (userPrefs.favoriteRestaurants) prefsLines.push(`喜好餐廳：${userPrefs.favoriteRestaurants}`);
+    if (userPrefs.dietaryNotes) prefsLines.push(`飲食備註：${userPrefs.dietaryNotes}`);
+
+    if (prefsLines.length > 0) {
+      prefsPrompt = `\n\n【住戶歷史偏好】
+以下是此住戶過去使用服務時留下的偏好資料，對話中可主動帶入作為預設值（例如：「要送到一樣的地址嗎？」「一樣用信用卡付款對嗎？」），但仍需確認：
+${prefsLines.join('\n')}`;
+    }
+  }
+
   // 圖片辨識用的 system prompt 附加
-  const systemPrompt = image
-    ? CHAT_SYSTEM_PROMPT + `\n\n【圖片辨識模式】
+  let systemPrompt = CHAT_SYSTEM_PROMPT + prefsPrompt;
+  if (image) {
+    systemPrompt += `\n\n【圖片辨識模式】
 使用者上傳了一張現場照片，請你：
 1. 辨識照片中的問題類型（如：漏水、牆壁裂縫、管線破損、家電故障、髒污程度等）
 2. 評估損壞/髒污嚴重程度（輕微/中等/嚴重）
@@ -617,8 +687,8 @@ async function handleChat(body) {
 4. 提供參考報價範圍（例如：約 NT$ 800-1,500）
 5. 建議需要的服務類型（修繕/清潔/其他）
 
-用條列方式清楚回覆，然後繼續詢問使用者是否要預約此服務。`
-    : CHAT_SYSTEM_PROMPT;
+用條列方式清楚回覆，然後繼續詢問使用者是否要預約此服務。`;
+  }
 
   try {
     const cmd = new InvokeModelCommand({
@@ -696,6 +766,37 @@ async function handleChat(body) {
       status  = 'collecting';
     }
 
+    // 從對話歷史中提取住戶偏好（從用戶回覆中辨識地址、電話等資訊）
+    const extractedPrefs = {};
+    const fullConversation = messages.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+    
+    // 提取電話號碼
+    const phoneMatch = fullConversation.match(/09\d{2}[\s-]?\d{3}[\s-]?\d{3}/);
+    if (phoneMatch) extractedPrefs.phone = phoneMatch[0].replace(/[\s-]/g, '');
+
+    // 提取付款方式
+    if (/信用卡|刷卡/.test(fullConversation)) extractedPrefs.paymentMethod = '信用卡';
+    else if (/付現|現金/.test(fullConversation)) extractedPrefs.paymentMethod = '付現';
+    else if (/行動支付|Line Pay|街口/.test(fullConversation)) extractedPrefs.paymentMethod = '行動支付';
+
+    // 提取地址（簡易：含有「路」「街」「巷」「號」的片段）
+    const addrMatch = fullConversation.match(/[\u4e00-\u9fff]+(?:路|街|大道|巷|弄|號|樓)[\u4e00-\u9fff0-9\-]+(?:號|樓)?/);
+    if (addrMatch) extractedPrefs.address = addrMatch[0];
+
+    // 若有提取到新偏好且有 account_id，寫回 DynamoDB
+    if (accountId && Object.keys(extractedPrefs).length > 0) {
+      try {
+        const merged = { ...userPrefs, ...extractedPrefs };
+        await dbPut('user_preferences', {
+          inbr_account_id: accountId,
+          ...merged,
+          updated_at: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error('[Prefs write error]', e);
+      }
+    }
+
     return ok({
       reply,
       intent:      (confirmMatch || submitMatch) ? 'service' : 'none',
@@ -705,6 +806,7 @@ async function handleChat(body) {
       service,
       feedback_no: feedbackNo,
       collected,
+      preferences: Object.keys(extractedPrefs).length > 0 ? extractedPrefs : undefined,
       source:      'bedrock',
     });
   } catch (err) {

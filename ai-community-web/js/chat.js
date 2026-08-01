@@ -9,6 +9,47 @@ const Chat = {
   input: null,
   recognition: null,
   isRecording: false,
+  PREFS_KEY: 'ai_user_preferences',
+
+  /**
+   * 取得住戶偏好
+   */
+  getPreferences() {
+    try {
+      return JSON.parse(localStorage.getItem(this.PREFS_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  },
+
+  /**
+   * 儲存住戶偏好（合併更新到 localStorage + API）
+   */
+  savePreferences(newPrefs) {
+    if (!newPrefs || typeof newPrefs !== 'object') return;
+    const current = this.getPreferences();
+    const merged = { ...current, ...newPrefs, updatedAt: new Date().toISOString() };
+    localStorage.setItem(this.PREFS_KEY, JSON.stringify(merged));
+
+    // 同步寫回 API
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    if (user.inbr_account_id) {
+      API.put('/preferences', { account_id: user.inbr_account_id, preferences: merged });
+    }
+  },
+
+  /**
+   * 從 API 載入住戶偏好（啟動時呼叫）
+   */
+  async loadPreferencesFromAPI() {
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    if (!user.inbr_account_id) return;
+
+    const result = await API.get(`/preferences?account_id=${user.inbr_account_id}`);
+    if (result && result.success && result.data && Object.keys(result.data).length > 0) {
+      localStorage.setItem(this.PREFS_KEY, JSON.stringify(result.data));
+    }
+  },
 
   /**
    * 初始化聊天
@@ -22,6 +63,9 @@ const Chat = {
     // 清空歷史
     this.conversationHistory = [];
     this.pendingImage = null; // 暫存待送出的圖片 base64
+
+    // 從 API 載入住戶偏好
+    this.loadPreferencesFromAPI();
 
     // 預設 AI 歡迎訊息
     this.messages = [
@@ -233,7 +277,8 @@ const Chat = {
     const imageData = hasImage ? this.pendingImage : null;
     this.clearImagePreview();
 
-    const result = await API.chatConversation(text || '請分析這張照片的問題', this.conversationHistory, imageData);
+    const preferences = this.getPreferences();
+    const result = await API.chatConversation(text || '請分析這張照片的問題', this.conversationHistory, imageData, preferences);
 
     // 把這輪 user 訊息加入歷史
     this.conversationHistory.push({ role: 'user', content: text || '[上傳照片]' });
@@ -254,6 +299,11 @@ const Chat = {
       } else if (data.has_form && data.form_id) {
         // fallback：Bedrock 不可用時顯示表單按鈕
         this.addFormButton(data.form_id, data.service);
+      }
+
+      // 儲存 AI 回傳的住戶偏好更新
+      if (data.preferences) {
+        this.savePreferences(data.preferences);
       }
 
       // 加入對話歷史

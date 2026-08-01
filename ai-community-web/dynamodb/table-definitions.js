@@ -187,6 +187,14 @@ const TABLE_DEFINITIONS = [
       { AttributeName: 'code', AttributeType: 'S' }
     ],
     BillingMode: 'PAY_PER_REQUEST'
+  },
+
+  // 11. user_preferences - 住戶偏好記憶資料表
+  {
+    TableName: 'user_preferences',
+    KeySchema: [{ AttributeName: 'inbr_account_id', KeyType: 'HASH' }],
+    AttributeDefinitions: [{ AttributeName: 'inbr_account_id', AttributeType: 'S' }],
+    BillingMode: 'PAY_PER_REQUEST'
   }
 ];
 
