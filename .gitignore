@@ -10,6 +10,8 @@ node_modules/
 .env*.local
 ai-community-web/php/aws_config.php
 ai-community-web/php/openai_config.php
+ai-community-web/php/api/aws_config.php
+ai-community-web/php/api/openai_config.php
 
 # uploads (user generated content)
 ai-community-web/assets/uploads/*

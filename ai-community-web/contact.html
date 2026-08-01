@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>聯絡客服 - Aî 智慧社區</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/orders.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <!-- Header -->
+  <div class="page-header">
+    <span class="header-back" onclick="history.back()">←</span>
+    <span class="header-title">聯絡客服</span>
+    <span></span>
+  </div>
+
+  <!-- 頁面內容 -->
+  <div class="page-content">
+    <div class="card">
+      <h3 class="section-title" style="margin-top:0;">客服聯絡資訊</h3>
+      <div class="order-info-row">
+        <span class="info-label">聯絡人</span>
+        <span class="info-value">陳小華</span>
+      </div>
+      <div class="order-info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value">service@ai-community.com.tw</span>
+      </div>
+      <div class="order-info-row">
+        <span class="info-label">電話</span>
+        <span class="info-value"><a href="tel:02-2888-6600" style="color:#4CAF50;text-decoration:none;">02-2888-6600</a></span>
+      </div>
+      <div class="order-info-row">
+        <span class="info-label">其他備註</span>
+        <span class="info-value">服務時間為週一至週五 09:00–18:00，例假日休息</span>
+      </div>
+    </div>
+
+    <!-- 聯絡表單 -->
+    <div class="card" style="margin-top:12px;">
+      <h3 class="section-title" style="margin-top:0;">聯絡我們</h3>
+      <form id="contact-form" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:12px;">
+          <input type="text" id="contact-name" placeholder="姓名" required style="flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+          <input type="email" id="contact-email" placeholder="信箱" required style="flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+        </div>
+        <div style="display:flex;gap:12px;">
+          <input type="tel" id="contact-phone" placeholder="手機號碼" style="flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+          <input type="text" id="contact-address" placeholder="地址" style="flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+        </div>
+        <textarea id="contact-content" placeholder="問題內容" required rows="5" style="padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;"></textarea>
+        <button type="submit" style="padding:12px;border:none;border-radius:8px;background:#333;color:#fff;font-size:15px;cursor:pointer;">送出</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 底部導覽列 -->
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span>首頁</span>
+    </a>
+    <a href="services.html" class="nav-item">
+      <span class="nav-icon">🛎️</span>
+      <span>服務</span>
+    </a>
+    <a href="orders.html" class="nav-item">
+      <span class="nav-icon">📋</span>
+      <span>訂單</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <span class="nav-icon">👤</span>
+      <span>我的</span>
+    </a>
+  </nav>
+</div>
+
+<script>
+  document.getElementById('contact-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('contact-name').value.trim();
+    const email = document.getElementById('contact-email').value.trim();
+    const phone = document.getElementById('contact-phone').value.trim();
+    const address = document.getElementById('contact-address').value.trim();
+    const content = document.getElementById('contact-content').value.trim();
+
+    if (!name || !email || !content) {
+      alert('請填寫必填欄位（姓名、信箱、問題內容）');
+      return;
+    }
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送出中...';
+
+    try {
+      const apiBase = 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod';
+      const res = await fetch(apiBase + '/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, address, content }),
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        alert(result.message || '感謝您的來信，我們將盡快回覆您！');
+        e.target.reset();
+      } else {
+        alert(result.message || '送出失敗，請稍後再試');
+      }
+    } catch (err) {
+      alert('網路錯誤，請稍後再試');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '送出';
+    }
+  });
+</script>
+</body>
+</html>

@@ -150,3 +150,10 @@
   width: calc(100% - 30px);
   max-width: calc(var(--max-width) - 30px);
 }
+
+/* Service Grid 響應式 */
+@media (min-width: 1025px) {
+  .service-grid .service-btn {
+    width: calc(50% - 6px);
+  }
+}

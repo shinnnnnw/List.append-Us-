@@ -85,6 +85,14 @@ input, select, textarea {
   padding-top: var(--header-height);
 }
 
+/* 首頁 Dashboard 專用佈局 */
+.page-content.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--nav-height));
+  overflow: hidden;
+}
+
 /* --- Header --- */
 .page-header {
   position: fixed;
@@ -258,4 +266,48 @@ input, select, textarea {
 }
 .view.active {
   display: block;
+}
+
+/* ============================================
+   Responsive Breakpoints
+   ============================================ */
+
+/* 平板 */
+@media (min-width: 576px) {
+  :root {
+    --max-width: 768px;
+  }
+}
+
+/* 桌面 */
+@media (min-width: 1025px) {
+  :root {
+    --max-width: 960px;
+  }
+
+  .page-content.dashboard-layout {
+    flex-direction: row;
+    gap: 20px;
+    align-items: stretch;
+  }
+}
+
+/* Dashboard Services 區域 */
+.dashboard-services {
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-services {
+    max-height: 28%;
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 1025px) {
+  .dashboard-services {
+    width: 280px;
+    max-height: none;
+    overflow-y: auto;
+  }
 }

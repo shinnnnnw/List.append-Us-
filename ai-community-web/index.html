@@ -87,19 +87,28 @@
     </div>
 
     <!-- 頁面內容 -->
-    <div class="page-content">
+    <div class="page-content dashboard-layout">
       <!-- 快捷服務 -->
-      <h3 class="section-title">一站搞定生活大小事</h3>
-      <div id="service-grid" class="service-grid"></div>
+      <div class="dashboard-services">
+        <h3 class="section-title">一站搞定生活大小事</h3>
+        <div id="service-grid" class="service-grid"></div>
+      </div>
 
       <!-- AI 聊天 -->
       <div class="chat-section">
         <div id="chat-container" class="chat-container"></div>
         <div class="chat-input-bar">
+          <button id="chat-attach-btn" class="chat-attach-btn" title="附加檔案">+</button>
+          <!-- 附加選單 -->
+          <div id="chat-attach-menu" class="chat-attach-menu" style="display:none">
+            <button class="attach-option" data-action="camera">📷 拍照</button>
+            <button class="attach-option" data-action="gallery">🖼️ 從相簿選擇</button>
+            <button class="attach-option" data-action="file">📁 上傳檔案</button>
+          </div>
+          <input id="chat-camera-input" type="file" accept="image/*" capture="environment" style="display:none">
+          <input id="chat-gallery-input" type="file" accept="image/*" style="display:none">
+          <input id="chat-file-input" type="file" accept="image/*,.pdf" style="display:none">
           <input id="chat-input" type="text" placeholder="跟我說說您的需求...">
-          <label id="chat-image-btn" class="chat-image-btn" title="上傳照片">📷
-            <input id="chat-image-input" type="file" accept="image/*" capture="environment" style="display:none">
-          </label>
           <button id="chat-voice-btn" class="chat-voice-btn" title="語音輸入">🎙️</button>
           <button id="chat-send-btn" class="chat-send-btn">發送</button>
         </div>
