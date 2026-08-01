@@ -1,10 +1,9 @@
 /**
  * API 封裝模組
- * 統一處理 fetch 請求、錯誤攔截
+ * 統一處理 fetch 請求
  */
 const API = {
   /**
-   * 通用 fetch 封裝
    */
   async request(endpoint, options = {}) {
     const url = `${CONFIG.API_BASE}/${endpoint}`;
@@ -25,9 +24,9 @@ const API = {
       const data = await response.json();
 
       if (response.status === 401) {
-        // 未登入，但不強制導向（前端用 localStorage 管理登入狀態）
-        console.warn('API 回傳 401:', endpoint);
-        return data;
+        // 未登入，回傳錯誤讓呼叫端自行處理
+        Auth.clearUser();
+        return { success: false, data: null, message: '未登入或登入已過期', _unauthorized: true };
       }
 
       return data;
