@@ -927,6 +927,24 @@ ${prefsLines.join('\n')}
       }
 
       // 同時建立訂單紀錄（讓訂單頁面能看到）
+      // 確保訂單類型至少是八大分類之一
+      // 根據 service 對應大分類
+      let orderCategory = service;
+      if (['修繕', '水電修繕'].includes(service)) orderCategory = '修繕';
+      else if (['清潔', '居家清潔'].includes(service)) orderCategory = '清潔';
+      else if (['外送', '餐廳外送'].includes(service)) orderCategory = '外送';
+      else if (['訂位', '餐廳訂位'].includes(service)) orderCategory = '訂位';
+      else if (['宅配', '包裹寄送', '寄件'].includes(service)) orderCategory = '宅配';
+      else if (['購物', '商品購買'].includes(service)) orderCategory = '購物';
+      else if (['叫車', '計程車'].includes(service)) orderCategory = '叫車';
+      else if (['領藥', '代領藥品'].includes(service)) orderCategory = '領藥';
+
+      // 從對話歷史中提取更具體的需求描述
+      const allHistory = messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n');
+      const detailMatch = allHistory.match(/▪\s*(?:詳細內容|清潔類型|需求類型|車型選擇|問題描述|商品)：(.+)/);
+      const serviceDetail = detailMatch ? detailMatch[1].trim() : '';
+      const serviceName = serviceDetail ? `${orderCategory} - ${serviceDetail}` : orderCategory;
+
       const recordId = Date.now();
       try {
         await dbPut('mms_order_record', {
@@ -936,10 +954,10 @@ ${prefsLines.join('\n')}
           service_vendor_id: '',
           order_type:        '01',
           order_status:      '01',
-          service_name:      service,
+          service_name:      serviceName,
           final_amount:      0,
           earn_points:       0,
-          remark:            `AI對話需求：${service}`,
+          remark:            `AI對話需求：${serviceName}`,
           feedback_no:       feedbackNo,
           cre_time:          now,
           order_time:        now,

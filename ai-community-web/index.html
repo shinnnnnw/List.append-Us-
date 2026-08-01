@@ -22,9 +22,10 @@
 
       <!-- 第一步：歡迎頁 -->
       <div id="login-step-welcome" class="login-card">
-        <h2>使用 uniopen 帳號登入</h2>
+        <h2>選擇登入身份</h2>
         <p class="login-desc">整合零售、物流、餐飲、生活，單一帳號免切換 App。</p>
-        <button id="btn-go-login" class="login-btn">開始登入</button>
+        <button id="btn-go-login-consumer" class="login-btn">我是住戶（消費者）</button>
+        <button id="btn-go-login-vendor" class="login-btn" style="margin-top:10px;background:#FF9800;">我是合作廠商</button>
         <ul class="login-features">
           <li>AI 智慧管家即時服務</li>
           <li>一站整合六大生活服務</li>
@@ -72,6 +73,27 @@
 
         <!-- 返回 -->
         <button id="btn-back-welcome" class="login-back-btn">← 返回</button>
+      </div>
+
+      <!-- 第三步：廠商登入表單 -->
+      <div id="login-step-vendor" class="login-card" style="display:none">
+        <h2>廠商後台登入</h2>
+        <div class="login-section">
+          <div class="login-section-title">廠商帳號登入</div>
+          <p class="login-section-desc">請輸入廠商專用帳號與密碼</p>
+          <div class="login-field">
+            <label>帳號</label>
+            <input id="vendor-username" type="text" placeholder="請輸入廠商帳號">
+          </div>
+          <div class="login-field">
+            <label>密碼</label>
+            <input id="vendor-password" type="password" placeholder="請輸入密碼">
+          </div>
+          <button id="btn-vendor-login" class="login-btn" style="margin-top:12px;background:#FF9800;">廠商登入</button>
+          <p id="vendor-login-error" style="color:#d32f2f;font-size:13px;margin-top:8px;text-align:center;display:none;">帳號或密碼錯誤</p>
+          <p style="font-size:12px;color:#999;text-align:center;margin-top:12px;">測試帳號：admin / 密碼：1234</p>
+        </div>
+        <button id="btn-back-welcome-vendor" class="login-back-btn">← 返回</button>
       </div>
     </div>
   </div>
@@ -142,6 +164,46 @@
   </div>
 </div>
 
+<!-- ===== 廠商後台畫面 ===== -->
+<div id="view-vendor" class="view">
+  <div class="page-wrapper">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:#4CAF50;color:#fff;">
+      <h2 style="font-size:16px;margin:0;">廠商管理後台</h2>
+      <button onclick="vendorLogout()" style="background:none;border:1px solid #fff;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;">登出</button>
+    </div>
+
+    <!-- 統計卡片 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px;">
+      <div class="card" style="text-align:center;padding:16px;">
+        <div id="v-stat-pending" style="font-size:28px;font-weight:bold;color:#FF9800;">0</div>
+        <div style="font-size:12px;color:#666;margin-top:4px;">待處理</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px;">
+        <div id="v-stat-progress" style="font-size:28px;font-weight:bold;color:#2196F3;">0</div>
+        <div style="font-size:12px;color:#666;margin-top:4px;">進行中</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px;">
+        <div id="v-stat-done" style="font-size:28px;font-weight:bold;color:#4CAF50;">0</div>
+        <div style="font-size:12px;color:#666;margin-top:4px;">已完成</div>
+      </div>
+    </div>
+
+    <!-- Tab 切換 -->
+    <div style="display:flex;border-bottom:1px solid #e0e0e0;padding:0 16px;background:#fff;">
+      <div class="v-tab active" data-tab="all" onclick="vendorSwitchTab('all')" style="flex:1;text-align:center;padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid #4CAF50;color:#4CAF50;font-weight:bold;">全部</div>
+      <div class="v-tab" data-tab="pending" onclick="vendorSwitchTab('pending')" style="flex:1;text-align:center;padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;color:#666;">待處理</div>
+      <div class="v-tab" data-tab="progress" onclick="vendorSwitchTab('progress')" style="flex:1;text-align:center;padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;color:#666;">進行中</div>
+      <div class="v-tab" data-tab="done" onclick="vendorSwitchTab('done')" style="flex:1;text-align:center;padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;color:#666;">已完成</div>
+    </div>
+
+    <!-- 案件列表 -->
+    <div id="v-case-list" style="padding:12px 16px;"></div>
+
+    <!-- 案件詳情 -->
+    <div id="v-case-detail" style="display:none;padding:16px;"></div>
+  </div>
+</div>
+
 <!-- Scripts -->
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
@@ -155,6 +217,249 @@
   document.addEventListener('DOMContentLoaded', function() {
     App.initIndex();
   });
+</script>
+
+<!-- 廠商後台邏輯 -->
+<script>
+// 廠商模擬案件資料（與消費者端共用同一份資料來源）
+let vendorCases = [
+  {
+    id: 'FB1722500001',
+    customerName: '王小明',
+    customerPhone: '0912-345-001',
+    customerEmail: 'wang@example.com',
+    service: '居家清潔',
+    category: '清潔',
+    description: '客廳和兩間房間需要深度清潔，大約 30 坪，希望週六上午來。',
+    status: 'pending',
+    createdAt: '2026-07-30 14:30',
+    address: '台北市信義區松仁路 100 號 12F',
+    replies: [],
+  },
+  {
+    id: 'FB1722500002',
+    customerName: '陳美玲',
+    customerPhone: '0923-456-002',
+    customerEmail: 'chen.ml@example.com',
+    service: '水電修繕',
+    category: '修繕',
+    description: '浴室水龍頭漏水，已經滴了兩天，希望盡快處理。',
+    status: 'progress',
+    createdAt: '2026-07-29 09:15',
+    address: '台北市大安區忠孝東路四段 50 號 3F',
+    replies: [
+      { time: '2026-07-29 10:00', content: '已收到，預計明天下午 2 點到府查看。' },
+    ],
+  },
+  {
+    id: 'FB1722500003',
+    customerName: '林大偉',
+    customerPhone: '0934-567-003',
+    customerEmail: 'lin.dw@example.com',
+    service: '冷氣清洗',
+    category: '清潔',
+    description: '兩台分離式冷氣需要清洗，已經用了三年沒洗過。',
+    status: 'done',
+    createdAt: '2026-07-25 16:45',
+    address: '台北市中山區南京東路二段 80 號 5F',
+    replies: [
+      { time: '2026-07-26 09:00', content: '預約週三上午 10 點清洗。' },
+      { time: '2026-07-28 12:00', content: '已完成清洗，感謝使用。' },
+    ],
+  },
+  {
+    id: 'FB1722500004',
+    customerName: '黃志豪',
+    customerPhone: '0945-678-004',
+    customerEmail: 'huang.zh@example.com',
+    service: '餐廳訂位',
+    category: '訂位',
+    description: '這週六晚上 6 點，4 位大人 2 位小孩，希望有兒童座椅。',
+    status: 'pending',
+    createdAt: '2026-07-31 11:20',
+    address: '',
+    replies: [],
+  },
+  {
+    id: 'FB1722500005',
+    customerName: '李小芳',
+    customerPhone: '0956-789-005',
+    customerEmail: 'li.xf@example.com',
+    service: '包裹寄送',
+    category: '宅配',
+    description: '有一箱書要寄到高雄，大約 5 公斤，希望三天內到。',
+    status: 'progress',
+    createdAt: '2026-07-30 08:00',
+    address: '台北市松山區民生東路三段 25 號 1F',
+    replies: [
+      { time: '2026-07-30 09:30', content: '已安排明天上午取件，請準備好包裹。' },
+    ],
+  },
+];
+
+const vendorStatusMap = {
+  pending: { label: '待處理', color: '#FF9800' },
+  progress: { label: '進行中', color: '#2196F3' },
+  done: { label: '已完成', color: '#4CAF50' },
+  cancel: { label: '已取消', color: '#9E9E9E' },
+};
+
+function vendorLogout() {
+  localStorage.removeItem('vendorLogin');
+  document.getElementById('view-vendor').classList.remove('active');
+  document.getElementById('view-login').classList.add('active');
+}
+
+function vendorShowDashboard() {
+  document.getElementById('view-login').classList.remove('active');
+  document.getElementById('view-dashboard').classList.remove('active');
+  document.getElementById('view-vendor').classList.add('active');
+  vendorRenderStats();
+  vendorRenderList('all');
+}
+
+function vendorRenderStats() {
+  const pending = vendorCases.filter(c => c.status === 'pending').length;
+  const progress = vendorCases.filter(c => c.status === 'progress').length;
+  const done = vendorCases.filter(c => c.status === 'done').length;
+  document.getElementById('v-stat-pending').textContent = pending;
+  document.getElementById('v-stat-progress').textContent = progress;
+  document.getElementById('v-stat-done').textContent = done;
+}
+
+function vendorSwitchTab(tab) {
+  document.querySelectorAll('.v-tab').forEach(t => {
+    t.style.borderBottom = '2px solid transparent';
+    t.style.color = '#666';
+    t.style.fontWeight = 'normal';
+    t.classList.remove('active');
+  });
+  const activeTab = document.querySelector(`.v-tab[data-tab="${tab}"]`);
+  if (activeTab) {
+    activeTab.style.borderBottom = '2px solid #4CAF50';
+    activeTab.style.color = '#4CAF50';
+    activeTab.style.fontWeight = 'bold';
+    activeTab.classList.add('active');
+  }
+  vendorRenderList(tab);
+}
+
+function vendorRenderList(filter) {
+  const listEl = document.getElementById('v-case-list');
+  const detailEl = document.getElementById('v-case-detail');
+  listEl.style.display = 'block';
+  detailEl.style.display = 'none';
+
+  const filtered = filter === 'all' ? vendorCases : vendorCases.filter(c => c.status === filter);
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<p style="text-align:center;color:#999;padding:40px 0;">目前沒有案件</p>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(c => {
+    const st = vendorStatusMap[c.status];
+    return `
+      <div class="card" style="padding:14px;margin-bottom:10px;cursor:pointer;" onclick="vendorShowDetail('${c.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:14px;font-weight:bold;">${c.service} - ${c.customerName}</span>
+          <span style="font-size:11px;padding:3px 8px;border-radius:12px;color:#fff;background:${st.color};">${st.label}</span>
+        </div>
+        <div style="font-size:12px;color:#666;line-height:1.8;">
+          <div>案件編號：${c.id}</div>
+          <div>建立時間：${c.createdAt}</div>
+          <div>需求摘要：${c.description.substring(0, 30)}${c.description.length > 30 ? '...' : ''}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function vendorShowDetail(id) {
+  const c = vendorCases.find(x => x.id === id);
+  if (!c) return;
+
+  const listEl = document.getElementById('v-case-list');
+  const detailEl = document.getElementById('v-case-detail');
+  listEl.style.display = 'none';
+  detailEl.style.display = 'block';
+
+  const st = vendorStatusMap[c.status];
+  const repliesHtml = c.replies.length > 0
+    ? c.replies.map(r => `<div style="background:#f8f9fa;padding:10px;border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.6;"><div style="color:#999;font-size:11px;">${r.time}</div><div>${r.content}</div></div>`).join('')
+    : '<p style="color:#999;font-size:12px;">尚無回覆紀錄</p>';
+
+  detailEl.innerHTML = `
+    <span style="font-size:14px;color:#4CAF50;cursor:pointer;" onclick="vendorSwitchTab(document.querySelector('.v-tab.active').dataset.tab)">← 返回列表</span>
+
+    <div class="card" style="padding:14px;margin-top:12px;">
+      <h4 style="font-size:14px;margin-bottom:10px;">案件資訊</h4>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">案件編號</span><span>${c.id}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">服務類別</span><span>${c.category} / ${c.service}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">建立時間</span><span>${c.createdAt}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#666;">目前狀態</span><span style="padding:3px 8px;border-radius:12px;color:#fff;background:${st.color};font-size:11px;">${st.label}</span></div>
+    </div>
+
+    <div class="card" style="padding:14px;margin-top:12px;">
+      <h4 style="font-size:14px;margin-bottom:10px;">消費者資訊</h4>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">姓名</span><span>${c.customerName}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">電話</span><span><a href="tel:${c.customerPhone}" style="color:#4CAF50;">${c.customerPhone}</a></span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;${c.address ? 'border-bottom:1px solid #eee;' : ''}"><span style="color:#666;">Email</span><span>${c.customerEmail}</span></div>
+      ${c.address ? `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#666;">地址</span><span>${c.address}</span></div>` : ''}
+    </div>
+
+    <div class="card" style="padding:14px;margin-top:12px;">
+      <h4 style="font-size:14px;margin-bottom:10px;">需求內容</h4>
+      <p style="font-size:13px;line-height:1.8;color:#333;">${c.description}</p>
+    </div>
+
+    <div class="card" style="padding:14px;margin-top:12px;">
+      <h4 style="font-size:14px;margin-bottom:10px;">狀態管理</h4>
+      <select id="v-status-select" onchange="vendorUpdateStatus('${c.id}', this.value)" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:13px;">
+        <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>待處理</option>
+        <option value="progress" ${c.status === 'progress' ? 'selected' : ''}>進行中</option>
+        <option value="done" ${c.status === 'done' ? 'selected' : ''}>已完成</option>
+        <option value="cancel" ${c.status === 'cancel' ? 'selected' : ''}>已取消</option>
+      </select>
+    </div>
+
+    <div class="card" style="padding:14px;margin-top:12px;">
+      <h4 style="font-size:14px;margin-bottom:10px;">回覆紀錄</h4>
+      <div>${repliesHtml}</div>
+      <textarea id="v-reply-input" placeholder="輸入回覆內容..." style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;resize:vertical;margin-top:8px;min-height:80px;"></textarea>
+      <button onclick="vendorAddReply('${c.id}')" style="margin-top:8px;padding:10px 16px;background:#4CAF50;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;">送出回覆</button>
+    </div>
+  `;
+}
+
+function vendorUpdateStatus(id, newStatus) {
+  const c = vendorCases.find(x => x.id === id);
+  if (c) {
+    c.status = newStatus;
+    vendorRenderStats();
+    vendorShowDetail(id);
+  }
+}
+
+function vendorAddReply(id) {
+  const input = document.getElementById('v-reply-input');
+  const content = input.value.trim();
+  if (!content) {
+    alert('請輸入回覆內容');
+    return;
+  }
+  const c = vendorCases.find(x => x.id === id);
+  if (c) {
+    const now = new Date();
+    const timeStr = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0') + ' ' +
+      String(now.getHours()).padStart(2, '0') + ':' +
+      String(now.getMinutes()).padStart(2, '0');
+    c.replies.push({ time: timeStr, content });
+    vendorShowDetail(id);
+  }
+}
 </script>
 </body>
 </html>
