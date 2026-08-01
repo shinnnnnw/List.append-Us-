@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "部署前檢查",
+      "trigger": "PostFileSave",
+      "matcher": "\\.(html|css)$",
+      "action": {
+        "type": "agent",
+        "prompt": "檢查 HTML/CSS 檔案引用路徑是否正確（相對路徑）、沒有殘留 localhost 硬編碼、沒有密碼或 API key 寫死在檔案中。如果沒問題就不需要回覆。"
+      }
+    }
+  ]
+}
