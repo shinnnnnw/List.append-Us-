@@ -30,15 +30,61 @@ const App = {
     // --- 步驟切換 ---
     var stepWelcome = Utils.$('#login-step-welcome');
     var stepForm = Utils.$('#login-step-form');
-    var btnGoLogin = Utils.$('#btn-go-login');
+    var btnGoLoginConsumer = Utils.$('#btn-go-login-consumer');
+    var btnGoLoginVendor = Utils.$('#btn-go-login-vendor');
     var btnBack = Utils.$('#btn-back-welcome');
 
-    if (btnGoLogin) {
-      btnGoLogin.addEventListener('click', function() {
+    if (btnGoLoginConsumer) {
+      btnGoLoginConsumer.addEventListener('click', function() {
+        localStorage.setItem('loginRole', 'consumer');
         stepWelcome.style.display = 'none';
         stepForm.style.display = 'block';
-        // 載入帳號列表
         App.loadUserList();
+      });
+    }
+
+    if (btnGoLoginVendor) {
+      btnGoLoginVendor.addEventListener('click', function() {
+        localStorage.setItem('loginRole', 'vendor');
+        stepWelcome.style.display = 'none';
+        var stepVendor = Utils.$('#login-step-vendor');
+        if (stepVendor) stepVendor.style.display = 'block';
+      });
+    }
+
+    // --- 廠商登入 ---
+    var btnVendorLogin = Utils.$('#btn-vendor-login');
+    var btnBackVendor = Utils.$('#btn-back-welcome-vendor');
+
+    if (btnVendorLogin) {
+      btnVendorLogin.addEventListener('click', function() {
+        var username = Utils.$('#vendor-username').value.trim();
+        var password = Utils.$('#vendor-password').value.trim();
+        var errorEl = Utils.$('#vendor-login-error');
+
+        if (username === 'admin' && password === '1234') {
+          if (errorEl) errorEl.style.display = 'none';
+          localStorage.setItem('vendorLogin', 'true');
+          vendorShowDashboard();
+        } else {
+          if (errorEl) errorEl.style.display = 'block';
+        }
+      });
+    }
+
+    if (btnBackVendor) {
+      btnBackVendor.addEventListener('click', function() {
+        var stepVendor = Utils.$('#login-step-vendor');
+        if (stepVendor) stepVendor.style.display = 'none';
+        stepWelcome.style.display = 'block';
+      });
+    }
+
+    // Enter 鍵廠商登入
+    var vendorPassInput = Utils.$('#vendor-password');
+    if (vendorPassInput) {
+      vendorPassInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && btnVendorLogin) btnVendorLogin.click();
       });
     }
 
@@ -152,6 +198,7 @@ const App = {
    * 顯示主控台
    */
   showDashboard(user) {
+    // 消費者登入 → 顯示一般主控台
     const loginView = Utils.$('#view-login');
     const dashboardView = Utils.$('#view-dashboard');
 
