@@ -94,7 +94,7 @@ const API = {
   },
 
   getService(id) {
-    return this.get(`/vendors?vendor_id=${id}`);
+    return this.get(`/vendors/${id}`);
   },
 
   // 表單（Mock）
