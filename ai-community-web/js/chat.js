@@ -6,6 +6,8 @@ const Chat = {
   messages: [],
   container: null,
   input: null,
+  recognition: null,
+  isRecording: false,
 
   /**
    * 初始化聊天
@@ -30,6 +32,82 @@ const Chat = {
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.handleSend();
     });
+
+    // 初始化語音輸入
+    this.initVoice();
+  },
+
+  /**
+   * 初始化語音輸入（Web Speech API）
+   */
+  initVoice() {
+    const voiceBtn = Utils.$('#chat-voice-btn');
+    if (!voiceBtn) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      voiceBtn.title = '您的瀏覽器不支援語音輸入';
+      voiceBtn.disabled = true;
+      voiceBtn.classList.add('disabled');
+      return;
+    }
+
+    this.recognition = new SpeechRecognition();
+    this.recognition.lang = 'zh-TW';
+    this.recognition.continuous = false;
+    this.recognition.interimResults = true;
+
+    this.recognition.onstart = () => {
+      this.isRecording = true;
+      voiceBtn.classList.add('recording');
+      voiceBtn.textContent = '⏹️';
+      this.input.placeholder = '正在聆聽...';
+    };
+
+    this.recognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      this.input.value = transcript;
+    };
+
+    this.recognition.onend = () => {
+      this.isRecording = false;
+      voiceBtn.classList.remove('recording');
+      voiceBtn.textContent = '🎙️';
+      this.input.placeholder = '輸入您的生活需求... (例如：我想訂明天晚上的餐廳)';
+
+      // 如果有辨識到內容，自動發送
+      if (this.input.value.trim()) {
+        this.handleSend();
+      }
+    };
+
+    this.recognition.onerror = (event) => {
+      this.isRecording = false;
+      voiceBtn.classList.remove('recording');
+      voiceBtn.textContent = '🎙️';
+      this.input.placeholder = '輸入您的生活需求... (例如：我想訂明天晚上的餐廳)';
+
+      if (event.error === 'not-allowed') {
+        alert('請允許麥克風權限以使用語音輸入功能');
+      }
+    };
+
+    voiceBtn.addEventListener('click', () => this.toggleVoice());
+  },
+
+  /**
+   * 切換語音錄製
+   */
+  toggleVoice() {
+    if (this.isRecording) {
+      this.recognition.stop();
+    } else {
+      this.input.value = '';
+      this.recognition.start();
+    }
   },
 
   /**

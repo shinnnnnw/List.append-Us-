@@ -128,3 +128,40 @@
 .chat-send-btn:hover {
   background-color: var(--primary-dark);
 }
+
+/* 語音輸入按鈕 */
+.chat-voice-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  border: 1px solid var(--border);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.chat-voice-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.chat-voice-btn.recording {
+  background-color: #ff4444;
+  border-color: #ff4444;
+  animation: pulse-recording 1.2s infinite;
+}
+
+.chat-voice-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@keyframes pulse-recording {
+  0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(255, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+}
