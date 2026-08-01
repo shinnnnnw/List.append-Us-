@@ -21,10 +21,11 @@ const Chat = {
 
     // 清空歷史
     this.conversationHistory = [];
+    this.pendingImage = null; // 暫存待送出的圖片 base64
 
     // 預設 AI 歡迎訊息
     this.messages = [
-      { id: 1, sender: 'ai', text: '你好！我是您的 AI 智慧社區管家。有什麼我能幫您的嗎？不論是餐廳訂位、居家清潔、水電修繕、包裹寄送，或是任何生活問題，直接跟我說就好！' },
+      { id: 1, sender: 'ai', text: '你好！我是您的 AI 智慧社區管家。有什麼我能幫您的嗎？不論是餐廳訂位、居家清潔、水電修繕、包裹寄送，或是任何生活問題，直接跟我說就好！\n\n💡 小提示：修繕或清潔相關問題，您可以直接拍照上傳，AI 會幫您辨識問題並預估報價喔！' },
     ];
     this.render();
 
@@ -40,8 +41,73 @@ const Chat = {
       }
     });
 
+    // 初始化圖片上傳
+    this.initImageUpload();
+
     // 初始化語音輸入
     this.initVoice();
+  },
+
+  /**
+   * 初始化圖片上傳功能
+   */
+  initImageUpload() {
+    const imageInput = Utils.$('#chat-image-input');
+    const removeBtn = Utils.$('#chat-image-remove');
+
+    if (imageInput) {
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // 檢查檔案大小（限制 5MB）
+        if (file.size > 5 * 1024 * 1024) {
+          alert('圖片大小不能超過 5MB，請重新選擇');
+          imageInput.value = '';
+          return;
+        }
+
+        // 轉 base64 並預覽
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target.result;
+          this.pendingImage = base64;
+          this.showImagePreview(base64);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        this.clearImagePreview();
+      });
+    }
+  },
+
+  /**
+   * 顯示圖片預覽
+   */
+  showImagePreview(base64) {
+    const previewContainer = Utils.$('#chat-image-preview');
+    const previewImg = Utils.$('#chat-preview-img');
+    if (previewContainer && previewImg) {
+      previewImg.src = base64;
+      previewContainer.style.display = 'flex';
+    }
+  },
+
+  /**
+   * 清除圖片預覽
+   */
+  clearImagePreview() {
+    const previewContainer = Utils.$('#chat-image-preview');
+    const previewImg = Utils.$('#chat-preview-img');
+    const imageInput = Utils.$('#chat-image-input');
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (previewImg) previewImg.src = '';
+    if (imageInput) imageInput.value = '';
+    this.pendingImage = null;
   },
 
   /**
@@ -121,20 +187,29 @@ const Chat = {
    */
   async handleSend() {
     const text = this.input.value.trim();
-    if (!text) return;
+    const hasImage = !!this.pendingImage;
 
-    // 新增使用者訊息到 UI
-    this.addMessage('user', text, false);
+    if (!text && !hasImage) return;
+
+    // 新增使用者訊息到 UI（含圖片縮圖）
+    if (hasImage) {
+      this.addImageMessage('user', this.pendingImage, text);
+    } else {
+      this.addMessage('user', text, false);
+    }
     this.input.value = '';
 
     // 顯示打字動畫
     this.showTyping();
 
-    // 呼叫 AI API，帶入「目前為止」的對話歷史
-    const result = await API.chatConversation(text, this.conversationHistory);
+    // 呼叫 AI API，帶入圖片（如果有）
+    const imageData = hasImage ? this.pendingImage : null;
+    this.clearImagePreview();
+
+    const result = await API.chatConversation(text || '請分析這張照片的問題', this.conversationHistory, imageData);
 
     // 把這輪 user 訊息加入歷史
-    this.conversationHistory.push({ role: 'user', content: text });
+    this.conversationHistory.push({ role: 'user', content: text || '[上傳照片]' });
 
     // 移除打字動畫
     this.hideTyping();
@@ -158,6 +233,20 @@ const Chat = {
     } else {
       this.addMessage('ai', '抱歉，目前系統忙碌中，請稍後再試。', false);
     }
+  },
+
+  /**
+   * 新增含圖片的使用者訊息
+   */
+  addImageMessage(sender, imageSrc, text) {
+    this.messages.push({
+      id: Date.now(),
+      sender,
+      text: text || '',
+      isHtml: true,
+      imageHtml: `<img src="${imageSrc}" class="chat-uploaded-img" alt="上傳的照片">${text ? '<br>' + text : ''}`,
+    });
+    this.render();
   },
 
   /**
@@ -255,7 +344,9 @@ const Chat = {
     this.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = `message-bubble ${msg.sender}`;
-      if (msg.isHtml) {
+      if (msg.imageHtml) {
+        bubble.innerHTML = msg.imageHtml;
+      } else if (msg.isHtml) {
         // 將換行符轉為 <br>，讓 AI 回覆正確換行顯示
         bubble.innerHTML = msg.text.replace(/\n/g, '<br>');
       } else {
