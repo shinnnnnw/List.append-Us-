@@ -34,31 +34,32 @@ const TABLE = 'cms_service_vendor';
 const client = new DynamoDBClient({ region });
 
 // vendor_id 用 Number 型別（雲端 DynamoDB 表 PK 為 N）
+// 餐廳名稱皆為虛構，如有雷同純屬巧合
 const RESTAURANTS = [
   // 中式
-  { vendor_id:{N:'4'}, name:{S:'饗食天堂'}, service_type:{N:'6'}, description:{S:'精緻中式料理，提供包廂訂位，適合家庭聚餐'}, rating_avg:{N:'4.7'}, rating_count:{N:'312'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'10'}, name:{S:'鼎泰豐信義店'}, service_type:{N:'6'}, description:{S:'世界知名小籠包，經典台灣中式餐廳'}, rating_avg:{N:'4.9'}, rating_count:{N:'856'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'13'}, name:{S:'點水樓'}, service_type:{N:'6'}, description:{S:'精緻江浙菜與港式點心，適合商務宴客'}, rating_avg:{N:'4.7'}, rating_count:{N:'245'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'14'}, name:{S:'欣葉台菜'}, service_type:{N:'6'}, description:{S:'傳統台灣料理，古早味辦桌菜，適合大桌聚餐'}, rating_avg:{N:'4.6'}, rating_count:{N:'378'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'4'}, name:{S:'饗宴樓'}, service_type:{N:'6'}, description:{S:'精緻中式料理，提供包廂訂位，適合家庭聚餐'}, rating_avg:{N:'4.7'}, rating_count:{N:'312'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'10'}, name:{S:'金鼎軒'}, service_type:{N:'6'}, description:{S:'招牌手工小籠包，經典台灣中式餐廳'}, rating_avg:{N:'4.9'}, rating_count:{N:'856'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'13'}, name:{S:'滴水坊'}, service_type:{N:'6'}, description:{S:'精緻江浙菜與港式點心，適合商務宴客'}, rating_avg:{N:'4.7'}, rating_count:{N:'245'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'14'}, name:{S:'豐葉台菜館'}, service_type:{N:'6'}, description:{S:'傳統台灣料理，古早味辦桌菜，適合大桌聚餐'}, rating_avg:{N:'4.6'}, rating_count:{N:'378'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'}]}, is_enable:{S:'1'} },
   // 日式
-  { vendor_id:{N:'7'}, name:{S:'和風亭日式料理'}, service_type:{N:'6'}, description:{S:'正宗日式定食、壽司、刺身，午間套餐優惠'}, rating_avg:{N:'4.6'}, rating_count:{N:'198'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'15'}, name:{S:'藏壽司台北站前店'}, service_type:{N:'6'}, description:{S:'迴轉壽司，平價新鮮，扭蛋抽獎樂趣多'}, rating_avg:{N:'4.4'}, rating_count:{N:'512'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'},{S:'台中市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'16'}, name:{S:'一蘭拉麵台灣本店'}, service_type:{N:'6'}, description:{S:'博多豚骨拉麵，個人座位專注享用'}, rating_avg:{N:'4.5'}, rating_count:{N:'723'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'7'}, name:{S:'和風亭'}, service_type:{N:'6'}, description:{S:'正宗日式定食、壽司、刺身，午間套餐優惠'}, rating_avg:{N:'4.6'}, rating_count:{N:'198'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'15'}, name:{S:'迴鮮壽司'}, service_type:{N:'6'}, description:{S:'迴轉壽司，平價新鮮，趣味抽獎活動'}, rating_avg:{N:'4.4'}, rating_count:{N:'512'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'},{S:'台中市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'16'}, name:{S:'豚骨拉麵本舖'}, service_type:{N:'6'}, description:{S:'濃郁博多豚骨拉麵，個人座位專注享用'}, rating_avg:{N:'4.5'}, rating_count:{N:'723'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
   // 西式 / 義式
-  { vendor_id:{N:'8'}, name:{S:'La Pasta 義式餐廳'}, service_type:{N:'6'}, description:{S:'手工義大利麵、窯烤披薩，浪漫約會首選'}, rating_avg:{N:'4.8'}, rating_count:{N:'267'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'17'}, name:{S:'Smith & Wollensky 牛排館'}, service_type:{N:'6'}, description:{S:'美式頂級牛排，乾式熟成28天，微風信義'}, rating_avg:{N:'4.7'}, rating_count:{N:'189'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'18'}, name:{S:'TUTTO BELLO 美好義式餐廳'}, service_type:{N:'6'}, description:{S:'義式燉飯、手作甜點，家庭聚餐友善'}, rating_avg:{N:'4.5'}, rating_count:{N:'134'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'8'}, name:{S:'La Cucina 義式廚房'}, service_type:{N:'6'}, description:{S:'手工義大利麵、窯烤披薩，浪漫約會首選'}, rating_avg:{N:'4.8'}, rating_count:{N:'267'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'17'}, name:{S:'紳士牛排館'}, service_type:{N:'6'}, description:{S:'頂級乾式熟成牛排，高級商務聚餐'}, rating_avg:{N:'4.7'}, rating_count:{N:'189'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'18'}, name:{S:'美好時光義式餐廳'}, service_type:{N:'6'}, description:{S:'義式燉飯、手作甜點，家庭聚餐友善'}, rating_avg:{N:'4.5'}, rating_count:{N:'134'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
   // 韓式
-  { vendor_id:{N:'9'}, name:{S:'韓國歐巴烤肉'}, service_type:{N:'6'}, description:{S:'正宗韓式烤肉、部隊鍋，提供包廂歡唱'}, rating_avg:{N:'4.5'}, rating_count:{N:'142'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'19'}, name:{S:'新麻蒲海鷗韓式料理'}, service_type:{N:'6'}, description:{S:'韓國人開的道地韓食，辣炒年糕、起司排骨'}, rating_avg:{N:'4.6'}, rating_count:{N:'287'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'20'}, name:{S:'Maple Tree House 楓樹韓國烤肉'}, service_type:{N:'6'}, description:{S:'首爾米其林一星韓式烤肉，厚切牛五花'}, rating_avg:{N:'4.8'}, rating_count:{N:'156'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'9'}, name:{S:'首爾烤肉屋'}, service_type:{N:'6'}, description:{S:'正宗韓式烤肉、部隊鍋，提供包廂歡唱'}, rating_avg:{N:'4.5'}, rating_count:{N:'142'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'19'}, name:{S:'海鷗韓食堂'}, service_type:{N:'6'}, description:{S:'道地韓國料理，辣炒年糕、起司排骨'}, rating_avg:{N:'4.6'}, rating_count:{N:'287'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'20'}, name:{S:'楓樹韓式燒肉'}, service_type:{N:'6'}, description:{S:'精品韓式烤肉，厚切牛五花，高級用餐體驗'}, rating_avg:{N:'4.8'}, rating_count:{N:'156'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
   // 海鮮
-  { vendor_id:{N:'11'}, name:{S:'漁港海鮮餐廳'}, service_type:{N:'6'}, description:{S:'新鮮現撈海鮮，蒸煮烤炸多種料理，適合大桌聚餐'}, rating_avg:{N:'4.4'}, rating_count:{N:'95'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'21'}, name:{S:'上引水產'}, service_type:{N:'6'}, description:{S:'立吞海鮮市場，現選現做，新鮮直送'}, rating_avg:{N:'4.6'}, rating_count:{N:'432'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'11'}, name:{S:'漁人碼頭海鮮'}, service_type:{N:'6'}, description:{S:'新鮮現撈海鮮，蒸煮烤炸多種料理，適合大桌聚餐'}, rating_avg:{N:'4.4'}, rating_count:{N:'95'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'21'}, name:{S:'鮮引水產直營店'}, service_type:{N:'6'}, description:{S:'立吞海鮮市場，現選現做，新鮮直送'}, rating_avg:{N:'4.6'}, rating_count:{N:'432'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
   // 泰式
-  { vendor_id:{N:'12'}, name:{S:'泰味食堂'}, service_type:{N:'6'}, description:{S:'道地泰式料理，酸辣開胃，平價大份量'}, rating_avg:{N:'4.3'}, rating_count:{N:'178'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'台中市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'22'}, name:{S:'Nara Thai Cuisine'}, service_type:{N:'6'}, description:{S:'泰國曼谷連鎖，精緻泰式料理，環境優雅'}, rating_avg:{N:'4.5'}, rating_count:{N:'203'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
-  { vendor_id:{N:'23'}, name:{S:'瓦城泰統'}, service_type:{N:'6'}, description:{S:'台灣最大泰式餐飲集團，口味穩定，多人合菜'}, rating_avg:{N:'4.4'}, rating_count:{N:'567'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'},{S:'台中市'},{S:'高雄市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'12'}, name:{S:'暹羅食堂'}, service_type:{N:'6'}, description:{S:'道地泰式料理，酸辣開胃，平價大份量'}, rating_avg:{N:'4.3'}, rating_count:{N:'178'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'台中市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'22'}, name:{S:'曼谷花園泰菜'}, service_type:{N:'6'}, description:{S:'精緻泰式料理，環境優雅，適合聚餐'}, rating_avg:{N:'4.5'}, rating_count:{N:'203'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
+  { vendor_id:{N:'23'}, name:{S:'泰皇殿'}, service_type:{N:'6'}, description:{S:'泰式連鎖餐廳，口味穩定，多人合菜首選'}, rating_avg:{N:'4.4'}, rating_count:{N:'567'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'},{S:'台中市'},{S:'高雄市'}]}, is_enable:{S:'1'} },
 ];
 
 async function main() {
