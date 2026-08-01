@@ -4,7 +4,8 @@
  * POST — 接收使用者訊息，執行意圖辨識，回傳 AI 回覆 + 建議表單
  */
 require_once __DIR__ . '/../db.php';
-require_once __DIR__ . '/../middleware/auth-check.php';
+// 聊天不強制登入驗證，允許未登入使用者使用 AI 問答
+require_once __DIR__ . '/../config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

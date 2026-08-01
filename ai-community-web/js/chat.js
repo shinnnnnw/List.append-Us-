@@ -62,6 +62,8 @@ const Chat = {
       }
 
       this.addMessage('ai', replyHtml, true);
+    } else if (result && result._unauthorized) {
+      this.addMessage('ai', '登入已過期，請重新登入後再使用聊天功能。');
     } else {
       this.addMessage('ai', '抱歉，目前系統忙碌中，請稍後再試。');
     }
