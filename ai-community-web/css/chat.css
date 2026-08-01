@@ -36,6 +36,7 @@
   color: #fff;
   margin-left: auto;
   border-bottom-right-radius: 2px;
+  width: fit-content;
 }
 
 .message-bubble.ai {
