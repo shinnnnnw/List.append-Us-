@@ -1,0 +1,47 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add `UpdateItemCommand` import and `handleCancelOrder` handler to `lambda/chat/index.mjs`": [
+      {
+        "executionId": "f35f181e-8b6f-45f4-bb63-bacacd3fdafb",
+        "chatSessionId": "sess_2ec21829-771e-4717-ab3c-b088e54018a0",
+        "timestamp": 1785600233580
+      }
+    ],
+    "2.1 Add `cancelOrder(orderId)` method to `js/api.js`": [
+      {
+        "executionId": "f35f181e-8b6f-45f4-bb63-bacacd3fdafb",
+        "chatSessionId": "sess_2ec21829-771e-4717-ab3c-b088e54018a0",
+        "timestamp": 1785600233776
+      }
+    ],
+    "3.1 Replace mock `cancelOrder` in `js/orders.js` with real API call": [
+      {
+        "executionId": "f35f181e-8b6f-45f4-bb63-bacacd3fdafb",
+        "chatSessionId": "sess_2ec21829-771e-4717-ab3c-b088e54018a0",
+        "timestamp": 1785600233919
+      }
+    ],
+    "3.2 Fix cancel button visibility status array in `js/orders.js`": [
+      {
+        "executionId": "f35f181e-8b6f-45f4-bb63-bacacd3fdafb",
+        "chatSessionId": "sess_2ec21829-771e-4717-ab3c-b088e54018a0",
+        "timestamp": 1785600234110
+      }
+    ],
+    "4. Checkpoint — Verify integration": [
+      {
+        "executionId": "f35f181e-8b6f-45f4-bb63-bacacd3fdafb",
+        "chatSessionId": "sess_2ec21829-771e-4717-ab3c-b088e54018a0",
+        "timestamp": 1785600234367
+      }
+    ],
+    "6. Final checkpoint — Ensure all tests pass": [
+      {
+        "executionId": "f35f181e-8b6f-45f4-bb63-bacacd3fdafb",
+        "chatSessionId": "sess_2ec21829-771e-4717-ab3c-b088e54018a0",
+        "timestamp": 1785600235041
+      }
+    ]
+  }
+}
