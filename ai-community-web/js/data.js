@@ -1,7 +1,8 @@
 /**
  * 靜態展示資料
- * 本專案部署在 AWS S3 靜態網站託管，無法執行 PHP，
- * 故以此檔案取代 php/api/*.php，資料內容取自 sql/0731_202607_hackson.sql 的種子資料。
+ * 本專案部署在 AWS S3 靜態網站託管，
+ * API 呼叫統一走 AWS Lambda + API Gateway，
+ * 此檔案提供本地 Mock 資料備援，內容取自 sql/0731_202607_hackson.sql 的種子資料。
  */
 const DATA = {
   COUNTIES: [

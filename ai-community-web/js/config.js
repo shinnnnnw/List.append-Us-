@@ -1,22 +1,10 @@
 /**
  * 全域設定
  */
-
-// 環境判斷：本地 localhost/127.0.0.1 用 PHP，雲端用 Lambda
-const _isLocal = (
-  location.hostname === 'localhost' ||
-  location.hostname === '127.0.0.1'
-);
-
 const CONFIG = {
-  // API base URL：本地用 PHP，雲端用 AWS Lambda
-  API_BASE: _isLocal
-    ? 'php/api'
-    : 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod',
+  // API base URL（AWS Lambda + API Gateway）
+  API_BASE: 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod',
 
-  // 是否為本地環境
-  IS_LOCAL: _isLocal,
- 
   // 服務快捷按鈕定義（對應 pms_vendor_service_type）
   QUICK_SERVICES: [
     { name: '訂位', formId: 1, color: '#4CAF50', icon: '🍽️', serviceType: '01' },
@@ -26,7 +14,7 @@ const CONFIG = {
     { name: '社區', formId: 3, color: '#9C27B0', icon: '🏘️', serviceType: '05' },
     { name: '藥局', formId: 3, color: '#FF5722', icon: '💊', serviceType: '06' },
   ],
- 
+
   // 訂單狀態對照
   ORDER_STATUS: {
     '01': { label: '待媒合', badge: 'badge-warning' },
@@ -37,7 +25,7 @@ const CONFIG = {
     '90': { label: '已取消', badge: 'badge-danger' },
     '99': { label: '已退款', badge: 'badge-danger' },
   },
- 
+
   ORDER_TYPE: {
     '01': '服務訂單',
     '02': '訂位',
@@ -46,13 +34,13 @@ const CONFIG = {
     '05': '商品訂單',
     '06': '訂餐',
   },
- 
+
   CONTACT_TIME: {
     '1': '上午',
     '2': '下午',
     '3': '皆可',
   },
- 
+
   TOPIC_TYPE: {
     '1': '簡答題',
     '2': '詳答題',
@@ -66,4 +54,3 @@ const CONFIG = {
     '10': '聯絡資料(不含地址)',
   },
 };
- 

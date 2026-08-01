@@ -182,18 +182,12 @@ const API = {
     return this.get('/districts');
   },
 
-  // AI 對話
+  // AI 對話（AWS Lambda Bedrock）
   chatConversation(message, history = []) {
-    if (CONFIG.IS_LOCAL) {
-      return this.post('/chat.php', { message: message, history: history });
-    }
     return this.post('/ai/chat', { text: message, history: history });
   },
 
   chat(message, history = []) {
-    if (CONFIG.IS_LOCAL) {
-      return this.post('/chat.php', { message: message, history: history });
-    }
     return this.post('/ai/chat', { text: message, history: history });
   },
 

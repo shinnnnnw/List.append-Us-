@@ -446,7 +446,7 @@ const FormRenderer = {
       data: feedbackData,
       account_id: (Auth.getUser() || {}).inbr_account_id || '',
       account_name: (Auth.getUser() || {}).name || '',
-      // 從 feedbackData 解析聯絡資料，對應 PHP form-submit.php 的欄位
+      // 從 feedbackData 解析聯絡資料，對應 Lambda /feedback API 的欄位
       ...(() => {
         const extra = {};
         feedbackData.forEach(item => {
