@@ -150,11 +150,20 @@ const API = {
   // 訂單
   getOrders(status) {
     const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
-    return this.get(`/feedback/member?member_id=${user.inbr_account_id || 'MBR001'}`);
+    const accountId = user.inbr_account_id || 'MBR001';
+    const q = status ? `&status=${status}` : '';
+    return this.get(`/orders?account_id=${accountId}${q}`);
   },
 
   getOrderDetail(id) {
-    return this.get(`/feedback/member?member_id=${id}`);
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    const accountId = user.inbr_account_id || 'MBR001';
+    return this.get(`/orders/${id}?account_id=${accountId}`);
+  },
+
+  createOrder(orderData) {
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    return this.post('/orders', { ...orderData, inbr_account_id: user.inbr_account_id || 'MBR001' });
   },
 
   // 縣市行政區
