@@ -224,6 +224,7 @@
 let vendorCases = [
   {
     id: 'FB1722500001',
+    vendorId: 1,
     customerName: '王小明',
     customerPhone: '0912-345-001',
     customerEmail: 'wang@example.com',
@@ -237,6 +238,7 @@ let vendorCases = [
   },
   {
     id: 'FB1722500002',
+    vendorId: 5,
     customerName: '陳美玲',
     customerPhone: '0923-456-002',
     customerEmail: 'chen.ml@example.com',
@@ -252,6 +254,7 @@ let vendorCases = [
   },
   {
     id: 'FB1722500003',
+    vendorId: 1,
     customerName: '林大偉',
     customerPhone: '0934-567-003',
     customerEmail: 'lin.dw@example.com',
@@ -268,6 +271,7 @@ let vendorCases = [
   },
   {
     id: 'FB1722500004',
+    vendorId: 23,
     customerName: '黃志豪',
     customerPhone: '0945-678-004',
     customerEmail: 'huang.zh@example.com',
@@ -281,18 +285,49 @@ let vendorCases = [
   },
   {
     id: 'FB1722500005',
+    vendorId: 5,
     customerName: '李小芳',
     customerPhone: '0956-789-005',
     customerEmail: 'li.xf@example.com',
-    service: '包裹寄送',
-    category: '宅配',
-    description: '有一箱書要寄到高雄，大約 5 公斤，希望三天內到。',
+    service: '水管維修',
+    category: '修繕',
+    description: '廚房水管堵塞，排水很慢，希望盡快來看。',
     status: 'progress',
     createdAt: '2026-07-30 08:00',
     address: '台北市松山區民生東路三段 25 號 1F',
     replies: [
-      { time: '2026-07-30 09:30', content: '已安排明天上午取件，請準備好包裹。' },
+      { time: '2026-07-30 09:30', content: '已安排明天上午到府查看。' },
     ],
+  },
+  {
+    id: 'FB1722500006',
+    vendorId: 23,
+    customerName: '張美華',
+    customerPhone: '0967-890-006',
+    customerEmail: 'chang.mh@example.com',
+    service: '餐廳訂位',
+    category: '訂位',
+    description: '下週三中午 12 點，8 位大人商務聚餐，需要包廂。',
+    status: 'progress',
+    createdAt: '2026-07-31 09:00',
+    address: '',
+    replies: [
+      { time: '2026-07-31 09:30', content: '包廂已為您保留，歡迎蒞臨。' },
+    ],
+  },
+  {
+    id: 'FB1722500007',
+    vendorId: 1,
+    customerName: '陳建志',
+    customerPhone: '0978-901-007',
+    customerEmail: 'chen.jz@example.com',
+    service: '居家清潔',
+    category: '清潔',
+    description: '搬家前需要全屋清潔，約 25 坪，含廚房油汙清理。',
+    status: 'pending',
+    createdAt: '2026-08-01 10:00',
+    address: '台北市內湖區成功路四段 30 號 8F',
+    replies: [],
   },
 ];
 
@@ -313,14 +348,27 @@ function vendorShowDashboard() {
   document.getElementById('view-login').classList.remove('active');
   document.getElementById('view-dashboard').classList.remove('active');
   document.getElementById('view-vendor').classList.add('active');
+
+  // 顯示店家名稱
+  const shopName = localStorage.getItem('vendorShopName') || '廠商';
+  const vendorHeader = document.querySelector('#view-vendor h2');
+  if (vendorHeader) vendorHeader.textContent = shopName + ' — 管理後台';
+
   vendorRenderStats();
   vendorRenderList('all');
 }
 
+// 取得當前廠商的案件（根據 vendorId 篩選）
+function getVendorMyCases() {
+  const myVendorId = parseInt(localStorage.getItem('vendorId') || '0');
+  return vendorCases.filter(c => c.vendorId === myVendorId);
+}
+
 function vendorRenderStats() {
-  const pending = vendorCases.filter(c => c.status === 'pending').length;
-  const progress = vendorCases.filter(c => c.status === 'progress').length;
-  const done = vendorCases.filter(c => c.status === 'done').length;
+  const myCases = getVendorMyCases();
+  const pending = myCases.filter(c => c.status === 'pending').length;
+  const progress = myCases.filter(c => c.status === 'progress').length;
+  const done = myCases.filter(c => c.status === 'done').length;
   document.getElementById('v-stat-pending').textContent = pending;
   document.getElementById('v-stat-progress').textContent = progress;
   document.getElementById('v-stat-done').textContent = done;
@@ -349,7 +397,8 @@ function vendorRenderList(filter) {
   listEl.style.display = 'block';
   detailEl.style.display = 'none';
 
-  const filtered = filter === 'all' ? vendorCases : vendorCases.filter(c => c.status === filter);
+  const myCases = getVendorMyCases();
+  const filtered = filter === 'all' ? myCases : myCases.filter(c => c.status === filter);
 
   if (filtered.length === 0) {
     listEl.innerHTML = '<p style="text-align:center;color:#999;padding:40px 0;">目前沒有案件</p>';

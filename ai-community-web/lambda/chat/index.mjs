@@ -132,6 +132,7 @@ export async function handler(event) {
     if (path === '/feedback' && method === 'POST')      return handleFeedback(body);
 
     // Admin（廠商後台）
+    if (path === '/admin/login' && method === 'POST')   return handleAdminLogin(body);
     if (path === '/admin/cases' && method === 'GET')    return handleAdminCases(qs);
     if (path === '/admin/cases/update' && method === 'POST') return handleAdminUpdateCase(body);
     if (path === '/admin/cases/reply' && method === 'POST')  return handleAdminReply(body);
@@ -428,6 +429,24 @@ async function handleContact(body) {
 }
 
 // ─── Admin（廠商後台）────────────────────────────────────────────────────────
+
+async function handleAdminLogin(body) {
+  const username = (body.username || '').trim();
+  const password = (body.password || '').trim();
+
+  if (!username || !password) return fail('請輸入帳號與密碼', 400);
+
+  const account = await dbGet('vendor_accounts', { username });
+  if (!account) return fail('帳號或密碼錯誤', 401);
+  if (account.password !== password) return fail('帳號或密碼錯誤', 401);
+
+  return ok({
+    username: account.username,
+    name: account.name,
+    vendorId: account.vendor_id,
+    shopName: account.shop_name,
+  }, '登入成功');
+}
 
 async function handleAdminCases(qs) {
   const status = qs.status || '';
