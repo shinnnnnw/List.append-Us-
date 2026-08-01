@@ -922,6 +922,10 @@ ${prefsLines.join('\n')}
       }
 
       // 同時建立訂單紀錄（讓訂單頁面能看到）
+      // 從 AI 回覆中提取具體服務名稱（確認單中的「詳細內容」欄位）
+      const detailMatch = reply.match(/(?:詳細內容|服務類型)：(.+)/);
+      const serviceName = detailMatch ? detailMatch[1].trim() : service;
+
       const recordId = Date.now();
       try {
         await dbPut('mms_order_record', {
@@ -931,10 +935,10 @@ ${prefsLines.join('\n')}
           service_vendor_id: '',
           order_type:        '01',
           order_status:      '01',
-          service_name:      service,
+          service_name:      serviceName,
           final_amount:      0,
           earn_points:       0,
-          remark:            `AI對話需求：${service}`,
+          remark:            `AI對話需求：${serviceName}`,
           feedback_no:       feedbackNo,
           cre_time:          now,
           order_time:        now,
