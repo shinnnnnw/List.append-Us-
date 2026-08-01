@@ -4,7 +4,6 @@
  */
 const API = {
   /**
-   * 通用 fetch 封裝
    */
   async request(endpoint, options = {}) {
     const url = `${CONFIG.API_BASE}/${endpoint}`;
