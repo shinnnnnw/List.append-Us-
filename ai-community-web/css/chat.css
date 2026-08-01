@@ -129,7 +129,7 @@
   background-color: var(--primary-dark);
 }
 
-/* 語音輸入按 */
+/* 語音輸入按鈕 */
 .chat-voice-btn {
   width: 40px;
   height: 40px;
@@ -164,4 +164,24 @@
   0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); }
   70% { box-shadow: 0 0 0 8px rgba(255, 68, 68, 0); }
   100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+}
+
+/* 廠商清單樣式 */
+.message-bubble.ai .vendor-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.message-bubble.ai .vendor-list li {
+  padding: 8px 12px;
+  margin: 4px 0;
+  background-color: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.message-bubble.ai .vendor-list li strong {
+  color: var(--primary);
 }

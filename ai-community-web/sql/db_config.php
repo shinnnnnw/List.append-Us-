@@ -7,10 +7,9 @@ $port = 3307; // 如果你的 MariaDB 是別的 port 就改掉
 
 $conn = mysqli_connect($host, $user, $pass, $dbname, $port);
 
-if($conn->connect_error){
- die("連線失敗");
+if (!$conn) {
+    die("資料庫連線失敗：" . mysqli_connect_error());
 }
 
-// MySQL 連線也設定為台灣時區
-$conn->query("SET time_zone = '+08:00'")
+mysqli_set_charset($conn, "utf8mb4");
 ?>
