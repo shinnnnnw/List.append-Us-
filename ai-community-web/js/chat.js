@@ -49,34 +49,61 @@ const Chat = {
   },
 
   /**
-   * 初始化圖片上傳功能
+   * 初始化圖片上傳功能（+ 按鈕選單）
    */
   initImageUpload() {
-    const imageInput = Utils.$('#chat-image-input');
+    const attachBtn = Utils.$('#chat-attach-btn');
+    const attachMenu = Utils.$('#chat-attach-menu');
+    const cameraInput = Utils.$('#chat-camera-input');
+    const galleryInput = Utils.$('#chat-gallery-input');
+    const fileInput = Utils.$('#chat-file-input');
     const removeBtn = Utils.$('#chat-image-remove');
 
-    if (imageInput) {
-      imageInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    if (attachBtn && attachMenu) {
+      // 點擊 + 按鈕切換選單
+      attachBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = attachMenu.style.display !== 'none';
+        attachMenu.style.display = isVisible ? 'none' : 'flex';
+      });
 
-        // 檢查檔案大小（限制 5MB）
-        if (file.size > 5 * 1024 * 1024) {
-          alert('圖片大小不能超過 5MB，請重新選擇');
-          imageInput.value = '';
-          return;
-        }
+      // 點擊頁面其他地方關閉選單
+      document.addEventListener('click', () => {
+        attachMenu.style.display = 'none';
+      });
 
-        // 轉 base64 並預覽
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const base64 = event.target.result;
-          this.pendingImage = base64;
-          this.showImagePreview(base64);
-        };
-        reader.readAsDataURL(file);
+      // 選單選項
+      attachMenu.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (action === 'camera' && cameraInput) cameraInput.click();
+        if (action === 'gallery' && galleryInput) galleryInput.click();
+        if (action === 'file' && fileInput) fileInput.click();
+        attachMenu.style.display = 'none';
       });
     }
+
+    // 統一處理檔案選擇
+    const handleFile = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('檔案大小不能超過 5MB，請重新選擇');
+        e.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        this.pendingImage = event.target.result;
+        this.showImagePreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    if (cameraInput) cameraInput.addEventListener('change', handleFile);
+    if (galleryInput) galleryInput.addEventListener('change', handleFile);
+    if (fileInput) fileInput.addEventListener('change', handleFile);
 
     if (removeBtn) {
       removeBtn.addEventListener('click', () => {
