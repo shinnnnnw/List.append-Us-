@@ -488,34 +488,54 @@ const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、
 
 【服務項目】餐廳訂位、居家清潔、水電修繕、包裹寄送、商品購買、家電清洗。
 
-【核心任務】判斷使用者訊息是否有服務需求，並立即引導至表單。
+【核心任務】透過自然對話逐步收集使用者的需求資訊，收集完整後整理成列表讓使用者確認。
+
+【對話流程】
+1. 辨識意圖：當使用者提到服務需求時，先確認服務類型
+2. 逐步詢問：根據服務類型，一次問一個問題收集必要資訊：
+   - 餐廳訂位：用餐日期、時間、人數、餐廳類型偏好、特殊需求
+   - 居家清潔：清潔類型、坪數/範圍、希望日期時間、地址
+   - 水電修繕：問題描述、緊急程度、希望時間、地址
+   - 包裹寄送：包裹大小/重量、收件方式、寄件地址
+   - 商品購買：商品描述、預算、配送方式
+   - 家電清洗：家電類型、數量、希望時間、地址
+3. 確認摘要：當所有必要資訊收集完畢，整理成格式化列表並加上 [CONFIRM] 標記
 
 【回覆規則】
 1. 用親切自然的繁體中文回覆
-2. 只要使用者訊息涉及以下關鍵字，立即在回覆末尾加上 [SUBMIT:服務類型]：
-   - 吃飯、用餐、訂位、聚餐、餐廳  → [SUBMIT:餐廳訂位]
-   - 買、購物、商品、採買、網購     → [SUBMIT:商品購買]
-   - 清潔、打掃、整理、大掃除       → [SUBMIT:居家清潔]
-   - 修繕、壞掉、漏水、水電、維修   → [SUBMIT:水電修繕]
-   - 冷氣、洗衣機、家電清洗         → [SUBMIT:家電清洗]
-   - 寄件、包裹、宅配、快遞         → [SUBMIT:包裹寄送]
-3. 回覆要簡短（2-3句），告知用戶你已為他安排，請填表單
-4. 不涉及服務的閒聊正常聊天，不加 [SUBMIT:]
-5. 回覆純文字，不加 markdown`;
+2. 每次只問一個問題，不要一次列出所有問題
+3. 適時使用換行讓回覆更好閱讀
+4. 當資訊收集完整，用以下格式整理確認列表：
+
+📋 需求確認單
+━━━━━━━━━━
+▪ 服務類型：xxx
+▪ 日期時間：xxx
+▪ 地點：xxx
+▪ 其他細節：xxx
+━━━━━━━━━━
+請確認以上資訊是否正確？
+
+然後在回覆最末尾加上（使用者看不到）：
+[CONFIRM:服務類型]
+
+5. 使用者確認「沒問題」「確認」「OK」等肯定回覆後，在末尾加上：
+[SUBMIT:服務類型]
+
+6. 如果使用者說要修改，回到對話模式重新收集該項目
+7. 不涉及服務的閒聊正常聊天，不加任何標記
+8. 回覆純文字，不加 markdown 語法（不要用 **粗體** 或 # 標題）`;
 
 async function handleChat(body) {
   const text    = (body.text || '').trim();
-  const history = (body.history || []).slice(-20);
+  const history = (body.history || []).slice(-30);
 
   if (!text) return fail('訊息不能為空');
 
   const messages = [];
   for (const msg of history) {
     if (!msg.role || !msg.content) continue;
-    const clean = msg.role === 'assistant'
-      ? msg.content.replace(/\[SUBMIT:[^\]]+\]/g, '').trim()
-      : msg.content;
-    if (clean) messages.push({ role: msg.role, content: clean });
+    messages.push({ role: msg.role, content: msg.content });
   }
   if (!messages.length || messages[messages.length - 1]?.content !== text) {
     messages.push({ role: 'user', content: text });
@@ -538,28 +558,40 @@ async function handleChat(body) {
     const data = JSON.parse(new TextDecoder().decode(res.body));
     const raw  = data.content?.[0]?.text?.trim() || '';
 
-    // 偵測服務意圖，回傳 has_form + form_id
-    const submitMatch = raw.match(/\[SUBMIT:([^\]]+)\]/);
-    const reply = raw.replace(/\[SUBMIT:[^\]]+\]/g, '').trim();
+    // 偵測狀態標記
+    const confirmMatch = raw.match(/\[CONFIRM:([^\]]+)\]/);
+    const submitMatch  = raw.match(/\[SUBMIT:([^\]]+)\]/);
+    const reply = raw
+      .replace(/\[CONFIRM:[^\]]+\]/g, '')
+      .replace(/\[SUBMIT:[^\]]+\]/g, '')
+      .trim();
+
+    const svcMap = {
+      '餐廳訂位': 1, '訂位': 1,
+      '商品購買': 2, '購物': 2,
+      '居家清潔': 3, '清潔': 3, '水電修繕': 3, '家電清洗': 3, '居家服務': 3,
+      '包裹寄送': 4, '寄件': 4,
+    };
 
     let formId = null;
     let service = null;
+    let status = 'chatting'; // chatting | confirming | confirmed
+
     if (submitMatch) {
-      const svc = submitMatch[1];
-      const svcMap = {
-        '餐廳訂位': 1, '訂位': 1,
-        '商品購買': 2, '購物': 2,
-        '家事服務': 3, '清潔': 3, '水電修繕': 3, '家電清洗': 3, '居家服務': 3,
-        '包裹寄送': 4, '寄件': 4,
-      };
-      formId  = svcMap[svc] || 3;
-      service = svc;
+      service = submitMatch[1];
+      formId  = svcMap[service] || 3;
+      status  = 'confirmed';
+    } else if (confirmMatch) {
+      service = confirmMatch[1];
+      formId  = svcMap[service] || 3;
+      status  = 'confirming';
     }
 
     return ok({
       reply,
-      intent:   submitMatch ? 'service' : 'none',
-      has_form: !!submitMatch,
+      intent:   (confirmMatch || submitMatch) ? 'service' : 'none',
+      status,
+      has_form: status === 'confirmed',
       form_id:  formId,
       service,
       source:   'bedrock',
@@ -568,7 +600,7 @@ async function handleChat(body) {
     console.error('[Bedrock Error]', err);
     return ok({
       reply: '不好意思，我現在有點忙不過來，可以請您再說一次嗎？',
-      intent: 'none', has_form: false, form_id: null, service: null, source: 'fallback',
+      intent: 'none', status: 'chatting', has_form: false, form_id: null, service: null, source: 'fallback',
     });
   }
 }

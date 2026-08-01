@@ -146,12 +146,13 @@ const Chat = {
       // 顯示 AI 回覆（允許 HTML）
       this.addMessage('ai', replyText, true);
 
-      // 若有對應表單，附上引導按鈕
-      if (data.has_form && data.form_id) {
-        this.addFormButton(data.form_id, data.service);
+      // 根據狀態決定下一步
+      if (data.status === 'confirmed' && data.has_form && data.form_id) {
+        // AI 收集完資訊且用戶已確認 → 顯示送出按鈕
+        this.addSubmitButton(data.form_id, data.service);
       }
 
-      // 加入對話歷史（存純文字，strip HTML 標籤）
+      // 加入對話歷史（存純文字）
       const plainReply = replyText.replace(/<[^>]*>/g, '');
       this.conversationHistory.push({ role: 'assistant', content: plainReply });
     } else {
@@ -192,6 +193,56 @@ const Chat = {
     `;
     this.container.appendChild(btn);
     this.container.scrollTop = this.container.scrollHeight;
+  },
+
+  /**
+   * 附加確認送出按鈕（AI 對話收集完資訊並經用戶確認後）
+   * @param {number} formId
+   * @param {string} serviceName
+   */
+  addSubmitButton(formId, serviceName) {
+    if (!this.container) return;
+    const btn = document.createElement('div');
+    btn.className = 'message-form-action';
+    btn.innerHTML = `
+      <button class="btn-primary form-guide-btn"
+              onclick="Chat.submitOrder(${formId}, '${(serviceName || '').replace(/'/g, "\\'")}')">
+        ✅ 確認送出需求
+      </button>
+    `;
+    this.container.appendChild(btn);
+    this.container.scrollTop = this.container.scrollHeight;
+  },
+
+  /**
+   * 送出訂單（從對話歷史中萃取需求資訊）
+   * @param {number} formId
+   * @param {string} serviceName
+   */
+  async submitOrder(formId, serviceName) {
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    const description = this.conversationHistory
+      .filter(m => m.role === 'assistant')
+      .map(m => m.content)
+      .slice(-3)
+      .join('\n');
+
+    const result = await API.submitForm({
+      form_id: formId,
+      account_id: user.inbr_account_id || '',
+      account_name: user.name || '',
+      contact_name: user.name || '',
+      contact_mobile: user.phone || '',
+      description: description,
+      data: { source: 'ai_chat', service: serviceName, history: this.conversationHistory.slice(-10) },
+    });
+
+    if (result && result.success) {
+      this.addMessage('ai', `已為您送出「${serviceName}」的需求！\n我們會盡快為您媒合適合的服務商，您可以在「訂單」頁面追蹤進度。`, true);
+      this.conversationHistory.push({ role: 'assistant', content: `需求已送出：${serviceName}` });
+    } else {
+      this.addMessage('ai', '抱歉，送出時發生問題，請稍後再試。', false);
+    }
   },
 
   /**
