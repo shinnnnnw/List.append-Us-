@@ -1,5 +1,5 @@
 <?php
-// 統一關閉錯誤顯示（不在畫面上洩漏路徑與語法）
+// 統一關閉錯誤顯示（不在畫面上洩漏
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 ini_set('log_errors', 1);
