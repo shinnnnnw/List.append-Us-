@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "編碼規範檢查",
+      "trigger": "PreToolUse",
+      "matcher": "fs_write|str_replace|fs_append",
+      "action": {
+        "type": "agent",
+        "prompt": "確認寫入的程式碼遵循專案規範：JS 用 const/let + camelCase、API 回傳 { success, data, message } 格式、DynamoDB 用 {S:'string'}/{N:'123'} 格式、UI 用繁體中文。違反規範時提出修改建議。"
+      }
+    }
+  ]
+}
