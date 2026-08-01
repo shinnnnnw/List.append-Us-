@@ -18,5 +18,4 @@ if($conn->connect_error){
 }
 
 // MySQL 連線也設定為台灣時區
-$conn->query("SET time_zone = '+08:00'")
-?>
+$conn->query("SET time_zone = '+08:00'");
