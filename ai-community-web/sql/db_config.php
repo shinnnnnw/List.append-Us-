@@ -3,7 +3,7 @@ $host = "127.0.0.1";
 $user = "root";
 $pass = "";
 $dbname = "202607_hackson";
-$port = 3306; // 如果你的 MariaDB 是別的 port 就改掉
+$port = 3307; // 如果你的 MariaDB 是別的 port 就改掉
 
 $conn = mysqli_connect($host, $user, $pass, $dbname, $port);
 
