@@ -1,153 +1,546 @@
 /**
- * AI Community API - Lambda Handler (ESM)
- * 處理 /ai/chat 多輪對話端點
+ * Aî 智慧社區 API — Lambda Handler (ESM)
+ *
+ * Routes:
+ *   POST   /ai/chat              AI 多輪對話
+ *   GET    /auth/users           帳號列表（Demo 快速登入）
+ *   POST   /auth/login           登入（手機號碼 + 密碼後四碼）
+ *   GET    /auth/check           檢查 session（JWT-less，回傳 localStorage 已儲存的 user）
+ *   GET    /vendors              廠商列表（?type=X 篩選）
+ *   GET    /vendors/:id          廠商詳情
+ *   GET    /forms/:id            表單結構
+ *   POST   /feedback             送出諮詢單
+ *   GET    /orders               訂單列表（?account_id=MBRxxx）
+ *   GET    /orders/:id           訂單詳情（?account_id=MBRxxx）
+ *   GET    /districts            縣市列表
+ *   GET    /districts?county=X   行政區列表
  */
+
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  PutItemCommand,
+  QueryCommand,
+  ScanCommand,
+} from '@aws-sdk/client-dynamodb';
+import { unmarshall, marshall } from '@aws-sdk/util-dynamodb';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 
-const bedrock = new BedrockRuntimeClient({ region: 'us-west-2' });
-const MODEL_ID = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+const REGION = 'us-west-2';
+const ddb = new DynamoDBClient({ region: REGION });
+const bedrock = new BedrockRuntimeClient({ region: REGION });
+const MODEL_ID = 'us.anthropic.claude-sonnet-4-20250514-v1:0';
 
-const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、專業的 AI 助手，服務於社區住戶。
+// ─── CORS Helper ────────────────────────────────────────────────────────────
 
-你可以處理以下服務：餐廳訂位、居家清潔、水電修繕、包裹寄送、商城購物、美食外送。
-
-對話規則：
-1. 用自然親切的繁體中文對話，像朋友一樣聊天
-2. 主動詢問用戶需求的細節（時間、地點、預算、人數、問題詳情等）
-3. 用戶可能有錯別字，請自行判斷正確意思
-4. 如果用戶描述不清楚，請進一步追問，不要猜測
-5. 根據對話內容分析問題嚴重性，緊急情況（如漏水、停電）優先提醒用戶注意安全
-6. 當你收集到足夠資訊（至少包含：需求類型、時間偏好、聯絡方式或地點）後，告訴用戶「我已為您記錄需求，廠商將在24小時內聯繫您確認細節」
-7. 收集到足夠資訊時，在回覆最後加上一行標記：[SUBMIT:需求類型] （例如 [SUBMIT:餐廳訂位] 或 [SUBMIT:水電修繕]）
-8. 如果用戶只是閒聊或問問題（不涉及服務需求），正常回答即可，不需要收集資訊
-9. 不要提到「表單」、「填寫表單」等字眼，用自然對話方式收集資訊
-10. 回覆純文字，不要用 JSON 格式，不要用 markdown 標記
-
-記住：你的目標是讓用戶覺得在跟一個懂生活的朋友聊天，而不是在填表單。`;
-
-export async function handler(event) {
-  // CORS preflight
-  if (event.httpMethod === 'OPTIONS') {
-    return corsResponse(200, '');
-  }
-
-  const path = event.path || event.rawPath || '';
-  const method = event.httpMethod || event.requestContext?.http?.method || '';
-
-  // Route: /ai/chat
-  if (path === '/ai/chat' && method === 'POST') {
-    return handleChat(event);
-  }
-
-  return corsResponse(404, { success: false, message: 'Not found' });
-}
-
-async function handleChat(event) {
-  try {
-    const body = JSON.parse(event.body || '{}');
-    const text = (body.text || '').trim();
-    const history = body.history || [];
-
-    if (!text) {
-      return corsResponse(400, { success: false, data: null, message: '訊息不能為空' });
-    }
-
-    // 組合 Bedrock messages（最多保留最近 30 條）
-    const messages = [];
-    const historySlice = history.slice(-30);
-
-    for (const msg of historySlice) {
-      if (msg.role && msg.content) {
-        // 過濾掉 [SUBMIT:...] 標記，不讓 AI 看到自己之前的標記
-        const cleanContent = msg.role === 'assistant'
-          ? msg.content.replace(/\[SUBMIT:[^\]]+\]/g, '').trim()
-          : msg.content;
-        if (cleanContent) {
-          messages.push({ role: msg.role, content: cleanContent });
-        }
-      }
-    }
-
-    // 加入當前用戶訊息（如果歷史最後一條不是同一條的話）
-    const lastMsg = messages[messages.length - 1];
-    if (!lastMsg || lastMsg.role !== 'user' || lastMsg.content !== text) {
-      messages.push({ role: 'user', content: text });
-    }
-
-    // 呼叫 Bedrock
-    const aiReply = await callBedrock(messages);
-
-    if (aiReply) {
-      // 檢查是否有 [SUBMIT:...] 標記，如果有則自動儲存需求
-      const submitMatch = aiReply.match(/\[SUBMIT:([^\]]+)\]/);
-      let cleanReply = aiReply.replace(/\[SUBMIT:[^\]]+\]/g, '').trim();
-
-      if (submitMatch) {
-        // 非同步儲存需求（不阻塞回覆）
-        const serviceType = submitMatch[1];
-        console.log(`[Auto-submit] Service: ${serviceType}, History length: ${history.length}`);
-        // TODO: Call /feedback API to save the collected info
-      }
-
-      return corsResponse(200, {
-        success: true,
-        data: { reply: cleanReply },
-        message: null,
-      });
-    } else {
-      // Fallback
-      return corsResponse(200, {
-        success: true,
-        data: { reply: '不好意思，我現在有點忙不過來，可以請您再說一次嗎？' },
-        message: null,
-      });
-    }
-  } catch (err) {
-    console.error('handleChat error:', err);
-    return corsResponse(500, { success: false, data: null, message: '伺服器內部錯誤' });
-  }
-}
-
-async function callBedrock(messages) {
-  try {
-    const requestBody = {
-      anthropic_version: 'bedrock-2023-05-01',
-      max_tokens: 1024,
-      temperature: 0.7,
-      system: CHAT_SYSTEM_PROMPT,
-      messages,
-    };
-
-    const command = new InvokeModelCommand({
-      modelId: MODEL_ID,
-      contentType: 'application/json',
-      accept: 'application/json',
-      body: JSON.stringify(requestBody),
-    });
-
-    const response = await bedrock.send(command);
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-    const content = responseBody.content || [];
-
-    if (content.length > 0 && content[0].type === 'text') {
-      return content[0].text.trim();
-    }
-    return null;
-  } catch (err) {
-    console.error('Bedrock error:', err);
-    return null;
-  }
-}
-
-function corsResponse(statusCode, body) {
+function response(statusCode, body) {
   return {
     statusCode,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type,X-Account-Id',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     },
-    body: typeof body === 'string' ? body : JSON.stringify(body),
+    body: JSON.stringify(body),
   };
+}
+
+function ok(data, message = '') {
+  return response(200, { success: true, data, message });
+}
+
+function fail(message, code = 400) {
+  return response(code, { success: false, data: null, message });
+}
+
+// ─── DynamoDB helpers ────────────────────────────────────────────────────────
+
+async function dbGet(table, key) {
+  const result = await ddb.send(new GetItemCommand({
+    TableName: table,
+    Key: marshall(key),
+  }));
+  return result.Item ? unmarshall(result.Item) : null;
+}
+
+async function dbQuery(table, indexName, keyExpr, exprValues, opts = {}) {
+  const result = await ddb.send(new QueryCommand({
+    TableName: table,
+    IndexName: indexName,
+    KeyConditionExpression: keyExpr,
+    ExpressionAttributeValues: marshall(exprValues),
+    ScanIndexForward: opts.ascending ?? false,
+    Limit: opts.limit,
+  }));
+  return (result.Items || []).map(i => unmarshall(i));
+}
+
+async function dbScan(table, filterExpr, exprValues) {
+  const result = await ddb.send(new ScanCommand({
+    TableName: table,
+    FilterExpression: filterExpr,
+    ExpressionAttributeValues: marshall(exprValues),
+  }));
+  return (result.Items || []).map(i => unmarshall(i));
+}
+
+async function dbPut(table, item) {
+  await ddb.send(new PutItemCommand({
+    TableName: table,
+    Item: marshall(item, { removeUndefinedValues: true }),
+  }));
+}
+
+// ─── Router ─────────────────────────────────────────────────────────────────
+
+export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') return response(200, '');
+
+  const method = event.httpMethod || event.requestContext?.http?.method || 'GET';
+  const rawPath = event.path || event.rawPath || '';
+  // 去掉 /prod 前綴（API Gateway stage prefix）
+  const path = rawPath.replace(/^\/prod/, '');
+  const qs = event.queryStringParameters || {};
+  let body = {};
+  try { body = JSON.parse(event.body || '{}'); } catch (_) {}
+
+  console.log(`[Router] ${method} ${path}`, { qs });
+
+  try {
+    // AI 對話
+    if (path === '/ai/chat' && method === 'POST')       return handleChat(body);
+
+    // Auth
+    if (path === '/auth/users' && method === 'GET')     return handleAuthUsers();
+    if (path === '/auth/login' && method === 'POST')    return handleAuthLogin(body);
+    if (path === '/auth/check' && method === 'GET')     return ok(null, '請從 localStorage 確認登入狀態');
+
+    // Vendors
+    if (path === '/vendors' && method === 'GET')        return handleVendors(qs);
+    if (/^\/vendors\/(.+)$/.test(path) && method === 'GET') {
+      return handleVendorDetail(path.match(/^\/vendors\/(.+)$/)[1]);
+    }
+
+    // Forms
+    if (/^\/forms\/(.+)$/.test(path) && method === 'GET') {
+      return handleForm(path.match(/^\/forms\/(.+)$/)[1]);
+    }
+
+    // Feedback（諮詢單）
+    if (path === '/feedback' && method === 'POST')      return handleFeedback(body);
+
+    // Orders
+    if (path === '/orders' && method === 'GET')         return handleOrders(qs);
+    if (/^\/orders\/(.+)$/.test(path) && method === 'GET') {
+      return handleOrderDetail(path.match(/^\/orders\/(.+)$/)[1], qs);
+    }
+
+    // Districts
+    if (path === '/districts' && method === 'GET')      return handleDistricts(qs);
+
+    return fail('找不到路由', 404);
+  } catch (err) {
+    console.error('[Handler Error]', err);
+    return fail('伺服器內部錯誤：' + err.message, 500);
+  }
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+async function handleAuthUsers() {
+  const items = await dbScan('inbr_member',
+    'is_enable = :e',
+    { ':e': '1' }
+  );
+  const users = items.map(m => ({
+    name: m.member_name,
+    phone: m.member_phone,
+  }));
+  return ok(users);
+}
+
+async function handleAuthLogin(body) {
+  const phone = (body.phone || '').trim();
+  const password = (body.password || '').trim();
+
+  if (!phone) return fail('請輸入手機號碼');
+
+  const items = await dbScan('inbr_member',
+    'member_phone = :p AND is_enable = :e',
+    { ':p': phone, ':e': '1' }
+  );
+
+  if (!items.length) return fail('找不到此手機號碼的帳號', 401);
+
+  const member = items[0];
+
+  // 密碼驗證：手機號碼去掉非數字後的後四碼
+  if (password) {
+    const digitsOnly = phone.replace(/\D/g, '');
+    const expected = digitsOnly.slice(-4);
+    if (password !== expected) return fail('密碼錯誤（提示：手機號碼後四碼）', 401);
+  }
+
+  const user = {
+    inbr_account_id: member.inbr_account_id,
+    name:   member.member_name,
+    phone:  member.member_phone,
+    email:  member.member_email || '',
+    points: Number(member.point_balance) || 0,
+  };
+
+  return ok(user, '登入成功');
+}
+
+// ─── Vendors ─────────────────────────────────────────────────────────────────
+
+const SERVICE_TYPE_MAP = {
+  '1': '家事服務', '2': '家電清洗', '3': '寄件服務',
+  '6': '餐廳訂位', '10': '水電修繕', '11': '商品購買',
+};
+
+async function handleVendors(qs) {
+  let items = await dbScan('cms_service_vendor',
+    'is_enable = :e',
+    { ':e': '1' }
+  );
+
+  if (qs.type) {
+    items = items.filter(v =>
+      String(v.service_type) === String(qs.type)
+    );
+  }
+
+  const vendors = items.map(v => ({
+    vendor_id:    v.vendor_id,
+    vendor_name:  v.name,
+    service_type: String(v.service_type),
+    description:  v.description,
+    rating_avg:   v.rating_avg ? Number(v.rating_avg).toFixed(1) : null,
+    rating_count: Number(v.rating_count) || 0,
+    service_types: [String(v.service_type)],
+  }));
+
+  return ok({
+    vendors,
+    service_type_map: SERVICE_TYPE_MAP,
+  });
+}
+
+async function handleVendorDetail(vendorId) {
+  const item = await dbGet('cms_service_vendor', { vendor_id: vendorId });
+  if (!item) return fail('找不到該服務商', 404);
+
+  return ok({
+    vendor_id:    item.vendor_id,
+    vendor_name:  item.name,
+    service_type: String(item.service_type),
+    description:  item.description,
+    rating_avg:   item.rating_avg ? Number(item.rating_avg).toFixed(1) : null,
+    rating_count: Number(item.rating_count) || 0,
+    service_types: [String(item.service_type)],
+    service_areas: (item.service_counties || []).map(c => ({ county_name: c })),
+  });
+}
+
+// ─── Forms（靜態結構，DynamoDB 無表單 schema，回傳固定結構）─────────────────
+
+const STATIC_FORMS = {
+  '1': {
+    id: 1, name: '餐廳訂位需求表單',
+    intro_content: '<p>請留下您的訂位需求，我們將盡快為您安排。</p>',
+    notice_content: null, terms_content: null,
+  },
+  '2': {
+    id: 2, name: '商品購買需求表單',
+    intro_content: '<p>請描述您的商品需求，我們將為您推薦適合的商品。</p>',
+    notice_content: null, terms_content: null,
+  },
+  '3': {
+    id: 3, name: '居家服務需求表單',
+    intro_content: '<p>請填寫您的服務需求，我們將安排合適的服務商聯繫您。</p>',
+    notice_content: null, terms_content: null,
+  },
+  '4': {
+    id: 4, name: '包裹寄送需求表單',
+    intro_content: '<p>請填寫寄件資訊，我們將安排到府收件。</p>',
+    notice_content: null, terms_content: null,
+  },
+};
+
+const STATIC_TOPICS = {
+  '1': [
+    { id: 1, form_id: 1, type: '8',  title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 2, form_id: 1, type: '5',  title: '希望用餐地區',     is_required: '1', sort: 2, options: [], feature: null },
+    { id: 3, form_id: 1, type: '9',  title: '希望訂位日期',     is_required: '1', sort: 3, options: [], feature: null },
+    { id: 4, form_id: 1, type: '1',  title: '用餐人數',         is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 5, form_id: 1, type: '3',  title: '餐廳類型偏好',     is_required: '0', sort: 5, options: [
+      { id: 1, topic_id: 5, option_name: '中式' }, { id: 2, topic_id: 5, option_name: '日式' },
+      { id: 3, topic_id: 5, option_name: '西式' }, { id: 4, topic_id: 5, option_name: '韓式' },
+    ], feature: null },
+  ],
+  '2': [
+    { id: 6,  form_id: 2, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 7,  form_id: 2, type: '2',  title: '商品描述',         is_required: '1', sort: 2, options: [], feature: null },
+    { id: 8,  form_id: 2, type: '4',  title: '商品類別',         is_required: '0', sort: 3, options: [
+      { id: 5, topic_id: 8, option_name: '生鮮食品' }, { id: 6, topic_id: 8, option_name: '日用品' },
+      { id: 7, topic_id: 8, option_name: '3C家電' },   { id: 8, topic_id: 8, option_name: '服飾' },
+    ], feature: null },
+    { id: 9,  form_id: 2, type: '8',  title: '配送地址',         is_required: '1', sort: 4, options: [], feature: null },
+    { id: 10, form_id: 2, type: '1',  title: '預算上限（元）',   is_required: '0', sort: 5, options: [], feature: null, is_number_only: '1' },
+  ],
+  '3': [
+    { id: 11, form_id: 3, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 12, form_id: 3, type: '3',  title: '需求類型',         is_required: '1', sort: 2, options: [
+      { id: 9,  topic_id: 12, option_name: '家事清潔' }, { id: 10, topic_id: 12, option_name: '水電修繕' },
+      { id: 11, topic_id: 12, option_name: '家電清洗' }, { id: 12, topic_id: 12, option_name: '其他' },
+    ], feature: null },
+    { id: 13, form_id: 3, type: '2',  title: '需求詳細說明',     is_required: '1', sort: 3, options: [], feature: null },
+    { id: 14, form_id: 3, type: '5',  title: '服務地址',         is_required: '1', sort: 4, options: [], feature: null },
+    { id: 15, form_id: 3, type: '9',  title: '希望服務時間',     is_required: '0', sort: 5, options: [], feature: null },
+  ],
+  '4': [
+    { id: 16, form_id: 4, type: '10', title: '寄件人資訊',       is_required: '1', sort: 1, options: [], feature: null },
+    { id: 17, form_id: 4, type: '3',  title: '包裹大小',         is_required: '1', sort: 2, options: [
+      { id: 13, topic_id: 17, option_name: '小型（鞋盒以下）' },
+      { id: 14, topic_id: 17, option_name: '中型' },
+      { id: 15, topic_id: 17, option_name: '大型' },
+    ], feature: null },
+    { id: 18, form_id: 4, type: '1',  title: '重量（公斤）',     is_required: '0', sort: 3, options: [], feature: null, is_number_only: '1' },
+    { id: 19, form_id: 4, type: '3',  title: '收件方式',         is_required: '1', sort: 4, options: [
+      { id: 16, topic_id: 19, option_name: '到府收件' },
+      { id: 17, topic_id: 19, option_name: '自行送至門市' },
+    ], feature: null },
+    { id: 20, form_id: 4, type: '5',  title: '取件地址',         is_required: '1', sort: 5, options: [], feature: null },
+  ],
+};
+
+async function handleForm(formId) {
+  const form = STATIC_FORMS[formId];
+  if (!form) return fail('找不到該表單', 404);
+  return ok({
+    form,
+    groups: [],
+    topics: STATIC_TOPICS[formId] || [],
+    county_relations: [],
+  });
+}
+
+// ─── Feedback（諮詢單送出）───────────────────────────────────────────────────
+
+async function handleFeedback(body) {
+  const accountId = body.account_id || '';
+  const formId    = body.form_id;
+
+  if (!formId)    return fail('缺少 form_id');
+  if (!accountId) return fail('未登入，請重新登入', 401);
+
+  const now = new Date().toISOString();
+  const feedbackNo = 'FB' + Date.now();
+
+  const item = {
+    feedback_no:              feedbackNo,
+    form_id:                  formId,
+    platform_code:            '01',
+    inbr_account_id:          accountId,
+    contact_name:             body.contact_name             || body.account_name || '',
+    contact_mobile:           body.contact_mobile           || '',
+    contact_email:            body.contact_email            || '',
+    contact_address_county:   body.contact_address_county   || '',
+    contact_address_district: body.contact_address_district || '',
+    contact_address_detail:   body.contact_address_detail   || '',
+    description:              body.description              || '',
+    feedback_content:         body.data ? JSON.stringify(body.data) : '{}',
+    status:                   '01',
+    is_read:                  '0',
+    cre_time:                 now,
+    upd_time:                 now,
+  };
+
+  await dbPut('pms_form_feedback', item);
+  return ok({ feedback_no: feedbackNo }, '表單提交成功');
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+function formatOrder(o) {
+  return {
+    record_id:    o.record_id,
+    order_no:     o.order_no,
+    order_type:   o.order_type,
+    order_status: o.order_status,
+    order_time:   o.cre_time || o.order_time || '',
+    vendor_name:  o.vendor_name  || o.service_vendor_id || '',
+    service_name: o.service_name || '',
+    final_amount: Number(o.final_amount) || 0,
+    earn_points:  Number(o.earn_points)  || 0,
+    remark:       o.remark || '',
+  };
+}
+
+async function handleOrders(qs) {
+  const accountId = qs.account_id || '';
+  if (!accountId) return fail('缺少 account_id', 401);
+
+  const items = await dbQuery(
+    'mms_order_record',
+    'GSI_inbr_account_id',
+    'inbr_account_id = :aid',
+    { ':aid': accountId },
+    { ascending: false }
+  );
+
+  let orders = items.map(formatOrder);
+  if (qs.status) orders = orders.filter(o => o.order_status === qs.status);
+  return ok(orders);
+}
+
+async function handleOrderDetail(orderId, qs) {
+  const accountId = qs.account_id || '';
+
+  // 先用 Scan 找（record_id 是 PK，但 DynamoDB GetItem 需精確 key type）
+  const items = await dbScan('mms_order_record',
+    'record_id = :rid',
+    { ':rid': orderId }
+  );
+
+  if (!items.length) return fail('找不到該訂單', 404);
+  const o = items[0];
+  if (accountId && o.inbr_account_id !== accountId) return fail('無權限查看此訂單', 403);
+
+  const order = {
+    ...formatOrder(o),
+    original_amount: Number(o.original_amount) || Number(o.final_amount) || 0,
+    discount_amount: Number(o.discount_amount) || 0,
+    order_items: typeof o.order_items === 'string'
+      ? JSON.parse(o.order_items) : (o.order_items || []),
+    timeline: [
+      { status: '建立訂單', time: o.cre_time || '' },
+      ...(o.confirm_time  ? [{ status: '訂單確認',  time: o.confirm_time  }] : []),
+      ...(o.service_time  ? [{ status: '服務進行',  time: o.service_time  }] : []),
+      ...(o.complete_time ? [{ status: '訂單完成',  time: o.complete_time }] : []),
+      ...(o.cancel_time   ? [{ status: '訂單取消',  time: o.cancel_time   }] : []),
+    ],
+  };
+  return ok(order);
+}
+
+// ─── Districts ───────────────────────────────────────────────────────────────
+
+const COUNTIES = [
+  { code: 'TPE', name: '台北市' },
+  { code: 'NTP', name: '新北市' },
+  { code: 'TXG', name: '台中市' },
+  { code: 'KHH', name: '高雄市' },
+  { code: 'TYC', name: '桃園市' },
+];
+
+async function handleDistricts(qs) {
+  if (!qs.county) {
+    // 回傳縣市列表
+    return ok(COUNTIES);
+  }
+
+  // 回傳指定縣市的行政區
+  const items = await dbScan('sys_district',
+    'county_code = :cc',
+    { ':cc': qs.county }
+  );
+  const districts = items
+    .sort((a, b) => (a.zip || '').localeCompare(b.zip || ''))
+    .map(d => ({ code: d.code, county_code: d.county_code, name: d.name, zip: d.zip }));
+
+  return ok(districts);
+}
+
+// ─── AI Chat ─────────────────────────────────────────────────────────────────
+
+const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、專業的 AI 助手，服務於社區住戶。
+
+【服務項目】餐廳訂位、居家清潔、水電修繕、包裹寄送、商品購買、家電清洗。
+
+【核心任務】判斷使用者訊息是否有服務需求，並立即引導至表單。
+
+【回覆規則】
+1. 用親切自然的繁體中文回覆
+2. 只要使用者訊息涉及以下關鍵字，立即在回覆末尾加上 [SUBMIT:服務類型]：
+   - 吃飯、用餐、訂位、聚餐、餐廳  → [SUBMIT:餐廳訂位]
+   - 買、購物、商品、採買、網購     → [SUBMIT:商品購買]
+   - 清潔、打掃、整理、大掃除       → [SUBMIT:居家清潔]
+   - 修繕、壞掉、漏水、水電、維修   → [SUBMIT:水電修繕]
+   - 冷氣、洗衣機、家電清洗         → [SUBMIT:家電清洗]
+   - 寄件、包裹、宅配、快遞         → [SUBMIT:包裹寄送]
+3. 回覆要簡短（2-3句），告知用戶你已為他安排，請填表單
+4. 不涉及服務的閒聊正常聊天，不加 [SUBMIT:]
+5. 回覆純文字，不加 markdown`;
+
+async function handleChat(body) {
+  const text    = (body.text || '').trim();
+  const history = (body.history || []).slice(-20);
+
+  if (!text) return fail('訊息不能為空');
+
+  const messages = [];
+  for (const msg of history) {
+    if (!msg.role || !msg.content) continue;
+    const clean = msg.role === 'assistant'
+      ? msg.content.replace(/\[SUBMIT:[^\]]+\]/g, '').trim()
+      : msg.content;
+    if (clean) messages.push({ role: msg.role, content: clean });
+  }
+  if (!messages.length || messages[messages.length - 1]?.content !== text) {
+    messages.push({ role: 'user', content: text });
+  }
+
+  try {
+    const cmd = new InvokeModelCommand({
+      modelId: MODEL_ID,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: 1024,
+        temperature: 0.7,
+        system: CHAT_SYSTEM_PROMPT,
+        messages,
+      }),
+    });
+    const res  = await bedrock.send(cmd);
+    const data = JSON.parse(new TextDecoder().decode(res.body));
+    const raw  = data.content?.[0]?.text?.trim() || '';
+
+    // 偵測服務意圖，回傳 has_form + form_id
+    const submitMatch = raw.match(/\[SUBMIT:([^\]]+)\]/);
+    const reply = raw.replace(/\[SUBMIT:[^\]]+\]/g, '').trim();
+
+    let formId = null;
+    let service = null;
+    if (submitMatch) {
+      const svc = submitMatch[1];
+      const svcMap = {
+        '餐廳訂位': 1, '訂位': 1,
+        '商品購買': 2, '購物': 2,
+        '家事服務': 3, '清潔': 3, '水電修繕': 3, '家電清洗': 3, '居家服務': 3,
+        '包裹寄送': 4, '寄件': 4,
+      };
+      formId  = svcMap[svc] || 3;
+      service = svc;
+    }
+
+    return ok({
+      reply,
+      intent:   submitMatch ? 'service' : 'none',
+      has_form: !!submitMatch,
+      form_id:  formId,
+      service,
+      source:   'bedrock',
+    });
+  } catch (err) {
+    console.error('[Bedrock Error]', err);
+    return ok({
+      reply: '不好意思，我現在有點忙不過來，可以請您再說一次嗎？',
+      intent: 'none', has_form: false, form_id: null, service: null, source: 'fallback',
+    });
+  }
 }
