@@ -130,6 +130,9 @@ export async function handler(event) {
     // Feedback（諮詢單）
     if (path === '/feedback' && method === 'POST')      return handleFeedback(body);
 
+    // Contact（聯絡我們）
+    if (path === '/contact' && method === 'POST')       return handleContact(body);
+
     // Orders
     if (path === '/orders' && method === 'GET')         return handleOrders(qs);
     if (path === '/orders' && method === 'POST')        return handleCreateOrder(body);
@@ -361,6 +364,35 @@ async function handleFeedback(body) {
 
   await dbPut('pms_form_feedback', item);
   return ok({ feedback_no: feedbackNo }, '表單提交成功');
+}
+
+// ─── Contact（聯絡我們）──────────────────────────────────────────────────────
+
+async function handleContact(body) {
+  const name    = (body.name || '').trim();
+  const email   = (body.email || '').trim();
+  const phone   = (body.phone || '').trim();
+  const address = (body.address || '').trim();
+  const content = (body.content || '').trim();
+
+  if (!name || !email || !content) {
+    return fail('請填寫必填欄位（姓名、信箱、問題內容）', 400);
+  }
+
+  const now = new Date().toISOString();
+  const id = 'CQ' + Date.now();
+
+  await dbPut('contact_inquiry', {
+    id,
+    name,
+    email,
+    phone,
+    address,
+    content,
+    created_at: now,
+  });
+
+  return ok(null, '感謝您的來信，我們將盡快回覆您！');
 }
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
