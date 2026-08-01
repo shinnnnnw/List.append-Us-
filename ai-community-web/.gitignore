@@ -5,6 +5,7 @@ node_modules/
 .env
 .env*.local
 php/aws_config.php
+php/openai_config.php
 
 # uploads (user generated content)
 assets/uploads/*

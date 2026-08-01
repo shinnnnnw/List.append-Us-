@@ -1,3 +1,4 @@
+// v2
 /**
  * table-definitions.js
  * DynamoDB 資料表 Schema 定義模組
@@ -13,32 +14,24 @@ const TABLE_DEFINITIONS = [
   // 1. inbr_member - 會員資料表
   {
     TableName: 'inbr_member',
-    KeySchema: [
-      { AttributeName: 'inbr_account_id', KeyType: 'HASH' }
-    ],
-    AttributeDefinitions: [
-      { AttributeName: 'inbr_account_id', AttributeType: 'S' }
-    ],
+    KeySchema: [{ AttributeName: 'inbr_account_id', KeyType: 'HASH' }],
+    AttributeDefinitions: [{ AttributeName: 'inbr_account_id', AttributeType: 'S' }],
     BillingMode: 'PAY_PER_REQUEST'
   },
 
   // 2. pms_vendor_account - 廠商帳號資料表
   {
     TableName: 'pms_vendor_account',
-    KeySchema: [
-      { AttributeName: 'account_id', KeyType: 'HASH' }
-    ],
+    KeySchema: [{ AttributeName: 'account_id', KeyType: 'HASH' }],
     AttributeDefinitions: [
-      { AttributeName: 'account_id', AttributeType: 'S' },
-      { AttributeName: 'vendor_id', AttributeType: 'S' }
+      { AttributeName: 'account_id', AttributeType: 'N' },
+      { AttributeName: 'vendor_id', AttributeType: 'N' }
     ],
     BillingMode: 'PAY_PER_REQUEST',
     GlobalSecondaryIndexes: [
       {
         IndexName: 'GSI_vendor_id',
-        KeySchema: [
-          { AttributeName: 'vendor_id', KeyType: 'HASH' }
-        ],
+        KeySchema: [{ AttributeName: 'vendor_id', KeyType: 'HASH' }],
         Projection: { ProjectionType: 'ALL' }
       }
     ]
@@ -47,21 +40,15 @@ const TABLE_DEFINITIONS = [
   // 3. cms_service_vendor - 服務廠商資料表
   {
     TableName: 'cms_service_vendor',
-    KeySchema: [
-      { AttributeName: 'vendor_id', KeyType: 'HASH' }
-    ],
-    AttributeDefinitions: [
-      { AttributeName: 'vendor_id', AttributeType: 'S' }
-    ],
+    KeySchema: [{ AttributeName: 'vendor_id', KeyType: 'HASH' }],
+    AttributeDefinitions: [{ AttributeName: 'vendor_id', AttributeType: 'N' }],
     BillingMode: 'PAY_PER_REQUEST'
   },
 
   // 4. pms_form_feedback - 諮詢單資料表
   {
     TableName: 'pms_form_feedback',
-    KeySchema: [
-      { AttributeName: 'feedback_no', KeyType: 'HASH' }
-    ],
+    KeySchema: [{ AttributeName: 'feedback_no', KeyType: 'HASH' }],
     AttributeDefinitions: [
       { AttributeName: 'feedback_no', AttributeType: 'S' },
       { AttributeName: 'inbr_account_id', AttributeType: 'S' },
@@ -83,28 +70,22 @@ const TABLE_DEFINITIONS = [
   // 5. pms_case_assignment - 派案資料表
   {
     TableName: 'pms_case_assignment',
-    KeySchema: [
-      { AttributeName: 'assignment_id', KeyType: 'HASH' }
-    ],
+    KeySchema: [{ AttributeName: 'assignment_id', KeyType: 'HASH' }],
     AttributeDefinitions: [
-      { AttributeName: 'assignment_id', AttributeType: 'S' },
+      { AttributeName: 'assignment_id', AttributeType: 'N' },
       { AttributeName: 'feedback_no', AttributeType: 'S' },
-      { AttributeName: 'vendor_id', AttributeType: 'S' }
+      { AttributeName: 'vendor_id', AttributeType: 'N' }
     ],
     BillingMode: 'PAY_PER_REQUEST',
     GlobalSecondaryIndexes: [
       {
         IndexName: 'GSI_feedback_no',
-        KeySchema: [
-          { AttributeName: 'feedback_no', KeyType: 'HASH' }
-        ],
+        KeySchema: [{ AttributeName: 'feedback_no', KeyType: 'HASH' }],
         Projection: { ProjectionType: 'ALL' }
       },
       {
         IndexName: 'GSI_vendor_id',
-        KeySchema: [
-          { AttributeName: 'vendor_id', KeyType: 'HASH' }
-        ],
+        KeySchema: [{ AttributeName: 'vendor_id', KeyType: 'HASH' }],
         Projection: { ProjectionType: 'ALL' }
       }
     ]
@@ -113,21 +94,19 @@ const TABLE_DEFINITIONS = [
   // 6. pms_case_reply - 回覆資料表
   {
     TableName: 'pms_case_reply',
-    KeySchema: [
-      { AttributeName: 'reply_id', KeyType: 'HASH' }
-    ],
+    KeySchema: [{ AttributeName: 'reply_id', KeyType: 'HASH' }],
     AttributeDefinitions: [
-      { AttributeName: 'reply_id', AttributeType: 'S' },
-      { AttributeName: 'feedback_no', AttributeType: 'S' },
-      { AttributeName: 'cre_time', AttributeType: 'S' }
+      { AttributeName: 'reply_id', AttributeType: 'N' },
+      { AttributeName: 'assignment_id', AttributeType: 'N' },
+      { AttributeName: 'reply_time', AttributeType: 'S' }
     ],
     BillingMode: 'PAY_PER_REQUEST',
     GlobalSecondaryIndexes: [
       {
-        IndexName: 'GSI_feedback_no',
+        IndexName: 'GSI_assignment_id',
         KeySchema: [
-          { AttributeName: 'feedback_no', KeyType: 'HASH' },
-          { AttributeName: 'cre_time', KeyType: 'RANGE' }
+          { AttributeName: 'assignment_id', KeyType: 'HASH' },
+          { AttributeName: 'reply_time', KeyType: 'RANGE' }
         ],
         Projection: { ProjectionType: 'ALL' }
       }
@@ -137,13 +116,11 @@ const TABLE_DEFINITIONS = [
   // 7. pms_case_status_log - 狀態歷程資料表
   {
     TableName: 'pms_case_status_log',
-    KeySchema: [
-      { AttributeName: 'log_id', KeyType: 'HASH' }
-    ],
+    KeySchema: [{ AttributeName: 'log_id', KeyType: 'HASH' }],
     AttributeDefinitions: [
-      { AttributeName: 'log_id', AttributeType: 'S' },
+      { AttributeName: 'log_id', AttributeType: 'N' },
       { AttributeName: 'feedback_no', AttributeType: 'S' },
-      { AttributeName: 'cre_time', AttributeType: 'S' }
+      { AttributeName: 'change_time', AttributeType: 'S' }
     ],
     BillingMode: 'PAY_PER_REQUEST',
     GlobalSecondaryIndexes: [
@@ -151,7 +128,7 @@ const TABLE_DEFINITIONS = [
         IndexName: 'GSI_feedback_no',
         KeySchema: [
           { AttributeName: 'feedback_no', KeyType: 'HASH' },
-          { AttributeName: 'cre_time', KeyType: 'RANGE' }
+          { AttributeName: 'change_time', KeyType: 'RANGE' }
         ],
         Projection: { ProjectionType: 'ALL' }
       }
@@ -161,28 +138,16 @@ const TABLE_DEFINITIONS = [
   // 8. pms_case_review - 評價資料表
   {
     TableName: 'pms_case_review',
-    KeySchema: [
-      { AttributeName: 'review_id', KeyType: 'HASH' }
-    ],
+    KeySchema: [{ AttributeName: 'review_id', KeyType: 'HASH' }],
     AttributeDefinitions: [
-      { AttributeName: 'review_id', AttributeType: 'S' },
-      { AttributeName: 'vendor_id', AttributeType: 'S' },
-      { AttributeName: 'inbr_account_id', AttributeType: 'S' }
+      { AttributeName: 'review_id', AttributeType: 'N' },
+      { AttributeName: 'vendor_id', AttributeType: 'N' }
     ],
     BillingMode: 'PAY_PER_REQUEST',
     GlobalSecondaryIndexes: [
       {
         IndexName: 'GSI_vendor_id',
-        KeySchema: [
-          { AttributeName: 'vendor_id', KeyType: 'HASH' }
-        ],
-        Projection: { ProjectionType: 'ALL' }
-      },
-      {
-        IndexName: 'GSI_inbr_account_id',
-        KeySchema: [
-          { AttributeName: 'inbr_account_id', KeyType: 'HASH' }
-        ],
+        KeySchema: [{ AttributeName: 'vendor_id', KeyType: 'HASH' }],
         Projection: { ProjectionType: 'ALL' }
       }
     ]
@@ -191,13 +156,11 @@ const TABLE_DEFINITIONS = [
   // 9. mms_order_record - 訂單記錄資料表
   {
     TableName: 'mms_order_record',
-    KeySchema: [
-      { AttributeName: 'record_id', KeyType: 'HASH' }
-    ],
+    KeySchema: [{ AttributeName: 'record_id', KeyType: 'HASH' }],
     AttributeDefinitions: [
-      { AttributeName: 'record_id', AttributeType: 'S' },
+      { AttributeName: 'record_id', AttributeType: 'N' },
       { AttributeName: 'inbr_account_id', AttributeType: 'S' },
-      { AttributeName: 'cre_time', AttributeType: 'S' }
+      { AttributeName: 'order_time', AttributeType: 'S' }
     ],
     BillingMode: 'PAY_PER_REQUEST',
     GlobalSecondaryIndexes: [
@@ -205,7 +168,7 @@ const TABLE_DEFINITIONS = [
         IndexName: 'GSI_inbr_account_id',
         KeySchema: [
           { AttributeName: 'inbr_account_id', KeyType: 'HASH' },
-          { AttributeName: 'cre_time', KeyType: 'RANGE' }
+          { AttributeName: 'order_time', KeyType: 'RANGE' }
         ],
         Projection: { ProjectionType: 'ALL' }
       }
@@ -216,9 +179,11 @@ const TABLE_DEFINITIONS = [
   {
     TableName: 'sys_district',
     KeySchema: [
-      { AttributeName: 'code', KeyType: 'HASH' }
+      { AttributeName: 'county_code', KeyType: 'HASH' },
+      { AttributeName: 'code', KeyType: 'RANGE' }
     ],
     AttributeDefinitions: [
+      { AttributeName: 'county_code', AttributeType: 'S' },
       { AttributeName: 'code', AttributeType: 'S' }
     ],
     BillingMode: 'PAY_PER_REQUEST'

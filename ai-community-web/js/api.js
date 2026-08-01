@@ -133,9 +133,9 @@ const API = {
     return this.get(`districts.php?county=${countyCode}`);
   },
 
-  /** AI 聊天 */
-  chat(message) {
-    return this.post('chat.php', { message });
+  /** AI 聊天（帶對話歷史） */
+  chat(message, history = []) {
+    return this.post('chat.php', { message, history });
   },
 
   /** 取得可登入帳號列表（Demo 用） */
