@@ -922,8 +922,9 @@ ${prefsLines.join('\n')}
       }
 
       // 同時建立訂單紀錄（讓訂單頁面能看到）
-      // 從 AI 回覆中提取具體服務名稱（確認單中的「詳細內容」欄位）
-      const detailMatch = reply.match(/(?:詳細內容|服務類型)：(.+)/);
+      // 從對話歷史中提取具體服務名稱（確認單中的欄位）
+      const allHistory = messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n');
+      const detailMatch = allHistory.match(/▪\s*(?:詳細內容|服務類型|清潔類型|需求類型|車型選擇|餐點)：(.+)/);
       const serviceName = detailMatch ? detailMatch[1].trim() : service;
 
       const recordId = Date.now();
