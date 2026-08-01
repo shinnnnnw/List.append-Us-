@@ -2,8 +2,8 @@
  * 全域設定
  */
 const CONFIG = {
-  // API base URL（AWS Lambda + API Gateway）
-  API_BASE: 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod',
+  // API base path（XAMPP 本地 PHP）
+  API_BASE: 'php/api',
  
   // 服務快捷按鈕定義
   QUICK_SERVICES: [

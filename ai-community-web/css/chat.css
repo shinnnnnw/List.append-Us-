@@ -186,3 +186,33 @@
 .message-bubble.ai .vendor-list li strong {
   color: var(--primary);
 }
+
+/* 表單引導按鈕（AI 回覆後附加） */
+.message-form-action {
+  margin: 4px 0 10px 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.form-guide-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.form-guide-btn:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.form-guide-btn:active {
+  transform: translateY(0);
+}

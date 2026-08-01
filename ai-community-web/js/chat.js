@@ -124,45 +124,74 @@ const Chat = {
     if (!text) return;
 
     // 新增使用者訊息到 UI
-    this.addMessage('user', text);
+    this.addMessage('user', text, false);
     this.input.value = '';
-
-    // 加入對話歷史
-    this.conversationHistory.push({ role: 'user', content: text });
 
     // 顯示打字動畫
     this.showTyping();
 
-    // 呼叫 AI API，帶入完整對話歷史
+    // 呼叫 AI API，帶入「目前為止」的對話歷史
     const result = await API.chatConversation(text, this.conversationHistory);
+
+    // 把這輪 user 訊息加入歷史
+    this.conversationHistory.push({ role: 'user', content: text });
 
     // 移除打字動畫
     this.hideTyping();
 
     if (result && result.success && result.data) {
-      const reply = result.data.reply || result.data;
+      const data = result.data;
+      const replyText = data.reply || '';
 
-      // 顯示 AI 回覆
-      this.addMessage('ai', reply);
+      // 顯示 AI 回覆（允許 HTML）
+      this.addMessage('ai', replyText, true);
 
-      // 加入對話歷史
-      this.conversationHistory.push({ role: 'assistant', content: reply });
+      // 若有對應表單，附上引導按鈕
+      if (data.has_form && data.form_id) {
+        this.addFormButton(data.form_id, data.service);
+      }
+
+      // 加入對話歷史（存純文字，strip HTML 標籤）
+      const plainReply = replyText.replace(/<[^>]*>/g, '');
+      this.conversationHistory.push({ role: 'assistant', content: plainReply });
     } else {
-      const errorMsg = '抱歉，目前系統忙碌中，請稍後再試。';
-      this.addMessage('ai', errorMsg);
+      this.addMessage('ai', '抱歉，目前系統忙碌中，請稍後再試。', false);
     }
   },
 
   /**
    * 新增訊息到 UI
+   * @param {string}  sender  - 'user' | 'ai'
+   * @param {string}  content - 訊息內容（可包含 HTML）
+   * @param {boolean} isHtml  - true 時以 innerHTML 渲染，預設 false
    */
-  addMessage(sender, content) {
+  addMessage(sender, content, isHtml = false) {
     this.messages.push({
       id: Date.now(),
       sender,
       text: content,
+      isHtml,
     });
     this.render();
+  },
+
+  /**
+   * 附加引導表單按鈕（不加入 messages 陣列，獨立插入到對話末尾）
+   * @param {number} formId
+   * @param {string} serviceName
+   */
+  addFormButton(formId, serviceName) {
+    if (!this.container) return;
+    const btn = document.createElement('div');
+    btn.className = 'message-form-action';
+    btn.innerHTML = `
+      <button class="btn-primary form-guide-btn"
+              onclick="Utils.navigate('form.html?form_id=${formId}&service=${encodeURIComponent(serviceName || '')}')">
+        📋 填寫${serviceName ? ' ' + serviceName : ''}需求表單
+      </button>
+    `;
+    this.container.appendChild(btn);
+    this.container.scrollTop = this.container.scrollHeight;
   },
 
   /**
@@ -175,7 +204,11 @@ const Chat = {
     this.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = `message-bubble ${msg.sender}`;
-      bubble.textContent = msg.text;
+      if (msg.isHtml) {
+        bubble.innerHTML = msg.text;
+      } else {
+        bubble.textContent = msg.text;
+      }
       this.container.appendChild(bubble);
     });
 

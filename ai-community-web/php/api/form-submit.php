@@ -4,9 +4,6 @@
  * POST — 接收表單填寫資料，寫入 pms_form_feedback
  */
 require_once __DIR__ . '/../db.php';
-require_once __DIR__ . '/../middleware/auth-check.php';
-
-/** @var array $currentUser 由 auth-check.php 提供 */
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -14,11 +11,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(false, null, '僅支援 POST 方法', 405);
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
+// 先讀 body，再傳給 auth-check（避免 php://input 被讀兩次）
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput, true);
 
 if (!$input) {
     jsonResponse(false, null, '無效的請求內容', 400);
 }
+
+// 將已解析的 input 注入給 auth-check 使用
+$GLOBALS['_parsed_input'] = $input;
+require_once __DIR__ . '/../middleware/auth-check.php';
+
+/** @var array $currentUser 由 auth-check.php 提供 */
 
 $formId = $input['form_id'] ?? null;
 $feedbackData = $input['data'] ?? [];

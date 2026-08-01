@@ -444,6 +444,8 @@ const FormRenderer = {
     const result = await API.submitForm({
       form_id: parseInt(formId),
       data: feedbackData,
+      account_id: (Auth.getUser() || {}).inbr_account_id || '',
+      account_name: (Auth.getUser() || {}).name || '',
     });
 
     if (result && result.success) {

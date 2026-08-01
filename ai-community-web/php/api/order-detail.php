@@ -8,8 +8,14 @@ require_once __DIR__ . '/../config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-// 嘗試取得登入用戶（不強制 401）
+// 取得登入用戶：session → query string fallback
 $currentUser = $_SESSION['user'] ?? null;
+if (!$currentUser) {
+    $accountId = $_GET['account_id'] ?? '';
+    if ($accountId) {
+        $currentUser = ['inbr_account_id' => $accountId];
+    }
+}
 
 $orderId = $_GET['id'] ?? null;
 
