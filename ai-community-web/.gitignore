@@ -4,6 +4,7 @@ node_modules/
 # environment
 .env
 .env*.local
+php/aws_config.php
 
 # uploads (user generated content)
 assets/uploads/*
@@ -26,3 +27,6 @@ vendor/
 
 # compiled/generated
 dist/
+
+sql/db_config.php
+php/api/db.php

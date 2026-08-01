@@ -24,7 +24,7 @@ function convertNamedParams(string $sql, array $params): array {
 
     // 如果 key 不是以 : 開頭，直接回傳（已經是位置參數）
     $firstKey = array_keys($params)[0];
-    if ($firstKey[0] !== ':') {
+    if (is_int($firstKey) || $firstKey[0] !== ':') {
         return [$sql, array_values($params)];
     }
 

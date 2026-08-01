@@ -1,17 +1,11 @@
 <?php
-// 統一關閉錯誤顯示（不在畫面上洩漏
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-ini_set('log_errors', 1);
-error_reporting(E_ALL);
+$host = "127.0.0.1";
+$user = "root";
+$pass = "";
+$dbname = "202607_hackson";
+$port = 3306; // 如果你的 MariaDB 是別的 port 就改掉
 
-//資料庫連線（UTF-8設定）
-date_default_timezone_set('Asia/Taipei'); // 統一使用台灣時區（UTC+8）
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-$conn = new mysqli("localhost","root","","202607_hackson");
+$conn = mysqli_connect($host, $user, $pass, $dbname, $port);
 
 if($conn->connect_error){
  die("連線失敗");

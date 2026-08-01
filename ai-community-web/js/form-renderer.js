@@ -213,32 +213,40 @@ const FormRenderer = {
       <input type="text" class="form-input" id="address_${topic.id}" data-topic-id="${topic.id}" data-field="address" placeholder="詳細地址">
     `;
 
-    // 載入縣市（非同步）
-    setTimeout(async () => {
-      const countySelect = Utils.$(`#county_${topic.id}`);
-      const districtSelect = Utils.$(`#district_${topic.id}`);
-
-      const result = await API.getCounties();
-      if (result && result.success) {
-        result.data.forEach(c => {
-          countySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
-        });
-      }
-
-      // 縣市變更 → 載入行政區
-      countySelect.addEventListener('change', async () => {
-        districtSelect.innerHTML = '<option value="">選擇行政區</option>';
-        if (!countySelect.value) return;
-        const res = await API.getDistricts(countySelect.value);
-        if (res && res.success) {
-          res.data.forEach(d => {
-            districtSelect.innerHTML += `<option value="${d.code}">${d.name}</option>`;
-          });
-        }
-      });
+    setTimeout(() => {
+      this._initCountyDistrict(`county_${topic.id}`, `district_${topic.id}`);
     }, 0);
 
     return wrapper;
+  },
+
+  /**
+   * 共用：初始化縣市 / 行政區聯動下拉
+   */
+  async _initCountyDistrict(countySelectId, districtSelectId) {
+    const countySelect = Utils.$(`#${countySelectId}`);
+    const districtSelect = Utils.$(`#${districtSelectId}`);
+    if (!countySelect || !districtSelect) return;
+
+    // 載入縣市
+    const result = await API.getCounties();
+    if (result && result.success) {
+      result.data.forEach(c => {
+        countySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+      });
+    }
+
+    // 縣市變更 → 載入行政區
+    countySelect.addEventListener('change', async () => {
+      districtSelect.innerHTML = '<option value="">選擇行政區</option>';
+      if (!countySelect.value) return;
+      const res = await API.getDistricts(countySelect.value);
+      if (res && res.success) {
+        res.data.forEach(d => {
+          districtSelect.innerHTML += `<option value="${d.code}">${d.name}</option>`;
+        });
+      }
+    });
   },
 
   /** 上傳照片 */
@@ -316,6 +324,14 @@ const FormRenderer = {
       `;
     }
     wrapper.innerHTML = html;
+
+    // 有地址欄位才需要載入縣市/行政區
+    if (withAddress) {
+      setTimeout(() => {
+        this._initCountyDistrict(`contact_county_${topic.id}`, `contact_district_${topic.id}`);
+      }, 0);
+    }
+
     return wrapper;
   },
 
