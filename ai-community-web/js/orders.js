@@ -66,20 +66,19 @@ const Orders = {
         onClick: () => Utils.navigate(`order-detail.html?id=${order.record_id}`),
       });
 
-      card.innerHTML = `
-        <div class="order-card-header">
-          <span class="order-no">${order.order_no}</span>
-          ${Utils.getOrderStatusBadge(order.order_status)}
-        </div>
-        <div class="order-card-body">
-          <span class="order-service">${order.service_name || order.vendor_name || '服務'}</span>
-          <span class="order-amount">${order.final_amount > 0 ? Utils.formatAmount(order.final_amount) : '-'}</span>
-        </div>
-        <div class="order-card-footer">
-          <span class="order-time">${Utils.formatDateTime(order.order_time)}</span>
-          <button class="order-action-btn">查看詳情 →</button>
-        </div>
-      `;
+      card.innerHTML =
+        '<div class="order-card-header">' +
+          '<span class="order-no">' + order.order_no + '</span>' +
+          Utils.getOrderStatusBadge(order.order_status) +
+        '</div>' +
+        '<div class="order-card-body">' +
+          '<span class="order-service">' + (order.vendor_name || '服務') + '</span>' +
+          '<span class="order-amount">' + (order.final_amount > 0 ? Utils.formatAmount(order.final_amount) : '-') + '</span>' +
+        '</div>' +
+        '<div class="order-card-footer">' +
+          '<span class="order-time">' + Utils.formatDateTime(order.order_time) + '</span>' +
+          '<button class="order-action-btn">查看詳情 →</button>' +
+        '</div>';
       container.appendChild(card);
     });
   },

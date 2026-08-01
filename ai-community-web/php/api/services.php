@@ -58,6 +58,17 @@ try {
     $sql .= ' ORDER BY v.vendor_id';
     $vendors = dbFetchAll($sql, $params);
 
+    // 為每個 vendor 附加 service_types
+    $allTypes = dbFetchAll('SELECT vendor_id, service_type FROM pms_vendor_service_type WHERE is_deleted = "0"');
+    $typesByVendor = [];
+    foreach ($allTypes as $row) {
+        $typesByVendor[$row['vendor_id']][] = $row['service_type'];
+    }
+    foreach ($vendors as &$v) {
+        $v['service_types'] = $typesByVendor[$v['vendor_id']] ?? [];
+    }
+    unset($v);
+
     // 服務類型對照
     $serviceTypeMap = [
         '01' => '餐廳訂位',

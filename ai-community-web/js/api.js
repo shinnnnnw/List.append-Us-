@@ -1,6 +1,6 @@
 /**
  * API 封裝模組
- * 統一處理 fetch 請求、錯誤
+ * 統一處理 fetch 請求
  */
 const API = {
   /**
