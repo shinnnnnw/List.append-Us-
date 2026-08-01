@@ -196,7 +196,7 @@ const App = {
         onClick: () => {
           // 點擊方塊 → 自動傳送服務需求到聊天室
           if (typeof Chat !== 'undefined' && Chat.input) {
-            Chat.input.value = `我需要${item.name}服務`;
+            Chat.input.value = item.chatMessage || `我需要${item.name}服務`;
             Chat.handleSend();
           }
         },
