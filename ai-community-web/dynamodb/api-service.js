@@ -172,6 +172,10 @@ async function createOrder(orderData) {
     if (!orderData.cre_time) {
       orderData.cre_time = new Date().toISOString();
     }
+    // GSI_inbr_account_id 需要 order_time 作為 RANGE key，缺少此欄位的資料不會被索引
+    if (!orderData.order_time) {
+      orderData.order_time = orderData.cre_time;
+    }
     await client.send(new PutItemCommand({
       TableName: 'mms_order_record',
       Item: marshall(orderData, { removeUndefinedValues: true })
