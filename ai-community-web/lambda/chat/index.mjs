@@ -214,7 +214,8 @@ async function handleAuthLogin(body) {
 
 const SERVICE_TYPE_MAP = {
   '1': '家事服務', '2': '家電清洗', '3': '寄件服務',
-  '6': '餐廳訂位', '10': '水電修繕', '11': '商品購買',
+  '6': '餐廳訂位', '7': '外送服務', '8': '叫車服務',
+  '9': '領藥服務', '10': '水電修繕', '11': '商品購買',
 };
 
 async function handleVendors(qs) {
