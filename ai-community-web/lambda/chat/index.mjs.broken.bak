@@ -1,0 +1,1088 @@
+/**
+ * AÃ® ?ºæ…§ç¤¾å? API ??Lambda Handler (ESM)
+ *
+ * Routes:
+ *   POST   /ai/chat              AI å¤šè¼ªå°è©±
+ *   GET    /auth/users           å¸³è??—è¡¨ï¼ˆDemo å¿«é€Ÿç™»?¥ï?
+ *   POST   /auth/login           ?»å…¥ï¼ˆæ?æ©Ÿè?ç¢?+ å¯†ç¢¼å¾Œå?ç¢¼ï?
+ *   GET    /auth/check           æª¢æŸ¥ sessionï¼ˆJWT-lessï¼Œå???localStorage å·²å„²å­˜ç? userï¼?
+ *   GET    /vendors              å» å??—è¡¨ï¼?type=X ç¯©é¸ï¼?
+ *   GET    /vendors/:id          å» å?è©³æ?
+ *   GET    /forms/:id            è¡¨å–®çµæ?
+ *   POST   /feedback             ?å‡ºè«®è©¢??
+ *   GET    /orders               è¨‚å–®?—è¡¨ï¼?account_id=MBRxxxï¼?
+ *   GET    /orders/:id           è¨‚å–®è©³æ?ï¼?account_id=MBRxxxï¼?
+ *   GET    /districts            ç¸???—è¡¨
+ *   GET    /districts?county=X   è¡Œæ”¿?€?—è¡¨
+ */
+
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  PutItemCommand,
+  QueryCommand,
+  ScanCommand,
+  UpdateItemCommand,
+} from '@aws-sdk/client-dynamodb';
+import { unmarshall, marshall } from '@aws-sdk/util-dynamodb';
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+
+const REGION = 'us-west-2';
+const ddb = new DynamoDBClient({ region: REGION });
+const bedrock = new BedrockRuntimeClient({ region: REGION });
+const MODEL_ID = 'us.anthropic.claude-sonnet-4-20250514-v1:0';
+
+// ?€?€?€ CORS Helper ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+function response(statusCode, body) {
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type,X-Account-Id',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    },
+    body: JSON.stringify(body),
+  };
+}
+
+function ok(data, message = '') {
+  return response(200, { success: true, data, message });
+}
+
+function fail(message, code = 400) {
+  return response(code, { success: false, data: null, message });
+}
+
+// ?€?€?€ DynamoDB helpers ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+async function dbGet(table, key) {
+  const result = await ddb.send(new GetItemCommand({
+    TableName: table,
+    Key: marshall(key),
+  }));
+  return result.Item ? unmarshall(result.Item) : null;
+}
+
+async function dbQuery(table, indexName, keyExpr, exprValues, opts = {}) {
+  const result = await ddb.send(new QueryCommand({
+    TableName: table,
+    IndexName: indexName,
+    KeyConditionExpression: keyExpr,
+    ExpressionAttributeValues: marshall(exprValues),
+    ScanIndexForward: opts.ascending ?? false,
+    Limit: opts.limit,
+  }));
+  return (result.Items || []).map(i => unmarshall(i));
+}
+
+async function dbScan(table, filterExpr, exprValues) {
+  const result = await ddb.send(new ScanCommand({
+    TableName: table,
+    FilterExpression: filterExpr,
+    ExpressionAttributeValues: marshall(exprValues),
+  }));
+  return (result.Items || []).map(i => unmarshall(i));
+}
+
+async function dbPut(table, item) {
+  await ddb.send(new PutItemCommand({
+    TableName: table,
+    Item: marshall(item, { removeUndefinedValues: true }),
+  }));
+}
+
+// ?€?€?€ Router ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') return response(200, '');
+
+  const method = event.httpMethod || event.requestContext?.http?.method || 'GET';
+  const rawPath = event.path || event.rawPath || '';
+  // ?»æ? /prod ?ç¶´ï¼ˆAPI Gateway stage prefixï¼?
+  const path = rawPath.replace(/^\/prod/, '');
+  const qs = event.queryStringParameters || {};
+  let body = {};
+  try { body = JSON.parse(event.body || '{}'); } catch (_) {}
+
+  console.log(`[Router] ${method} ${path}`, { qs });
+
+  try {
+    // AI å°è©±
+    if (path === '/ai/chat' && method === 'POST')       return handleChat(body);
+
+    // Auth
+    if (path === '/auth/users' && method === 'GET')     return handleAuthUsers();
+    if (path === '/auth/login' && method === 'POST')    return handleAuthLogin(body);
+    if (path === '/auth/check' && method === 'GET')     return ok(null, 'è«‹å? localStorage ç¢ºè??»å…¥?€??);
+
+    // Vendors
+    if (path === '/vendors' && method === 'GET')        return handleVendors(qs);
+    if (/^\/vendors\/(.+)$/.test(path) && method === 'GET') {
+      return handleVendorDetail(path.match(/^\/vendors\/(.+)$/)[1]);
+    }
+
+    // Forms
+    if (/^\/forms\/(.+)$/.test(path) && method === 'GET') {
+      return handleForm(path.match(/^\/forms\/(.+)$/)[1]);
+    }
+
+    // Feedbackï¼ˆè«®è©¢å–®ï¼?
+    if (path === '/feedback' && method === 'POST')      return handleFeedback(body);
+
+    // Adminï¼ˆå??†å??°ï?
+    if (path === '/admin/cases' && method === 'GET')    return handleAdminCases(qs);
+    if (path === '/admin/cases/update' && method === 'POST') return handleAdminUpdateCase(body);
+    if (path === '/admin/cases/reply' && method === 'POST')  return handleAdminReply(body);
+
+    // Contactï¼ˆè¯çµ¡æ??‘ï?
+    if (path === '/contact' && method === 'POST')       return handleContact(body);
+
+    // Orders
+    if (path === '/orders' && method === 'GET')         return handleOrders(qs);
+    if (path === '/orders' && method === 'POST')        return handleCreateOrder(body);
+    if (/^\/orders\/(.+)\/cancel$/.test(path) && method === 'POST') {
+      return handleCancelOrder(path.match(/^\/orders\/(.+)\/cancel$/)[1], body);
+    }
+    if (/^\/orders\/(.+)$/.test(path) && method === 'GET') {
+      return handleOrderDetail(path.match(/^\/orders\/(.+)$/)[1], qs);
+    }
+
+    // Districts
+    if (path === '/districts' && method === 'GET')      return handleDistricts(qs);
+
+    // Preferencesï¼ˆä??¶å?å¥½ï?
+    if (path === '/preferences' && method === 'GET')    return handleGetPreferences(qs);
+    if (path === '/preferences' && method === 'PUT')    return handlePutPreferences(body);
+
+    return fail('?¾ä??°è·¯??, 404);
+  } catch (err) {
+    console.error('[Handler Error]', err);
+    return fail('ä¼ºæ??¨å…§?¨éŒ¯èª¤ï?' + err.message, 500);
+  }
+}
+
+// ?€?€?€ Auth ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+async function handleAuthUsers() {
+  const items = await dbScan('inbr_member',
+    'is_enable = :e',
+    { ':e': '1' }
+  );
+  const users = items.map(m => ({
+    name: m.member_name,
+    phone: m.member_phone,
+  }));
+  return ok(users);
+}
+
+async function handleAuthLogin(body) {
+  const phone = (body.phone || '').trim();
+  const password = (body.password || '').trim();
+
+  if (!phone) return fail('è«‹è¼¸?¥æ?æ©Ÿè?ç¢?);
+
+  const items = await dbScan('inbr_member',
+    'member_phone = :p AND is_enable = :e',
+    { ':p': phone, ':e': '1' }
+  );
+
+  if (!items.length) return fail('?¾ä??°æ­¤?‹æ??Ÿç¢¼?„å¸³??, 401);
+
+  const member = items[0];
+
+  // å¯†ç¢¼é©—è?ï¼šæ?æ©Ÿè?ç¢¼å»?‰é??¸å?å¾Œç?å¾Œå?ç¢?
+  if (password) {
+    const digitsOnly = phone.replace(/\D/g, '');
+    const expected = digitsOnly.slice(-4);
+    if (password !== expected) return fail('å¯†ç¢¼?¯èª¤ï¼ˆæ?ç¤ºï??‹æ??Ÿç¢¼å¾Œå?ç¢¼ï?', 401);
+  }
+
+  const user = {
+    inbr_account_id: member.inbr_account_id,
+    name:   member.member_name,
+    phone:  member.member_phone,
+    email:  member.member_email || '',
+    points: Number(member.point_balance) || 0,
+  };
+
+  return ok(user, '?»å…¥?å?');
+}
+
+// ?€?€?€ Vendors ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+const SERVICE_TYPE_MAP = {
+  '1': 'å®¶ä??å?', '2': 'å®¶é›»æ¸…æ?', '3': 'å¯„ä»¶?å?',
+  '6': 'é¤å»³è¨‚ä?', '10': 'æ°´é›»ä¿®ç?', '11': '?†å?è³¼è²·',
+};
+
+async function handleVendors(qs) {
+  let items = await dbScan('cms_service_vendor',
+    'is_enable = :e',
+    { ':e': '1' }
+  );
+
+  if (qs.type) {
+    items = items.filter(v =>
+      String(v.service_type) === String(qs.type)
+    );
+  }
+
+  const vendors = items.map(v => ({
+    vendor_id:    v.vendor_id,
+    vendor_name:  v.name,
+    service_type: String(v.service_type),
+    description:  v.description,
+    rating_avg:   v.rating_avg ? Number(v.rating_avg).toFixed(1) : null,
+    rating_count: Number(v.rating_count) || 0,
+    service_types: [String(v.service_type)],
+  }));
+
+  return ok({
+    vendors,
+    service_type_map: SERVICE_TYPE_MAP,
+  });
+}
+
+async function handleVendorDetail(vendorId) {
+  // ?´æ¥??GetItemCommandï¼Œæ??•æ?å®?key ??Number
+  const result = await ddb.send(new GetItemCommand({
+    TableName: 'cms_service_vendor',
+    Key: { vendor_id: { N: String(vendorId) } },
+  }));
+  const item = result.Item ? unmarshall(result.Item) : null;
+  if (!item) return fail('?¾ä??°è©²?å???, 404);
+
+  // service_areas ?ªå???DynamoDB è£¡ç?çµæ??–è??™ï?fallback ??service_counties
+  let areas = [];
+  if (item.service_areas && Array.isArray(item.service_areas)) {
+    areas = item.service_areas.map(a => ({
+      county_name: a.county_name || '',
+      district_name: a.district_name || '',
+    }));
+  } else if (item.service_counties && Array.isArray(item.service_counties)) {
+    areas = item.service_counties.map(c => ({ county_name: c }));
+  }
+
+  return ok({
+    vendor_id:     item.vendor_id,
+    vendor_name:   item.name,
+    service_type:  String(item.service_type),
+    description:   item.description,
+    rating_avg:    item.rating_avg ? Number(item.rating_avg).toFixed(1) : null,
+    rating_count:  Number(item.rating_count) || 0,
+    contact_name:  item.contact_name || '',
+    contact_phone: item.contact_phone || '',
+    service_types: [String(item.service_type)],
+    service_areas: areas,
+  });
+}
+
+// ?€?€?€ Formsï¼ˆé??‹ç?æ§‹ï?DynamoDB ?¡è¡¨??schemaï¼Œå??³å›ºå®šç?æ§‹ï??€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+const STATIC_FORMS = {
+  '1': {
+    id: 1, name: 'é¤å»³è¨‚ä??€æ±‚è¡¨??,
+    intro_content: '<p>è«‹ç?ä¸‹æ‚¨?„è?ä½é?æ±‚ï??‘å€‘å??¡å¿«?ºæ‚¨å®‰æ???/p>',
+    notice_content: null, terms_content: null,
+  },
+  '2': {
+    id: 2, name: '?†å?è³¼è²·?€æ±‚è¡¨??,
+    intro_content: '<p>è«‹æ?è¿°æ‚¨?„å??é?æ±‚ï??‘å€‘å??ºæ‚¨?¨è–¦?©å??„å??ã€?/p>',
+    notice_content: null, terms_content: null,
+  },
+  '3': {
+    id: 3, name: 'å±…å®¶?å??€æ±‚è¡¨??,
+    intro_content: '<p>è«‹å¡«å¯«æ‚¨?„æ??™é?æ±‚ï??‘å€‘å?å®‰æ??ˆé©?„æ??™å??¯ç¹«?¨ã€?/p>',
+    notice_content: null, terms_content: null,
+  },
+  '4': {
+    id: 4, name: '?…è£¹å¯„é€é?æ±‚è¡¨??,
+    intro_content: '<p>è«‹å¡«å¯«å?ä»¶è?è¨Šï??‘å€‘å?å®‰æ??°å??¶ä»¶??/p>',
+    notice_content: null, terms_content: null,
+  },
+};
+
+const STATIC_TOPICS = {
+  '1': [
+    { id: 1, form_id: 1, type: '8',  title: '?¯çµ¡è³‡è?',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 2, form_id: 1, type: '5',  title: 'å¸Œæ??¨é??°å?',     is_required: '1', sort: 2, options: [], feature: null },
+    { id: 3, form_id: 1, type: '9',  title: 'å¸Œæ?è¨‚ä??¥æ?',     is_required: '1', sort: 3, options: [], feature: null },
+    { id: 4, form_id: 1, type: '1',  title: '?¨é?äººæ•¸',         is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 5, form_id: 1, type: '3',  title: 'é¤å»³é¡å??å¥½',     is_required: '0', sort: 5, options: [
+      { id: 1, topic_id: 5, option_name: 'ä¸­å?' }, { id: 2, topic_id: 5, option_name: '?¥å?' },
+      { id: 3, topic_id: 5, option_name: 'è¥¿å?' }, { id: 4, topic_id: 5, option_name: '?“å?' },
+    ], feature: null },
+  ],
+  '2': [
+    { id: 6,  form_id: 2, type: '10', title: '?¯çµ¡è³‡è?',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 7,  form_id: 2, type: '2',  title: '?†å??è¿°',         is_required: '1', sort: 2, options: [], feature: null },
+    { id: 8,  form_id: 2, type: '4',  title: '?†å?é¡åˆ¥',         is_required: '0', sort: 3, options: [
+      { id: 5, topic_id: 8, option_name: '?Ÿé®®é£Ÿå?' }, { id: 6, topic_id: 8, option_name: '?¥ç”¨?? },
+      { id: 7, topic_id: 8, option_name: '3Cå®¶é›»' },   { id: 8, topic_id: 8, option_name: '?é£¾' },
+    ], feature: null },
+    { id: 9,  form_id: 2, type: '8',  title: '?é€åœ°?€',         is_required: '1', sort: 4, options: [], feature: null },
+    { id: 10, form_id: 2, type: '1',  title: '?ç?ä¸Šé?ï¼ˆå?ï¼?,   is_required: '0', sort: 5, options: [], feature: null, is_number_only: '1' },
+  ],
+  '3': [
+    { id: 11, form_id: 3, type: '10', title: '?¯çµ¡è³‡è?',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 12, form_id: 3, type: '3',  title: '?€æ±‚é???,         is_required: '1', sort: 2, options: [
+      { id: 9,  topic_id: 12, option_name: 'å®¶ä?æ¸…æ?' }, { id: 10, topic_id: 12, option_name: 'æ°´é›»ä¿®ç?' },
+      { id: 11, topic_id: 12, option_name: 'å®¶é›»æ¸…æ?' }, { id: 12, topic_id: 12, option_name: '?¶ä?' },
+    ], feature: null },
+    { id: 13, form_id: 3, type: '2',  title: '?€æ±‚è©³ç´°èªª??,     is_required: '1', sort: 3, options: [], feature: null },
+    { id: 14, form_id: 3, type: '5',  title: '?å??°å?',         is_required: '1', sort: 4, options: [], feature: null },
+    { id: 15, form_id: 3, type: '9',  title: 'å¸Œæ??å??‚é?',     is_required: '0', sort: 5, options: [], feature: null },
+  ],
+  '4': [
+    { id: 16, form_id: 4, type: '10', title: 'å¯„ä»¶äººè?è¨?,       is_required: '1', sort: 1, options: [], feature: null },
+    { id: 17, form_id: 4, type: '3',  title: '?…è£¹å¤§å?',         is_required: '1', sort: 2, options: [
+      { id: 13, topic_id: 17, option_name: 'å°å?ï¼ˆé??’ä»¥ä¸‹ï?' },
+      { id: 14, topic_id: 17, option_name: 'ä¸­å?' },
+      { id: 15, topic_id: 17, option_name: 'å¤§å?' },
+    ], feature: null },
+    { id: 18, form_id: 4, type: '1',  title: '?é?ï¼ˆå…¬?¤ï?',     is_required: '0', sort: 3, options: [], feature: null, is_number_only: '1' },
+    { id: 19, form_id: 4, type: '3',  title: '?¶ä»¶?¹å?',         is_required: '1', sort: 4, options: [
+      { id: 16, topic_id: 19, option_name: '?°å??¶ä»¶' },
+      { id: 17, topic_id: 19, option_name: '?ªè??è‡³?€å¸? },
+    ], feature: null },
+    { id: 20, form_id: 4, type: '5',  title: '?–ä»¶?°å?',         is_required: '1', sort: 5, options: [], feature: null },
+  ],
+};
+
+async function handleForm(formId) {
+  const form = STATIC_FORMS[formId];
+  if (!form) return fail('?¾ä??°è©²è¡¨å–®', 404);
+  return ok({
+    form,
+    groups: [],
+    topics: STATIC_TOPICS[formId] || [],
+    county_relations: [],
+  });
+}
+
+// ?€?€?€ Feedbackï¼ˆè«®è©¢å–®?å‡ºï¼‰â??€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+async function handleFeedback(body) {
+  const accountId = body.account_id || '';
+  const formId    = body.form_id;
+
+  if (!formId)    return fail('ç¼ºå? form_id');
+  if (!accountId) return fail('?ªç™»?¥ï?è«‹é??°ç™»??, 401);
+
+  const now = new Date().toISOString();
+  const feedbackNo = 'FB' + Date.now();
+
+  const item = {
+    feedback_no:              feedbackNo,
+    form_id:                  formId,
+    platform_code:            '01',
+    inbr_account_id:          accountId,
+    contact_name:             body.contact_name             || body.account_name || '',
+    contact_mobile:           body.contact_mobile           || '',
+    contact_email:            body.contact_email            || '',
+    contact_address_county:   body.contact_address_county   || '',
+    contact_address_district: body.contact_address_district || '',
+    contact_address_detail:   body.contact_address_detail   || '',
+    description:              body.description              || '',
+    feedback_content:         body.data ? JSON.stringify(body.data) : '{}',
+    status:                   '01',
+    is_read:                  '0',
+    cre_time:                 now,
+    upd_time:                 now,
+  };
+
+  await dbPut('pms_form_feedback', item);
+  return ok({ feedback_no: feedbackNo }, 'è¡¨å–®?äº¤?å?');
+}
+
+// ?€?€?€ Contactï¼ˆè¯çµ¡æ??‘ï??€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+async function handleContact(body) {
+  const name    = (body.name || '').trim();
+  const email   = (body.email || '').trim();
+  const phone   = (body.phone || '').trim();
+  const address = (body.address || '').trim();
+  const content = (body.content || '').trim();
+
+  if (!name || !email || !content) {
+    return fail('è«‹å¡«å¯«å?å¡«æ?ä½ï?å§“å??ä¿¡ç®±ã€å?é¡Œå…§å®¹ï?', 400);
+  }
+
+  const now = new Date().toISOString();
+  const id = 'CQ' + Date.now();
+
+  await dbPut('contact_inquiry', {
+    id,
+    name,
+    email,
+    phone,
+    address,
+    content,
+    created_at: now,
+  });
+
+  return ok(null, '?Ÿè??¨ç?ä¾†ä¿¡ï¼Œæ??‘å??¡å¿«?è??¨ï?');
+}
+
+// ?€?€?€ Adminï¼ˆå??†å??°ï??€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+async function handleAdminCases(qs) {
+  const status = qs.status || '';
+  const items = await dbScan('pms_form_feedback',
+    'feedback_no > :empty',
+    { ':empty': '' }
+  );
+
+  let cases = items.map(item => ({
+    id: item.feedback_no,
+    customerName: item.contact_name || '',
+    customerPhone: item.contact_mobile || '',
+    customerEmail: item.contact_email || '',
+    service: item.description || '',
+    status: item.status || '01',
+    createdAt: item.cre_time || '',
+    address: [item.contact_address_county, item.contact_address_district, item.contact_address_detail].filter(Boolean).join(''),
+    description: item.feedback_content || '',
+    replies: item.replies ? (typeof item.replies === 'string' ? JSON.parse(item.replies) : item.replies) : [],
+  }));
+
+  if (status) {
+    cases = cases.filter(c => c.status === status);
+  }
+
+  return ok(cases);
+}
+
+async function handleAdminUpdateCase(body) {
+  const feedbackNo = body.feedback_no || body.id;
+  const newStatus = body.status;
+
+  if (!feedbackNo || !newStatus) return fail('ç¼ºå?å¿…è?æ¬„ä?', 400);
+
+  const existing = await dbGet('pms_form_feedback', { feedback_no: feedbackNo });
+  if (!existing) return fail('?¾ä??°è©²æ¡ˆä»¶', 404);
+
+  existing.status = newStatus;
+  existing.upd_time = new Date().toISOString();
+
+  await dbPut('pms_form_feedback', existing);
+  return ok(null, '?€?‹æ›´?°æ???);
+}
+
+async function handleAdminReply(body) {
+  const feedbackNo = body.feedback_no || body.id;
+  const replyContent = (body.content || '').trim();
+
+  if (!feedbackNo || !replyContent) return fail('ç¼ºå?å¿…è?æ¬„ä?', 400);
+
+  const existing = await dbGet('pms_form_feedback', { feedback_no: feedbackNo });
+  if (!existing) return fail('?¾ä??°è©²æ¡ˆä»¶', 404);
+
+  const replies = existing.replies ? (typeof existing.replies === 'string' ? JSON.parse(existing.replies) : existing.replies) : [];
+  replies.push({
+    time: new Date().toISOString(),
+    content: replyContent,
+  });
+
+  existing.replies = JSON.stringify(replies);
+  existing.upd_time = new Date().toISOString();
+
+  await dbPut('pms_form_feedback', existing);
+  return ok(null, '?è??å?');
+}
+
+// ?€?€?€ Orders ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+const SERVICE_ID_NAME_MAP = {
+  '2': 'å®¶é›»æ¸…æ?', '3': 'å¯„ä»¶?å?', '4': 'å±…å®¶æ¸…æ?',
+  '9': 'é¤å»³è¨‚ä?', '16': '?†å?è³¼ç‰©', '17': 'æ°´é›»ä¿®ç?',
+};
+
+async function formatOrder(o) {
+  // vendor_nameï¼šç”¨ service_vendor_id ??cms_service_vendor è¡?
+  let vendorName = '-';
+  const svid = String(o.service_vendor_id || '');
+  if (svid && svid !== '' && !isNaN(svid)) {
+    try {
+      const vendor = await dbGet('cms_service_vendor', { vendor_id: Number(svid) });
+      if (vendor && vendor.name) vendorName = vendor.name;
+    } catch (e) {
+      console.error('[formatOrder] vendor lookup failed:', e.message);
+    }
+  }
+
+  // service_name ?ªå?åºï?è¨‚å–®?¬èº« > order_items[0].name > SERVICE_ID_NAME_MAP > '-'
+  let serviceName = '-';
+  if (o.service_name) {
+    serviceName = o.service_name;
+  } else if (o.order_items && Array.isArray(o.order_items) && o.order_items.length > 0 && o.order_items[0].name) {
+    serviceName = o.order_items[0].name;
+  } else if (o.service_id) {
+    serviceName = SERVICE_ID_NAME_MAP[String(o.service_id)] || '-';
+  }
+
+  return {
+    record_id:    o.record_id,
+    order_no:     o.order_no,
+    order_type:   o.order_type,
+    order_status: o.order_status,
+    order_time:   o.cre_time || o.order_time || '',
+    vendor_name:  vendorName,
+    service_name: serviceName,
+    final_amount: Number(o.final_amount) || 0,
+    earn_points:  Number(o.earn_points)  || 0,
+    remark:       o.remark || '',
+  };
+}
+
+async function handleOrders(qs) {
+  const accountId = qs.account_id || '';
+  if (!accountId) return fail('ç¼ºå? account_id', 401);
+
+  const items = await dbQuery(
+    'mms_order_record',
+    'GSI_inbr_account_id',
+    'inbr_account_id = :aid',
+    { ':aid': accountId },
+    { ascending: false }
+  );
+
+  let orders = await Promise.all(items.map(o => formatOrder(o)));
+  if (qs.status) orders = orders.filter(o => o.order_status === qs.status);
+  return ok(orders);
+}
+
+async function handleCreateOrder(body) {
+  const requiredFields = ['inbr_account_id', 'service_vendor_id', 'service_id', 'order_type'];
+  for (const field of requiredFields) {
+    if (!body[field]) return fail(`ç¼ºå?å¿…å¡«æ¬„ä?: ${field}`, 400);
+  }
+
+  const now = new Date().toISOString();
+  const recordId = Date.now(); // ?¸å??‹ä¸»?µï??¨æ¯«ç§’æ??“æˆ³ç¢ºä??¯ä??å?
+
+  const orderData = {
+    record_id: recordId,
+    order_no: body.order_no || `ORD${Date.now()}`,
+    service_vendor_id: body.service_vendor_id,
+    service_id: body.service_id,
+    service_name: body.service_name || '',
+    inbr_account_id: body.inbr_account_id,
+    order_type: body.order_type,
+    order_status: body.order_status || '01',
+    final_amount: body.final_amount || 0,
+    order_items: body.order_items || [],
+    cre_time: now,
+    order_time: now, // GSI_inbr_account_id ??RANGE keyï¼Œå?å¿…å¯«??
+  };
+
+  await dbPut('mms_order_record', orderData);
+  return ok(await formatOrder(orderData), 'è¨‚å–®å»ºç??å?');
+}
+
+async function handleOrderDetail(orderId, qs) {
+  const accountId = qs.account_id || '';
+
+  // ?ˆç”¨ Scan ?¾ï?record_id ??PKï¼Œä? DynamoDB GetItem ?€ç²¾ç¢º key typeï¼?
+  const items = await dbScan('mms_order_record',
+    'record_id = :rid',
+    { ':rid': Number(orderId) }  // record_id ??N ?‹åˆ¥ï¼ŒorderId å¾è·¯å¾‘å?å¾—æ˜¯å­—ä¸²ï¼Œé?è½‰æ•¸å­—æ??½æ?å°?
+  );
+
+  if (!items.length) return fail('?¾ä??°è©²è¨‚å–®', 404);
+  const o = items[0];
+  if (accountId && o.inbr_account_id !== accountId) return fail('?¡æ??æŸ¥?‹æ­¤è¨‚å–®', 403);
+
+  const order = {
+    ...(await formatOrder(o)),
+    original_amount: Number(o.original_amount) || Number(o.final_amount) || 0,
+    discount_amount: Number(o.discount_amount) || 0,
+    order_items: typeof o.order_items === 'string'
+      ? JSON.parse(o.order_items) : (o.order_items || []),
+    timeline: [
+      { status: 'å»ºç?è¨‚å–®', time: o.cre_time || '' },
+      ...(o.confirm_time  ? [{ status: 'è¨‚å–®ç¢ºè?',  time: o.confirm_time  }] : []),
+      ...(o.service_time  ? [{ status: '?å??²è?',  time: o.service_time  }] : []),
+      ...(o.complete_time ? [{ status: 'è¨‚å–®å®Œæ?',  time: o.complete_time }] : []),
+      ...(o.cancel_time   ? [{ status: 'è¨‚å–®?–æ?',  time: o.cancel_time   }] : []),
+    ],
+  };
+  return ok(order);
+}
+
+// ?€?€?€ Cancel Order ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+const NON_CANCELLABLE_STATUS = ['80', '90', '99'];
+
+async function handleCancelOrder(orderId, body) {
+  const accountId = (body.inbr_account_id || '').trim();
+  if (!accountId) return fail('ç¼ºå? account_id', 400);
+
+  // ?¥è©¢è¨‚å–®ï¼ˆrecord_id ??N ?‹åˆ¥ï¼Œé?è½?Numberï¼?
+  const items = await dbScan('mms_order_record',
+    'record_id = :rid',
+    { ':rid': Number(orderId) }
+  );
+
+  if (!items.length) return fail('è¨‚å–®ä¸å???, 404);
+  const order = items[0];
+
+  // é©—è??æ?æ¬?
+  if (order.inbr_account_id !== accountId) {
+    return fail('?¡æ??ä?æ­¤è???, 403);
+  }
+
+  // é©—è??€??
+  if (NON_CANCELLABLE_STATUS.includes(order.order_status)) {
+    return fail('æ­¤è??®ç??‹ç„¡æ³•å?æ¶?, 400);
+  }
+
+  // ?·è??´æ–°
+  const now = new Date().toISOString();
+  await ddb.send(new UpdateItemCommand({
+    TableName: 'mms_order_record',
+    Key: marshall({ record_id: Number(orderId) }),
+    UpdateExpression: 'SET order_status = :s, upd_time = :t',
+    ExpressionAttributeValues: marshall({ ':s': '90', ':t': now }),
+  }));
+
+  return ok({ record_id: Number(orderId), order_status: '90', upd_time: now }, 'è¨‚å–®å·²å?æ¶?);
+}
+
+// ?€?€?€ Districts ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+const COUNTIES = [
+  { code: 'TPE', name: '?°å?å¸? },
+  { code: 'NTP', name: '?°å?å¸? },
+  { code: 'TXG', name: '?°ä¸­å¸? },
+  { code: 'KHH', name: 'é«˜é?å¸? },
+  { code: 'TYC', name: 'æ¡ƒå?å¸? },
+];
+
+async function handleDistricts(qs) {
+  if (!qs.county) {
+    // ?å‚³ç¸???—è¡¨
+    return ok(COUNTIES);
+  }
+
+  // ?å‚³?‡å?ç¸???„è??¿å?
+  const items = await dbScan('sys_district',
+    'county_code = :cc',
+    { ':cc': qs.county }
+  );
+  const districts = items
+    .sort((a, b) => (a.zip || '').localeCompare(b.zip || ''))
+    .map(d => ({ code: d.code, county_code: d.county_code, name: d.name, zip: d.zip }));
+
+  return ok(districts);
+}
+
+// ?€?€?€ Preferencesï¼ˆä??¶å?å¥½ï??€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+async function handleGetPreferences(qs) {
+  const accountId = qs.account_id || '';
+  if (!accountId) return fail('ç¼ºå? account_id', 400);
+
+  const item = await dbGet('user_preferences', { inbr_account_id: accountId });
+  if (!item) return ok({});
+
+  // ç§»é™¤ DynamoDB ä¸»éµï¼Œåª?å‚³?å¥½è³‡æ?
+  const { inbr_account_id, ...prefs } = item;
+  return ok(prefs);
+}
+
+async function handlePutPreferences(body) {
+  const accountId = body.account_id || '';
+  if (!accountId) return fail('ç¼ºå? account_id', 400);
+
+  const prefs = body.preferences || {};
+  if (!Object.keys(prefs).length) return fail('?å¥½è³‡æ??ºç©º', 400);
+
+  const item = {
+    inbr_account_id: accountId,
+    ...prefs,
+    updated_at: new Date().toISOString(),
+  };
+
+  await dbPut('user_preferences', item);
+  return ok(item, '?å¥½å·²å„²å­?);
+}
+
+// ?€?€?€ AI Chat ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+const CHAT_SYSTEM_PROMPT = `ä½ æ˜¯?ŒAÃ® ?ºæ…§ç¤¾å?ç®¡å®¶?ï?ä¸€?‹å??„ã€å?æ¥­ç? AI ?©æ?ï¼Œæ??™æ–¼ç¤¾å?ä½æˆ¶??
+
+?æ??™é??®ã€‘å??ã€è?ä½ã€æ?æ½”ã€ä¿®ç¹•ã€å??ã€è³¼?©ã€å«è»Šã€é??¥ã€?
+
+?æ ¸å¿ƒä»»?™ã€‘é€é??ªç„¶å°è©±?æ­¥?¶é?ä½¿ç”¨?…ç??€æ±‚è?è¨Šï??¶é?å®Œæ•´å¾Œæ•´?†æ?ç¢ºè??®è?ä½¿ç”¨?…ç¢ºèªã€?
+
+?å?è©±æ?ç¨‹ã€?
+1. è¾¨è??å?ï¼šä½¿?¨è€…æ??°æ??™é?æ±‚æ?ï¼Œä?è¦å??ã€Œä?è¦ä?éº¼æ??™ã€ï??´æ¥?‹å??è©²?å??„ç¬¬ä¸€?‹ç´°ç¯€?é?
+2. ?æ­¥è©¢å?ï¼šæ?æ¬¡åª?ä??‹å?é¡Œï?ä¾ç…§ä»¥ä?æµç??¶é?è³‡è?ï¼?
+
+?å??ã€?
+ç¬¬ä??‡å?è¦†ï??Œå¥½?„ï??‘ä?å¹«æ‚¨å®‰æ?å¤–é€ğ??è«‹å??‰æ?å®šç?é¤å»³?ï??„æ˜¯?Šè¨´?‘æƒ³?ƒä?éº¼é??‹ï??‘ä??¨è–¦ï¼Ÿã€?
+?¶é??†å?ï¼šæ?å®šé?å»³æ?é¤é?é¡å? ???·é?é¤é??§å®¹ ???é??°å? ???¯çµ¡?»è©± ??å¸Œæ??é??‚é? ??ä»˜æ¬¾?¹å?ï¼ˆä????·å¡/è¡Œå??¯ä?ï¼????¹æ??™è¨»ï¼ˆä?è¦è¾£ç­‰ï?
+æ³¨æ?ï¼šè‹¥ä½¿ç”¨?…æ?å®šé?å»³å?ç¨±ï??™å?è¤‡è¿°ç¢ºè?é¤å»³?¨å???
+
+?è?ä½ã€?
+ç¬¬ä??‡å?è¦†ï??Œæ??é?ï¼æ?å¹«æ‚¨å®‰æ?è¨‚ä??½ï¸?è«‹å??‰æ?å®šç?é¤å»³?ï??„æ˜¯?³ç”±?‘ç‚º?¨æ¨?¦ï???
+?¶é??†å?ï¼šæ?å®šé?å»³æ?é¤å»³é¡å??å¥½ ???¨é??¥æ??‡æ?æ®????¨é?äººæ•¸ ??è¨‚ä?äººå??è??¯çµ¡?»è©± ???¹æ??€æ±‚ï??…å??å?ç«¥æ??ç„¡?œç?ç­‰ï?
+æ³¨æ?ï¼šè‹¥ä½¿ç”¨?…æ?å®šé?å»³å?ç¨±ï??™å?è¤‡è¿°ç¢ºè???
+
+?æ?æ½”ã€?
+ç¬¬ä??‡å?è¦†ï??Œæ”¶?°ï??‘ä?å®‰æ?æ¸…æ??å??§¹ è«‹å??¯å“ªç¨®æ?æ½”é?æ±‚å‘¢ï¼Ÿï?ä¸€?¬å?å®¶æ?æ½”ã€å¤§?ƒé™¤?å†·æ°??æ´—ã€æ?è¡??æ¸…æ??æ¬å®¶æ?æ½”ç?ï¼‰ã€?
+?¶é??†å?ï¼šæ?æ½”é??????ªæ•¸?–æ?æ½”ç??????¯å¦?¹ä¾¿?ä??¾å ´?§ç?ï¼ˆå¯?¸ï??‰åŠ©?¼å ±?¹ï? ??å¸Œæ??¥æ??‚é? ???å??°å? ???¯çµ¡äººå??è??»è©±
+
+?ä¿®ç¹•ã€?
+ç¬¬ä??‡å?è¦†ï??Œä?è§???‘å¹«?¨å??’ä¿®ç¹•å¸«?…ğ??è«‹å??¯ä?éº¼åœ°?¹é?è¦ç¶­ä¿®å‘¢ï¼Ÿï?æ¼æ°´?é›»è·¯ã€é¦¬æ¡¶ã€æ°´é¾é ­?é?çª—ç?ï¼‰ã€?
+?¶é??†å?ï¼šå?é¡Œæ?è¿????¯å¦?½æ?ä¾›ç¾?´ç…§?‡æ?å½±ç?ï¼ˆå¼·?ˆå»ºè­°ï?å¸«å??€?¤æ–·å·¥å…·?‡é›¶ä»¶ï? ??ç·Šæ€¥ç?åº¦ï?è¶Šå¿«è¶Šå¥½/?¯æ??‚é?ï¼????¹ä¾¿?„æ—¥?Ÿæ??????å??°å? ???¯çµ¡äººå??è??»è©±
+
+?å??ã€?
+ç¬¬ä??‡å?è¦†ï??Œå¥½?„ï??‘ä?å¹«æ‚¨å®‰æ?å¯„ä»¶?“¦ è«‹å??…è£¹å¤§æ?å¤šå¤§?¢ï?ï¼ˆå??‹ä¿¡ä»¶ã€ä¸­?‹ç?ç®±ã€å¤§?‹ç‰©?ï???
+?¶é??†å?ï¼šå?è£¹å¤§å°è??é? ???©å??§è³ª?‡æº«å±¤ï?å¸¸æº«/?·è?/?·å?/?“ç?/æ¶²é?ï¼???å¯„ä»¶äººè?è¨Šï??°å??å??ã€é›»è©±ï? ???¶ä»¶äººè?è¨Šï??°å??å??ã€é›»è©±ï? ??å¸Œæ??–ä»¶?‚é?
+
+?è³¼?©ã€?
+ç¬¬ä??‡å?è¦†ï??Œæ??é?ï¼æ?å¹«æ‚¨?¡è²·?? è«‹å??³è³¼è²·ä?éº¼å??å‘¢ï¼Ÿã€?
+?¶é??†å?ï¼šå??å?ç¨±æ??è¿° ???¸é? ???ç?ç¯„å? ???é€æ–¹å¼ï?å®…é??°å?/è¶…å??–è²¨/?€å¸‚è‡ª?–ï? ???¶ä»¶è³‡è?ï¼ˆè‹¥å®…é?ï¼šåœ°?€/å§“å?/?»è©±ï¼›è‹¥è¶…å?ï¼šæ?å®šè??†é?å¸‚å?ç¨±ï?
+
+?å«è»Šã€?
+ç¬¬ä??‡å?è¦†ï??Œå¥½?„ï??‘ä?å¹«æ‚¨å®‰æ??«è??? è«‹å??¨é?è¦å“ªç¨®è??‹å‘¢ï¼?
+1. ä¸€?¬è?ç¨‹è?
+2. å¤šå?è¨ˆç?è»?
+3. å¯µç‰©å°ˆè?ï¼ˆå¯?œå¸¶æ¯›å­©ï¼?
+4. ?¡é?ç¤™å?è»?
+5. å¤§å?è¡Œæ?å°ˆè?ï¼ˆé©?ˆæ?å¸¶å¤§ä»¶è??ï?
+6. ?«ç??¥é€å?è»Šã€?
+?¶é??†å?ï¼šè??‹é¸????ä¸Šè??°é? ???®ç?????ä¹˜è??‚é?ï¼ˆç¾?¨å«è»??ç??‚é?ï¼???ä¹˜è?äººæ•¸ ???¯çµ¡äººå??è??»è©± ???¹æ??€æ±‚å?è¨?
+æ³¨æ?ï¼?
+- ?¸æ?å¯µç‰©å°ˆè??‚ï?è©¢å?å¯µç‰©ç¨®é??‡å¤§å°?
+- ?¸æ??¡é?ç¤™å?è»Šæ?ï¼Œè©¢?æ˜¯?¦é?è¦è¼ªæ¤…å??è¨­??
+- ?¸æ?å¤§å?è¡Œæ?å°ˆè??‚ï?è©¢å?è¡Œæ?ä»¶æ•¸?‡å¤§å°?
+- ?¸æ??«ç??¥é€æ?ï¼Œè©¢?æ˜¯?¦é?è¦é™ª?Œäºº?¡æ??¹æ??«ç?è¨­å?
+
+?é??¥ã€?
+ç¬¬ä??‡å?è¦†ï??Œæ”¶?°ï??‘å¹«?¨å??’ä»£?˜è—¥?ğ??
+?é??¨ï?ä»???•æ–¹?¥é??ä??•æ–¹ç®‹ç…§?‡è??¸é?è­‰æ??‡ä»¶?”ï?
+è«‹å??¯è?ä»???•æ–¹?¥é??¯è³¼è²·ä??¬è—¥?å‘¢ï¼Ÿã€?
+?¶é??†å?ï¼šè??¹è—¥/ä¸€?¬è—¥????ä¸Šå‚³?•æ–¹ç®‹ç…§?‡æ??ä??¥å??ç¨± ???‡å??¥å?ï¼ˆæ??€è¿‘å³?¯ï? ???é??°å??‡è¯çµ¡é›»è©???å¸Œæ??é??‚é?
+æ³¨æ?ï¼šè??¹è—¥ä»???™å??é??€æº–å??¥ä??¡ã€èº«?†è??ã€å?è¨—æ›¸ç­‰æ?ä»¶ã€?
+
+?é€šç”¨è¦å???
+1. ?¨è¦ª?‡è‡ª?¶ç?ç¹é?ä¸­æ??è?
+2. æ¯æ¬¡?ªå?ä¸€?‹å?é¡Œï?ä¸è?ä¸€æ¬¡å??ºæ??‰å?é¡?
+3. ?©æ?ä½¿ç”¨?›è?è®“å?è¦†æ›´å¥½é–±è®€
+4. ?¡æ??Šã€Œé€é??æ´¾?®ã€è?ä½ã€åˆ°åºœã€ç??å?ï¼Œæ?å¾Œä?å®šè?ç¢ºè??Œè¯çµ¡äººå§“å??è??Œè¯çµ¡é›»è©±ã€?
+5. ?¶ä½¿?¨è€…æ?å®šé?å»³æ?åº—å®¶?ç¨±?‚ï??™å?è¤‡è¿°?¨å?ç¢ºè?
+6. çµ•å?ä¸è?ä¸»å??¨è–¦?–æ??Šä»»ä½•ç?å¯¦å??¨ç??ç??é?å»³ã€å?å®¶å?ç¨±ï?å¦‚é?æ³°è??ç“¦?ã€ä??­ç?ï¼‰ï??ªé?è©¢å?ä½¿ç”¨?…ç??å¥½é¡å?ï¼ˆä¸­å¼ã€æ—¥å¼ã€è¥¿å¼ç?ï¼‰æ?è®“ä½¿?¨è€…è‡ªå·±æ?å®?
+7. ?¶è?è¨Šæ”¶?†å??´ï??¨ä»¥ä¸‹æ ¼å¼æ•´?†ç¢ºèªå–®ï¼?
+
+?? ?€æ±‚ç¢ºèªå–®
+?â??â??â??â??â?
+???å?é¡å?ï¼šxxx
+??è©³ç´°?§å®¹ï¼šxxx
+???¥æ??‚é?ï¼šxxx
+???°é?/?°å?ï¼šxxx
+???¯çµ¡äººï?xxx
+???¯çµ¡?»è©±ï¼šxxx
+??ä»˜æ¬¾?¹å?ï¼šxxxï¼ˆå??©ç”¨ï¼?
+???™è¨»ï¼šxxx
+?â??â??â??â??â?
+è«‹ç¢ºèªä»¥ä¸Šè?è¨Šæ˜¯?¦æ­£ç¢ºï?å¦‚é?ä¿®æ”¹è«‹å?è¨´æ??ªé?è¦æ”¹??
+
+?¶å??¨å?è¦†æ??«å°¾? ä?ï¼ˆä½¿?¨è€…ç?ä¸åˆ°ï¼‰ï?
+[CONFIRM:?å?é¡å?]
+
+8. ä½¿ç”¨?…ç¢ºèªã€Œæ??é??ã€Œç¢ºèªã€ã€ŒOK?ã€Œå??ç??¯å??è?å¾Œï??¨æœ«å°¾å?ä¸Šï?
+[SUBMIT:?å?é¡å?]
+?¶å??è??Œå·²?ºæ‚¨?å‡º?€æ±‚ï??ä?å¾Œï??¥è??ï?
+?Œè??Šé€™æ¬¡?„è¯çµ¡è?è¨Šï??°å?/?»è©±/ä»˜æ¬¾?¹å?ï¼‰å??ºå¸¸?¨è?è¨Šå?ï¼Ÿä?æ¬¡å°±ä¸ç”¨?è¼¸?¥ä? ????
+
+8. ?¥ä½¿?¨è€…å??å„²å­˜å¸¸?¨è?è¨Šï??è??Œå¥½?ã€Œè??ã€Œå??ç??¯å?è©ï?ï¼Œåœ¨?è??«å°¾? ä?æ¨™è?ï¼?
+[SAVE_PREFS:{"address":"å®Œæ•´?°å?","phone":"?»è©±?Ÿç¢¼","contactName":"?¯çµ¡äººå???,"paymentMethod":"ä»˜æ¬¾?¹å?"}]
+?ªå?ä½¿ç”¨?…åœ¨?¬æ¬¡å°è©±ä¸­å¯¦?›æ?ä¾›é??„æ?ä½ï?æ²’æ?ä¾›ç?ä¸è??¾é€²å»?‚åœ°?€å¿…é??¯å??´ç??€?Œåœ°?€ï¼ˆå?ï¼šæ–°?—å??¿æ??€ä¸­å±±è·¯ä?æ®?0??æ¨“ï?ï¼Œä?è¦å??«å?é¤˜ç??‡å???
+
+9. å¦‚æ?ä½¿ç”¨?…èªªè¦ä¿®?¹æ??…ï?è©¢å??°ç??§å®¹å¾Œé??°æ•´?†ç¢ºèªå–®
+10. ä¸æ??Šæ??™ç??’è?æ­?¸¸?Šå¤©ï¼Œä?? ä»»ä½•æ?è¨?
+11. ?è?ç´”æ?å­—ï?ä¸å? markdown èªæ?ï¼ˆä?è¦ç”¨ **ç²—é?** ??# æ¨™é?ï¼?
+12. ?¥ä½¿?¨è€…ä??³ç…§?‡ä?æ¸…æ™°ï¼Œè??ç¤º?æ–°ä¸Šå‚³
+13. ?˜è—¥?å?æ¶‰å??æ?äº‹é?ï¼Œè?? ä??è²¬?ç¤º`;
+
+async function handleChat(body) {
+  const text    = (body.text || '').trim();
+  const image   = body.image || null; // base64 encoded image
+  const imageMediaType = body.image_media_type || 'image/jpeg';
+  const history = (body.history || []).slice(-30);
+  const preferences = body.preferences || {};
+  const accountId = body.account_id || '';
+
+  // å¦‚æ??ç«¯æ²’å¸¶?å¥½ä½†æ? account_idï¼Œå? DynamoDB è®€??
+  let userPrefs = preferences;
+  if (accountId && Object.keys(preferences).length === 0) {
+    try {
+      const stored = await dbGet('user_preferences', { inbr_account_id: accountId });
+      if (stored) {
+        const { inbr_account_id, updated_at, ...rest } = stored;
+        userPrefs = rest;
+      }
+    } catch (e) {
+      console.error('[Prefs read error]', e);
+    }
+  }
+
+  if (!text && !image) return fail('è¨Šæ¯ä¸èƒ½?ºç©º');
+
+  const messages = [];
+  for (const msg of history) {
+    if (!msg.role || !msg.content) continue;
+    messages.push({ role: msg.role, content: msg.content });
+  }
+
+  // çµ„å??¶å?ä½¿ç”¨?…è??¯ï??¯æ´å¤šæ¨¡?‹ï??‡å? + ?–ç?ï¼?
+  if (image) {
+    const userContent = [];
+    userContent.push({
+      type: 'image',
+      source: { type: 'base64', media_type: imageMediaType, data: image },
+    });
+    userContent.push({
+      type: 'text',
+      text: text || 'è«‹å??é€™å¼µ?§ç?ï¼Œè¾¨è­˜å?é¡Œé??‹ã€åš´?ç?åº¦ï?ä¸¦é?ä¼°ç¶­ä¿®å·¥?‚è??ƒè€ƒå ±?¹ã€?,
+    });
+    messages.push({ role: 'user', content: userContent });
+  } else {
+    if (!messages.length || messages[messages.length - 1]?.content !== text) {
+      messages.push({ role: 'user', content: text });
+    }
+  }
+
+  // ?µæ¸¬?¯å¦æ¶‰å?é¤å»³/è¨‚ä?ï¼Œå? DynamoDB ?“é?å»³æ??®æ³¨??prompt
+  const bookingKeywords = ['??, 'é¤å»³', 'è¨‚ä?', '?¨é?', '?šé?', '?šé?', '?ˆé?', '?©é?', '?ƒé£¯', 'ç´„å?', '?¨è–¦'];
+  const allText = messages.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+  const isBookingRelated = bookingKeywords.some(kw => allText.includes(kw));
+
+  let vendorPromptAppend = '';
+  if (isBookingRelated) {
+    try {
+      const vendors = await dbScan('cms_service_vendor',
+        'service_type = :st AND is_enable = :e',
+        { ':st': 6, ':e': '1' }
+      );
+      if (vendors.length > 0) {
+        const vendorList = vendors
+          .sort((a, b) => (Number(b.rating_avg) || 0) - (Number(a.rating_avg) || 0))
+          .map(v => `- ${v.name}ï¼?{v.description}ï¼Œè???${v.rating_avg}ï¼‰`)
+          .join('\n');
+        vendorPromptAppend = `\n\n?ç³»çµ±è??™ï?å¹³å°?ˆä?é¤å»³æ¸…å–®?‘\n?¶ä½¿?¨è€…å??‰å“ªäº›é?å»³å¯?¸æ?ï¼Œåª?½å?ä»¥ä?æ¸…å–®?¨è–¦ï¼Œä??¯è‡ªè¡Œç·¨? é?å»³å?ç¨±ï?\n${vendorList}\n\n?¨è–¦?‚ä?ä½¿ç”¨?…å?å¥½ç??™ç?é¡å?ç¯©é¸ï¼Œæ?å¤šå???3-5 ?“ä??¸æ??‚`;
+      }
+    } catch (vendorErr) {
+      console.error('[Vendor fetch error]', vendorErr);
+    }
+  }
+
+  // çµ„å?ä½æˆ¶?å¥½?ç¤º
+  let prefsPrompt = '';
+  const accountName = body.account_name || '';
+  const accountPhone = body.account_phone || '';
+
+  // å¸³è??ºæœ¬è³‡æ?ï¼ˆç™»?¥æ??„å??å??»è©±ï¼?
+  const accountInfo = [];
+  if (accountName) accountInfo.push(`å¸³è?å§“å?ï¼?{accountName}`);
+  if (accountPhone) accountInfo.push(`å¸³è??»è©±ï¼?{accountPhone}`);
+
+  if (accountInfo.length > 0 || Object.keys(userPrefs).length > 0) {
+    const prefsLines = [...accountInfo];
+    if (userPrefs.address) prefsLines.push(`å¸¸ç”¨?°å?ï¼?{userPrefs.address}`);
+    if (userPrefs.phone) prefsLines.push(`å¸¸ç”¨?¯çµ¡?»è©±ï¼?{userPrefs.phone}`);
+    if (userPrefs.contactName) prefsLines.push(`å¸¸ç”¨?¯çµ¡äººï?${userPrefs.contactName}`);
+    if (userPrefs.paymentMethod) prefsLines.push(`??”¨ä»˜æ¬¾?¹å?ï¼?{userPrefs.paymentMethod}`);
+    if (userPrefs.favoriteRestaurants) prefsLines.push(`?œå¥½é¤å»³ï¼?{userPrefs.favoriteRestaurants}`);
+    if (userPrefs.dietaryNotes) prefsLines.push(`é£²é??™è¨»ï¼?{userPrefs.dietaryNotes}`);
+
+    prefsPrompt = `\n\n?ä??¶è??™è??å¥½??
+${prefsLines.join('\n')}
+
+ä½¿ç”¨è¦å?ï¼?
+- ?¶é?è¦è¯çµ¡äººå§“å??Œé›»è©±æ?ï¼Œä¸»?•è©¢?ï??Œè??´æ¥ä½¿ç”¨?¨å¸³?Ÿç?å§“å?ï¼?{accountName || '?ªè¨­å®?}ï¼‰å??»è©±ï¼?{accountPhone || '?ªè¨­å®?}ï¼‰å?ï¼Ÿã€?
+- ?¥ä??¶æ?å¸¸ç”¨?°å?ï¼Œè©¢?ï??Œè??åˆ°è·Ÿä?æ¬¡ä?æ¨???°å??ï?ï¼?{userPrefs.address || ''}ï¼‰ã€?
+- ?¥ä??¶æ???”¨ä»˜æ¬¾?¹å?ï¼Œè©¢?ï??Œä?æ¨?”¨${userPrefs.paymentMethod || ''}ä»˜æ¬¾?ï???
+- ä½¿ç”¨?…å??å°±?´æ¥å¸¶å…¥ï¼Œä??Œæ?å°±é??°è©¢?`;
+  }
+
+  // ?–ç?è¾¨è??¨ç? system prompt ?„å?
+  let systemPrompt = CHAT_SYSTEM_PROMPT + vendorPromptAppend + prefsPrompt;
+  if (image) {
+    systemPrompt += `\n\n?å??‡è¾¨è­˜æ¨¡å¼ã€?
+ä½¿ç”¨?…ä??³ä?ä¸€å¼µç¾?´ç…§?‡ï?è«‹ä?ï¼?
+1. è¾¨è??§ç?ä¸­ç??é?é¡å?ï¼ˆå?ï¼šæ?æ°´ã€ç?å£è?ç¸«ã€ç®¡ç·šç ´?ã€å®¶?»æ??œã€é?æ±¡ç?åº¦ç?ï¼?
+2. è©•ä¼°?å?/é«’æ±¡?´é?ç¨‹åº¦ï¼ˆè?å¾?ä¸­ç?/?´é?ï¼?
+3. ?ä¼°ç¶­ä¿®?–æ?æ½”å·¥?‚ï?ä¾‹å?ï¼šç? 1-2 å°æ?ï¼?
+4. ?ä??ƒè€ƒå ±?¹ç??ï?ä¾‹å?ï¼šç? NT$ 800-1,500ï¼?
+5. å»ºè­°?€è¦ç??å?é¡å?ï¼ˆä¿®ç¹?æ¸…æ?/?¶ä?ï¼?
+
+?¨æ??—æ–¹å¼æ?æ¥šå?è¦†ï??¶å?ç¹¼ç?è©¢å?ä½¿ç”¨?…æ˜¯?¦è??ç?æ­¤æ??™ã€‚`;
+  }
+
+  try {
+    const cmd = new InvokeModelCommand({
+      modelId: MODEL_ID,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: 2048,
+        temperature: 0.7,
+        system: systemPrompt,
+        messages,
+      }),
+    });
+    const res  = await bedrock.send(cmd);
+    const data = JSON.parse(new TextDecoder().decode(res.body));
+    const raw  = data.content?.[0]?.text?.trim() || '';
+
+    // ?µæ¸¬?€?‹æ?è¨?
+    const confirmMatch = raw.match(/\[CONFIRM:([^\]]+)\]/);
+    const submitMatch  = raw.match(/\[SUBMIT:([^\]]+)\]/);
+    const reply = raw
+      .replace(/\[CONFIRM:[^\]]+\]/g, '')
+      .replace(/\[SUBMIT:[^\]]+\]/g, '')
+      .trim();
+
+    const svcMap = {
+      'å¤–é€?: 1, 'é¤å»³å¤–é€?: 1,
+      'è¨‚ä?': 1, 'é¤å»³è¨‚ä?': 1,
+      'æ¸…æ?': 3, 'å±…å®¶æ¸…æ?': 3,
+      'ä¿®ç?': 3, 'æ°´é›»ä¿®ç?': 3,
+      'å®…é?': 4, '?…è£¹å¯„é€?: 4, 'å¯„ä»¶': 4,
+      'è³¼ç‰©': 2, '?†å?è³¼è²·': 2,
+      '?«è?': 3, 'è¨ˆç?è»?: 3,
+      '?˜è—¥': 3, 'ä»???¥å?': 3,
+    };
+
+    let formId = null;
+    let service = null;
+    let status = 'chatting'; // chatting | collecting | complete
+    let feedbackNo = null;
+    let collected = null;
+
+    if (submitMatch) {
+      service = submitMatch[1];
+      formId  = svcMap[service] || 3;
+      status  = 'complete';
+
+      // ?ªå?å»ºç?è«®è©¢??
+      feedbackNo = 'FB' + Date.now();
+      collected = { service, history_summary: reply };
+
+      const now = new Date().toISOString();
+
+      try {
+        await dbPut('pms_form_feedback', {
+          feedback_no:     feedbackNo,
+          form_id:         formId,
+          platform_code:   '01',
+          inbr_account_id: accountId,
+          contact_name:    body.account_name || '',
+          contact_mobile:  body.account_phone || '',
+          description:     `AIå°è©±?ªå?å»ºå–®ï¼?{service}`,
+          feedback_content: JSON.stringify({ source: 'ai_chat', service, reply }),
+          status:          '01',
+          is_read:         '0',
+          cre_time:        now,
+          upd_time:        now,
+        });
+      } catch (dbErr) {
+        console.error('[Auto-submit feedback error]', dbErr);
+      }
+
+      // ?Œæ?å»ºç?è¨‚å–®ç´€?„ï?è®“è??®é??¢èƒ½?‹åˆ°ï¼?
+      // ç¢ºä?è¨‚å–®é¡å??³å??¯å…«å¤§å?é¡ä?ä¸€
+      // ?¹æ? service å°æ?å¤§å?é¡?
+      let orderCategory = service;
+      if (['ä¿®ç?', 'æ°´é›»ä¿®ç?'].includes(service)) orderCategory = 'ä¿®ç?';
+      else if (['æ¸…æ?', 'å±…å®¶æ¸…æ?'].includes(service)) orderCategory = 'æ¸…æ?';
+      else if (['å¤–é€?, 'é¤å»³å¤–é€?].includes(service)) orderCategory = 'å¤–é€?;
+      else if (['è¨‚ä?', 'é¤å»³è¨‚ä?'].includes(service)) orderCategory = 'è¨‚ä?';
+      else if (['å®…é?', '?…è£¹å¯„é€?, 'å¯„ä»¶'].includes(service)) orderCategory = 'å®…é?';
+      else if (['è³¼ç‰©', '?†å?è³¼è²·'].includes(service)) orderCategory = 'è³¼ç‰©';
+      else if (['?«è?', 'è¨ˆç?è»?].includes(service)) orderCategory = '?«è?';
+      else if (['?˜è—¥', 'ä»???¥å?'].includes(service)) orderCategory = '?˜è—¥';
+
+      // å¾å?è©±æ­·?²ä¸­?å??´å…·é«”ç??€æ±‚æ?è¿?
+      const allHistory = messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n');
+      const detailMatch = allHistory.match(/?ª\s*(?:è©³ç´°?§å®¹|æ¸…æ?é¡å?|?€æ±‚é??‹|è»Šå??¸æ?|?é??è¿°|?†å?)ï¼?.+)/);
+      const serviceDetail = detailMatch ? detailMatch[1].trim() : '';
+      const serviceName = serviceDetail ? `${orderCategory} - ${serviceDetail}` : orderCategory;
+
+      const recordId = Date.now();
+      try {
+        await dbPut('mms_order_record', {
+          record_id:         recordId,
+          order_no:          'ORD' + recordId,
+          inbr_account_id:   accountId,
+          service_vendor_id: '',
+          order_type:        '01',
+          order_status:      '01',
+          service_name:      serviceName,
+          final_amount:      0,
+          earn_points:       0,
+          remark:            `AIå°è©±?€æ±‚ï?${serviceName}`,
+          feedback_no:       feedbackNo,
+          cre_time:          now,
+          order_time:        now,
+        });
+      } catch (dbErr) {
+        console.error('[Auto-submit order error]', dbErr);
+      }
+    } else if (confirmMatch) {
+      service = confirmMatch[1];
+      formId  = svcMap[service] || 3;
+      status  = 'collecting';
+    }
+
+    // ?å¥½?²å???AI ?¨è??®ç¢ºèªå?ä¸»å?è©¢å??¨æˆ¶ï¼Œä??è‡ª?•æ???
+    // AI ?ƒåœ¨?è?ä¸­å?ä¸?[SAVE_PREFS:JSON] æ¨™è?è¡¨ç¤º?¨æˆ¶?Œæ??²å?
+    const prefsMatch = raw.match(/\[SAVE_PREFS:(.*?)\]/s);
+    let extractedPrefs = null;
+    if (prefsMatch) {
+      try {
+        extractedPrefs = JSON.parse(prefsMatch[1]);
+        // å¯«å…¥ DynamoDB
+        if (accountId && extractedPrefs) {
+          const merged = { ...userPrefs, ...extractedPrefs };
+          await dbPut('user_preferences', {
+            inbr_account_id: accountId,
+            ...merged,
+            updated_at: new Date().toISOString(),
+          });
+        }
+      } catch (e) {
+        console.error('[Prefs save error]', e);
+      }
+    }
+
+    // æ¸…é™¤æ¨™è?
+    const cleanReply = reply.replace(/\[SAVE_PREFS:.*?\]/s, '').trim();
+
+    return ok({
+      reply: cleanReply,
+      intent:      (confirmMatch || submitMatch) ? 'service' : 'none',
+      status,
+      has_form:    false,
+      form_id:     formId,
+      service,
+      feedback_no: feedbackNo,
+      collected,
+      preferences: extractedPrefs || undefined,
+      source:      'bedrock',
+    });
+  } catch (err) {
+    console.error('[Bedrock Error]', err);
+    return ok({
+      reply: 'ä¸å¥½?æ€ï??‘ç¾?¨æ?é»å?ä¸é?ä¾†ï??¯ä»¥è«‹æ‚¨?èªªä¸€æ¬¡å?ï¼?,
+      intent: 'none', status: 'chatting', has_form: false, form_id: null, service: null, source: 'fallback',
+    });
+  }
+}
