@@ -72,7 +72,7 @@ const Orders = {
           Utils.getOrderStatusBadge(order.order_status) +
         '</div>' +
         '<div class="order-card-body">' +
-          '<span class="order-service">' + (order.vendor_name || '服務') + '</span>' +
+          '<span class="order-service">' + (order.service_name || order.vendor_name || '服務') + '</span>' +
           '<span class="order-amount">' + (order.final_amount > 0 ? Utils.formatAmount(order.final_amount) : '-') + '</span>' +
         '</div>' +
         '<div class="order-card-footer">' +
