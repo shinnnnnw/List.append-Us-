@@ -1,7 +1,7 @@
 <?php
 /**
  * AI 聊天 API
- * POST — 接收使用者訊息，透過 OpenAI API 回覆，同時辨識意圖推薦表單
+ * POST — 適用接收使用者訊息，執行意圖辨識，回傳 AI 回覆 + 建議表單
  */
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../config.php';
