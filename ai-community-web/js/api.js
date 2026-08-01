@@ -183,13 +183,17 @@ const API = {
   },
 
   // AI 對話（AWS Lambda Bedrock，支援圖片多模態）
-  chatConversation(message, history = [], imageBase64 = null) {
-    const body = { text: message, history: history };
+  chatConversation(message, history = [], imageBase64 = null, preferences = null) {
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    const body = { text: message, history: history, account_id: user.inbr_account_id || '' };
     if (imageBase64) {
       const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
       const mediaType = imageBase64.match(/^data:(image\/\w+);base64,/);
       body.image = base64Data;
       body.image_media_type = mediaType ? mediaType[1] : 'image/jpeg';
+    }
+    if (preferences && Object.keys(preferences).length > 0) {
+      body.preferences = preferences;
     }
     return this.post('/ai/chat', body);
   },
