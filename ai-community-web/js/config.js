@@ -3,7 +3,7 @@
  */
 const CONFIG = {
   // API base path（XAMPP 本地 PHP）
-  API_BASE: 'php/api',
+  API_BASE: 'http://localhost/List.append-Us-/ai-community-web/php/api',
  
   // 服務快捷按鈕定義（對應 pms_vendor_service_type）
   QUICK_SERVICES: [
