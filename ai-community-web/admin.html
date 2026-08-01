@@ -74,7 +74,7 @@
     </div>
     <button class="admin-btn" onclick="adminLogin()">登入</button>
     <p class="admin-error" id="admin-error">帳號或密碼錯誤</p>
-    <p style="font-size:12px;color:#999;text-align:center;margin-top:12px;">測試帳號：admin / 密碼：1234</p>
+    <p style="font-size:12px;color:#999;text-align:center;margin-top:12px;">測試帳號：vendor01 / vendor05 / vendor23<br>密碼：Vendor01! / Vendor05! / Vendor23!</p>
   </div>
 </div>
 
@@ -119,10 +119,22 @@
 <script>
 const API_BASE = 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod';
 
-// 模擬案件資料（實際會從 API 載入）
-let cases = [
+// 廠商帳號資料
+const vendorAccounts = [
+  { username: 'vendor01', password: 'Vendor01!', vendorId: 1, vendorName: '潔淨居家清潔', contactName: '李佳穎' },
+  { username: 'vendor05', password: 'Vendor05!', vendorId: 5, vendorName: '水電王修繕', contactName: '王建國' },
+  { username: 'vendor23', password: 'Vendor23!', vendorId: 23, vendorName: '泰皇殿', contactName: '鄭雅文' },
+];
+
+// 當前登入的廠商
+let currentVendor = null;
+
+// 所有案件資料（含 vendorId 欄位，登入後只顯示自己的）
+const allCases = [
+  // === 潔淨居家清潔 (vendor_id: 1) 的案件 ===
   {
-    id: 'FB1722500001',
+    id: 'FB2607300001',
+    vendorId: 1,
     customerName: '王小明',
     customerPhone: '0912-345-001',
     customerEmail: 'wang@example.com',
@@ -135,7 +147,42 @@ let cases = [
     replies: [],
   },
   {
-    id: 'FB1722500002',
+    id: 'FB2607250003',
+    vendorId: 1,
+    customerName: '林大偉',
+    customerPhone: '0934-567-003',
+    customerEmail: 'lin.dw@example.com',
+    service: '居家清潔',
+    category: '清潔',
+    description: '搬家前需要全屋清潔，三房兩廳約 35 坪，含廚房油汙清理。',
+    status: 'done',
+    createdAt: '2026-07-25 16:45',
+    address: '台北市中山區南京東路二段 80 號 5F',
+    replies: [
+      { time: '2026-07-26 09:00', content: '預約週三上午 10 點到府清潔。' },
+      { time: '2026-07-28 12:00', content: '已完成清潔，感謝使用。' },
+    ],
+  },
+  {
+    id: 'FB2607310006',
+    vendorId: 1,
+    customerName: '張雅琪',
+    customerPhone: '0978-123-006',
+    customerEmail: 'chang.yc@example.com',
+    service: '居家清潔',
+    category: '清潔',
+    description: '浴室磁磚發霉嚴重，希望做深度除霉清潔。',
+    status: 'progress',
+    createdAt: '2026-07-31 09:00',
+    address: '新北市板橋區文化路一段 200 號 8F',
+    replies: [
+      { time: '2026-07-31 10:30', content: '已確認，預計 8/2 上午到府處理。' },
+    ],
+  },
+  // === 水電王修繕 (vendor_id: 5) 的案件 ===
+  {
+    id: 'FB2607290002',
+    vendorId: 5,
     customerName: '陳美玲',
     customerPhone: '0923-456-002',
     customerEmail: 'chen.ml@example.com',
@@ -150,50 +197,86 @@ let cases = [
     ],
   },
   {
-    id: 'FB1722500003',
-    customerName: '林大偉',
-    customerPhone: '0934-567-003',
-    customerEmail: 'lin.dw@example.com',
-    service: '冷氣清洗',
-    category: '清潔',
-    description: '兩台分離式冷氣需要清洗，已經用了三年沒洗過。',
-    status: 'done',
-    createdAt: '2026-07-25 16:45',
-    address: '台北市中山區南京東路二段 80 號 5F',
-    replies: [
-      { time: '2026-07-26 09:00', content: '預約週三上午 10 點清洗。' },
-      { time: '2026-07-28 12:00', content: '已完成清洗，感謝使用。' },
-    ],
+    id: 'FB2607310007',
+    vendorId: 5,
+    customerName: '劉建宏',
+    customerPhone: '0965-432-007',
+    customerEmail: 'liu.jh@example.com',
+    service: '水電修繕',
+    category: '修繕',
+    description: '廚房電路跳電頻繁，懷疑是迴路過載，需要師傅來檢查。',
+    status: 'pending',
+    createdAt: '2026-07-31 15:40',
+    address: '台北市松山區南京東路五段 60 號 4F',
+    replies: [],
   },
   {
-    id: 'FB1722500004',
+    id: 'FB2607280008',
+    vendorId: 5,
+    customerName: '許雅婷',
+    customerPhone: '0933-876-008',
+    customerEmail: 'hsu.yt@example.com',
+    service: '水電修繕',
+    category: '修繕',
+    description: '馬桶不通，已經試過通管器沒有用，需要專業處理。',
+    status: 'done',
+    createdAt: '2026-07-28 08:20',
+    address: '新北市中和區景安路 88 號 2F',
+    replies: [
+      { time: '2026-07-28 09:00', content: '已派師傅前往，預計上午 11 點抵達。' },
+      { time: '2026-07-28 13:00', content: '已完成疏通，問題為油脂堆積堵塞。' },
+    ],
+  },
+  // === 泰皇殿 (vendor_id: 23) 的案件 ===
+  {
+    id: 'FB2607310004',
+    vendorId: 23,
     customerName: '黃志豪',
     customerPhone: '0945-678-004',
     customerEmail: 'huang.zh@example.com',
     service: '餐廳訂位',
     category: '訂位',
-    description: '這週六晚上 6 點，4 位大人 2 位小孩，希望有兒童座椅。',
+    description: '這週六晚上 6 點，4 位大人 2 位小孩，希望有兒童座椅。想吃泰式合菜。',
     status: 'pending',
     createdAt: '2026-07-31 11:20',
     address: '',
     replies: [],
   },
   {
-    id: 'FB1722500005',
-    customerName: '李小芳',
-    customerPhone: '0956-789-005',
-    customerEmail: 'li.xf@example.com',
-    service: '包裹寄送',
-    category: '宅配',
-    description: '有一箱書要寄到高雄，大約 5 公斤，希望三天內到。',
-    status: 'progress',
-    createdAt: '2026-07-30 08:00',
-    address: '台北市松山區民生東路三段 25 號 1F',
+    id: 'FB2607300009',
+    vendorId: 23,
+    customerName: '蔡宜庭',
+    customerPhone: '0911-222-009',
+    customerEmail: 'tsai.yt@example.com',
+    service: '餐廳訂位',
+    category: '訂位',
+    description: '8/3 週日中午 12 點，8 位大人慶生聚餐，需要包廂。可以準備生日蛋糕嗎？',
+    status: 'pending',
+    createdAt: '2026-07-30 20:15',
+    address: '',
+    replies: [],
+  },
+  {
+    id: 'FB2607280010',
+    vendorId: 23,
+    customerName: '吳正男',
+    customerPhone: '0922-333-010',
+    customerEmail: 'wu.zn@example.com',
+    service: '餐廳訂位',
+    category: '訂位',
+    description: '7/30 晚上 7 點，2 位用餐，想坐靠窗位置，有過敏不吃花生。',
+    status: 'done',
+    createdAt: '2026-07-28 10:00',
+    address: '',
     replies: [
-      { time: '2026-07-30 09:30', content: '已安排明天上午取件，請準備好包裹。' },
+      { time: '2026-07-28 11:00', content: '已為您保留靠窗座位，會標註花生過敏。' },
+      { time: '2026-07-30 21:00', content: '感謝光臨，歡迎再訪！' },
     ],
   },
 ];
+
+// 依當前登入廠商篩選出的案件
+let cases = [];
 
 const statusMap = {
   pending: { label: '待處理', badge: 'badge-pending' },
@@ -208,10 +291,17 @@ function adminLogin() {
   const password = document.getElementById('admin-password').value.trim();
   const errorEl = document.getElementById('admin-error');
 
-  if (username === 'admin' && password === '1234') {
+  const vendor = vendorAccounts.find(v => v.username === username && v.password === password);
+
+  if (vendor) {
+    currentVendor = vendor;
+    // 依 vendorId 篩選只屬於該廠商的案件
+    cases = allCases.filter(c => c.vendorId === vendor.vendorId);
     errorEl.style.display = 'none';
     document.getElementById('admin-login').style.display = 'none';
     document.getElementById('admin-dashboard').style.display = 'block';
+    // 更新 header 顯示廠商名稱
+    document.querySelector('.admin-header h2').textContent = vendor.vendorName + ' - 管理後台';
     renderDashboard();
   } else {
     errorEl.style.display = 'block';
@@ -220,6 +310,8 @@ function adminLogin() {
 
 // 登出
 function adminLogout() {
+  currentVendor = null;
+  cases = [];
   document.getElementById('admin-login').style.display = 'block';
   document.getElementById('admin-dashboard').style.display = 'none';
   document.getElementById('admin-username').value = '';
