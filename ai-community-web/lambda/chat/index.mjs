@@ -898,8 +898,9 @@ ${prefsLines.join('\n')}
 
       // 自動建立諮詢單
       feedbackNo = 'FB' + Date.now();
-      const accountId = body.account_id || '';
       collected = { service, history_summary: reply };
+
+      const now = new Date().toISOString();
 
       try {
         await dbPut('pms_form_feedback', {
@@ -908,16 +909,38 @@ ${prefsLines.join('\n')}
           platform_code:   '01',
           inbr_account_id: accountId,
           contact_name:    body.account_name || '',
-          contact_mobile:  '',
+          contact_mobile:  body.account_phone || '',
           description:     `AI對話自動建單：${service}`,
           feedback_content: JSON.stringify({ source: 'ai_chat', service, reply }),
           status:          '01',
           is_read:         '0',
-          cre_time:        new Date().toISOString(),
-          upd_time:        new Date().toISOString(),
+          cre_time:        now,
+          upd_time:        now,
         });
       } catch (dbErr) {
-        console.error('[Auto-submit DB error]', dbErr);
+        console.error('[Auto-submit feedback error]', dbErr);
+      }
+
+      // 同時建立訂單紀錄（讓訂單頁面能看到）
+      const recordId = Date.now();
+      try {
+        await dbPut('mms_order_record', {
+          record_id:         recordId,
+          order_no:          'ORD' + recordId,
+          inbr_account_id:   accountId,
+          service_vendor_id: '',
+          order_type:        '01',
+          order_status:      '01',
+          service_name:      service,
+          final_amount:      0,
+          earn_points:       0,
+          remark:            `AI對話需求：${service}`,
+          feedback_no:       feedbackNo,
+          cre_time:          now,
+          order_time:        now,
+        });
+      } catch (dbErr) {
+        console.error('[Auto-submit order error]', dbErr);
       }
     } else if (confirmMatch) {
       service = confirmMatch[1];
