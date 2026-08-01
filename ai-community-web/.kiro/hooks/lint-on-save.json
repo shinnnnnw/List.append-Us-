@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "JS 語法檢查提醒",
+      "trigger": "PostFileSave",
+      "matcher": "\\.(js|mjs)$",
+      "action": {
+        "type": "agent",
+        "prompt": "檢查剛才儲存的檔案是否有 JavaScript 語法錯誤、重複定義的變數/函式、未宣告的變數、或明顯的邏輯問題。如果有問題，簡短列出並建議修正方式。如果沒問題就不需要回覆。"
+      }
+    }
+  ]
+}

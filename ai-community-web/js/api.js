@@ -1,22 +1,12 @@
 /**
  * API 封裝模組
- * 本地：php/api/<file>.php  （XAMPP PHP）
- * 雲端：https://...amazonaws.com/prod/<route>  （AWS Lambda）
+ * 統一處理 fetch 請求
+ * 本地用 PHP，雲端用 AWS Lambda + API Gateway
  */
 const API = {
-  /**
-   * 依環境回傳正確的 endpoint
-   * local: prefix=''  → 'auth.php?action=login'
-   * cloud: prefix=''  → 'auth/login'
-   */
-  _ep(local, cloud) {
-    return CONFIG.IS_LOCAL ? local : cloud;
-  },
 
   async request(endpoint, options = {}) {
-    const cleanEndpoint = endpoint.replace(/^\/+/, '');
-    const url = `${CONFIG.API_BASE}/${cleanEndpoint}`;
-    console.log('[API] fetch →', url);
+    const url = `${CONFIG.API_BASE}${endpoint}`;
     const defaultOptions = {
       headers: { 'Content-Type': 'application/json' },
     };
@@ -26,12 +16,10 @@ const API = {
     }
     try {
       const response = await fetch(url, mergedOptions);
-      console.log('[API] status', response.status, url);
-      const json = await response.json();
-      console.log('[API] result', json);
-      return json;
+      const data = await response.json();
+      return data;
     } catch (error) {
-      console.error(`[API] Error [${url}]:`, error);
+      console.error(`API Error [${endpoint}]:`, error);
       return { success: false, data: null, message: '網路連線錯誤，請稍後再試' };
     }
   },
@@ -47,114 +35,165 @@ const API = {
     });
   },
 
-  // ── 登入 / 登出 / 驗證 ───────────────────────────────────────────────────
+  async put(endpoint, body = {}) {
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  },
+
+  // ── 登入 / 登出 / 驗證 ──────────────────────────────────────────────────
 
   login(phone, password) {
-    return this.post(this._ep('auth.php?action=login', 'auth/login'), { phone, password });
+    const users = [
+      { inbr_account_id: 'MBR001', name: '王小明', phone: '0912-345-001', email: 'wang01@example.com', point_balance: 50 },
+      { inbr_account_id: 'MBR002', name: '陳美玲', phone: '0923-456-002', email: 'chen02@example.com', point_balance: 120 },
+      { inbr_account_id: 'MBR003', name: '林大偉', phone: '0934-567-003', email: 'lin03@example.com', point_balance: 0 },
+      { inbr_account_id: 'MBR004', name: '黃志豪', phone: '0945-678-004', email: 'huang04@example.com', point_balance: 300 },
+      { inbr_account_id: 'MBR005', name: '李小芳', phone: '0956-789-005', email: 'li05@example.com', point_balance: 80 },
+      { inbr_account_id: 'MBR006', name: '張美華', phone: '0967-890-006', email: 'chang06@example.com', point_balance: 200 },
+      { inbr_account_id: 'MBR007', name: '陳建志', phone: '0978-901-007', email: 'chen07@example.com', point_balance: 150 },
+    ];
+    const clean = (p) => p.replace(/[-\s]/g, '');
+    const u = users.find(x => clean(x.phone) === clean(phone));
+    if (u) {
+      localStorage.setItem('ai_user', JSON.stringify(u));
+      return Promise.resolve({ success: true, data: u });
+    }
+    return Promise.resolve({ success: false, message: '找不到此帳號' });
   },
 
   logout() {
-    return this.post(this._ep('auth.php?action=logout', 'auth/logout'), {});
+    localStorage.removeItem('ai_user');
+    return Promise.resolve({ success: true });
   },
 
   checkAuth() {
-    return this.get(this._ep('auth.php?action=check', 'auth/check'));
+    const u = localStorage.getItem('ai_user');
+    if (u) return Promise.resolve({ success: true, data: JSON.parse(u) });
+    return Promise.resolve({ success: false });
   },
 
-  getUsers() {
-    return this.get(this._ep('auth.php?action=users', 'auth/users'));
-  },
-
-  // ── 服務廠商 ─────────────────────────────────────────────────────────────
-
-  getServices(type) {
-    const typeParam = type ? `?type=${type}` : '';
-    return this.get(this._ep(`services.php${typeParam}`, `vendors${typeParam}`));
-  },
-
-  getService(id) {
-    return this.get(this._ep(`services.php?id=${id}`, `vendors/${id}`));
-  },
-
-  // ── 表單 ─────────────────────────────────────────────────────────────────
-
-  getForm(formId) {
-    return this.get(this._ep(`forms.php?form_id=${formId}`, `forms/${formId}`));
-  },
-
-  submitForm(data) {
-    return this.post(this._ep('form-submit.php', 'feedback'), data);
-  },
-
-  // ── 訂單 ─────────────────────────────────────────────────────────────────
-
-  getOrders(status) {
-    const user = Auth.getUser() || {};
-    const accountId = user.inbr_account_id || '';
-    const statusParam = status ? `&status=${status}` : '';
-    if (CONFIG.IS_LOCAL) {
-      return this.get(`orders.php?account_id=${encodeURIComponent(accountId)}${statusParam}`);
-    }
-    return this.get(`orders?account_id=${encodeURIComponent(accountId)}${statusParam}`);
-  },
-
-  getOrderDetail(id) {
-    const user = Auth.getUser() || {};
-    const accountId = user.inbr_account_id || '';
-    if (CONFIG.IS_LOCAL) {
-      return this.get(`order-detail.php?id=${id}&account_id=${encodeURIComponent(accountId)}`);
-    }
-    return this.get(`orders/${id}?account_id=${encodeURIComponent(accountId)}`);
-  },
-
-  // ── 縣市行政區 ───────────────────────────────────────────────────────────
-
-  getCounties() {
-    return this.get(this._ep('districts.php', 'districts'));
-  },
-
-  getDistricts(countyCode) {
-    return this.get(this._ep(`districts.php?county=${countyCode}`, `districts?county=${countyCode}`));
-  },
-
-  // ── 圖片上傳 ─────────────────────────────────────────────────────────────
-
-  upload(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    const endpoint = this._ep('upload.php', 'upload');
-    const url = `${CONFIG.API_BASE}/${endpoint}`;
-    console.log('[API] fetch →', url);
-    return fetch(url, { method: 'POST', body: formData })
-      .then(res => res.json())
-      .catch(err => {
-        console.error('[API] upload error:', err);
-        return { success: false, data: null, message: '上傳失敗，請稍後再試' };
-      });
-  },
-
-  // ── AI 聊天 ───────────────────────────────────────────────────────────────
-
-  chatConversation(message, history = []) {
-    if (CONFIG.IS_LOCAL) {
-      // 本地：PHP chat.php 接收 { message, history }
-      return this.post('chat.php', { message, history });
-    }
-    // 雲端：Lambda /chat 接收 { message, history }
-    return this.post('/chat', { message, history });
-  },
-
-  chat(message, history = []) {
-    return this.chatConversation(message, history);
-  },
- 
-  // --- Demo 帳號列表 ---
   getUsers() {
     return Promise.resolve({ success: true, data: [
       { inbr_account_id: 'MBR001', name: '王小明', phone: '0912-345-001' },
       { inbr_account_id: 'MBR002', name: '陳美玲', phone: '0923-456-002' },
       { inbr_account_id: 'MBR003', name: '林大偉', phone: '0934-567-003' },
+      { inbr_account_id: 'MBR004', name: '黃志豪', phone: '0945-678-004' },
+      { inbr_account_id: 'MBR005', name: '李小芳', phone: '0956-789-005' },
+      { inbr_account_id: 'MBR006', name: '張美華', phone: '0967-890-006' },
+      { inbr_account_id: 'MBR007', name: '陳建志', phone: '0978-901-007' },
     ]});
   },
+
+  // ── 服務廠商 ─────────────────────────────────────────────────────────────
+
+  getServices(type) {
+    const q = type ? `?service_type=${type}` : '';
+    return this.get(`/vendors${q}`);
+  },
+
+  getService(id) {
+    return this.get(`/vendors?vendor_id=${id}`);
+  },
+
+  // ── 表單 ─────────────────────────────────────────────────────────────────
+
+  getForm(formId) {
+    const FORMS = {
+      1: { id: 1, name: '餐廳訂位', groups: [
+        { id: 1, name: '訂位資訊', topics: [
+          { id: 1, type: '9', title: '希望訂位日期', is_required: '1' },
+          { id: 2, type: '1', title: '用餐人數', is_required: '1', is_number_only: '1' },
+          { id: 3, type: '3', title: '用餐時段', is_required: '1', options: ['午餐 11:30','午餐 12:00','晚餐 17:30','晚餐 18:00','晚餐 18:30','晚餐 19:00'] },
+          { id: 4, type: '4', title: '特殊需求', is_required: '0', options: ['兒童椅','無障礙座位','包廂','生日蛋糕','素食'] },
+          { id: 5, type: '2', title: '備註', is_required: '0' },
+        ]},
+        { id: 2, name: '聯絡資料', topics: [{ id: 6, type: '10', title: '聯絡資料', is_required: '1' }] },
+      ]},
+      2: { id: 2, name: '商城購物', groups: [
+        { id: 3, name: '商品需求', topics: [
+          { id: 7, type: '1', title: '商品名稱或類別', is_required: '1' },
+          { id: 8, type: '2', title: '詳細需求', is_required: '1' },
+          { id: 9, type: '1', title: '預算上限（元）', is_required: '0', is_number_only: '1' },
+          { id: 10, type: '3', title: '收貨方式', is_required: '1', options: ['宅配到府','超商取貨','門市自取'] },
+        ]},
+        { id: 4, name: '配送資料', topics: [{ id: 11, type: '8', title: '聯絡與配送資料', is_required: '1' }] },
+      ]},
+      3: { id: 3, name: '居家服務', groups: [
+        { id: 5, name: '服務需求', topics: [
+          { id: 12, type: '3', title: '服務類型', is_required: '1', options: ['一般居家清潔','家電清洗','水電修繕','冷氣安裝','油漆粉刷'] },
+          { id: 13, type: '1', title: '坪數', is_required: '0', is_number_only: '1' },
+          { id: 14, type: '3', title: '希望時段', is_required: '1', options: ['越快越好（緊急）','本週內','彈性配合'] },
+          { id: 15, type: '2', title: '問題描述', is_required: '1' },
+        ]},
+        { id: 6, name: '聯絡地址', topics: [{ id: 16, type: '8', title: '聯絡與服務地址', is_required: '1' }] },
+      ]},
+      4: { id: 4, name: '包裹寄送', groups: [
+        { id: 7, name: '寄件資訊', topics: [
+          { id: 17, type: '3', title: '包裹大小', is_required: '1', options: ['小型','中型','大型'] },
+          { id: 18, type: '1', title: '重量（公斤）', is_required: '0', is_number_only: '1' },
+          { id: 19, type: '3', title: '收件方式', is_required: '1', options: ['到府收件','自行送至門市'] },
+          { id: 20, type: '2', title: '寄件備註', is_required: '0' },
+        ]},
+        { id: 8, name: '寄件人資料', topics: [{ id: 21, type: '10', title: '寄件聯絡資料', is_required: '1' }] },
+      ]},
+    };
+    return Promise.resolve({ success: true, data: FORMS[formId] || null });
+  },
+
+  // ── 送出諮詢單 ──────────────────────────────────────────────────────────
+
+  submitForm(data) {
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    return this.post('/feedback', { ...data, inbr_account_id: user.inbr_account_id || 'MBR001' });
+  },
+
+  // ── 訂單 ─────────────────────────────────────────────────────────────────
+
+  getOrders(status) {
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    return this.get(`/feedback/member?member_id=${user.inbr_account_id || 'MBR001'}`);
+  },
+
+  getOrderDetail(id) {
+    return this.get(`/feedback/member?member_id=${id}`);
+  },
+
+  // ── 縣市行政區 ───────────────────────────────────────────────────────────
+
+  getCounties() {
+    return Promise.resolve({ success: true, data: [
+      { code: '01', name: '台北市' },
+      { code: '02', name: '新北市' },
+      { code: '03', name: '桃園市' },
+      { code: '04', name: '台中市' },
+      { code: '05', name: '台南市' },
+      { code: '06', name: '高雄市' },
+    ]});
+  },
+
+  getDistricts(countyCode) {
+    return this.get('/districts');
+  },
+
+  // ── AI 聊天（打 Lambda /chat endpoint，使用 Bedrock） ──────────────────
+
+  chatConversation(message, history = []) {
+    return this.post('/chat', { message, history });
+  },
+
+  chat(message, history = []) {
+    return this.post('/chat', { message, history });
+  },
+
+  // ── B端廠商案件 ──────────────────────────────────────────────────────────
+
+  getVendorCases(vendorId) {
+    return this.get(`/cases/vendor?vendor_id=${vendorId}`);
+  },
+
+  updateCaseStatus(assignmentId, status) {
+    return this.put('/cases/status', { assignment_id: assignmentId, status: status });
+  },
 };
- 
