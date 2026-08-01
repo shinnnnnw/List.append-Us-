@@ -114,14 +114,5 @@ const API = {
   chat(message, history = []) {
     return this.post('chat.php', { message, history });
   },
- 
-  // --- Demo 帳號列表 ---
-  getUsers() {
-    return Promise.resolve({ success: true, data: [
-      { inbr_account_id: 'MBR001', name: '王小明', phone: '0912-345-001' },
-      { inbr_account_id: 'MBR002', name: '陳美玲', phone: '0923-456-002' },
-      { inbr_account_id: 'MBR003', name: '林大偉', phone: '0934-567-003' },
-    ]});
-  },
 };
  
