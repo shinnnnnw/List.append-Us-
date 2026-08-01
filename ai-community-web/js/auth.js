@@ -33,17 +33,15 @@ const Auth = {
   },
 
   /**
-   * 執行登入（免驗證，任何人皆可直接登入）
+   * 執行登入（用手機號碼，查資料庫）
    */
-  async login() {
-    const defaultUser = {
-      id: 1,
-      name: '住戶',
-      phone: '0900000000',
-      points: 50,
-    };
-    this.saveUser(defaultUser);
-    return defaultUser;
+  async login(phone, password) {
+    const result = await API.login(phone, password);
+    if (result && result.success) {
+      this.saveUser(result.data);
+      return result.data;
+    }
+    return null;
   },
 
   /**

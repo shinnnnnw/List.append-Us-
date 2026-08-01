@@ -77,9 +77,9 @@ const API = {
 
   // --- 具體 API 方法 ---
 
-  /** 登入 */
-  login(token = '') {
-    return this.post('auth.php?action=login', { token });
+  /** 登入（用手機號碼 + 密碼） */
+  login(phone, password) {
+    return this.post('auth.php?action=login', { phone: phone, password: password || '' });
   },
 
   /** 登出 */
@@ -137,5 +137,10 @@ const API = {
   /** AI 聊天 */
   chat(message) {
     return this.post('chat.php', { message });
+  },
+
+  /** 取得可登入帳號列表（Demo 用） */
+  getUsers() {
+    return this.get('auth.php?action=users');
   },
 };

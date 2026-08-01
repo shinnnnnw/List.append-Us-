@@ -15,31 +15,135 @@ const App = {
    * 初始化首頁（index.html 專用）
    */
   initIndex() {
-    const user = Auth.getUser();
-    const loginView = Utils.$('#view-login');
-    const dashboardView = Utils.$('#view-dashboard');
+    var user = Auth.getUser();
+    var loginView = Utils.$('#view-login');
+    var dashboardView = Utils.$('#view-dashboard');
 
     if (user) {
       this.showDashboard(user);
-    } else {
-      if (loginView) loginView.classList.add('active');
-      if (dashboardView) dashboardView.classList.remove('active');
+      return;
     }
 
-    // 綁定登入按鈕
-    const loginBtn = Utils.$('#login-btn');
-    if (loginBtn) {
-      loginBtn.addEventListener('click', async () => {
-        loginBtn.disabled = true;
-        loginBtn.textContent = '登入中...';
-        const user = await Auth.login();
-        if (user) {
-          this.showDashboard(user);
-        } else {
-          Utils.toast('登入失敗，請稍後再試');
-          loginBtn.disabled = false;
-          loginBtn.textContent = 'OpenPî / uniopen 一鍵授權登入';
+    if (loginView) loginView.classList.add('active');
+    if (dashboardView) dashboardView.classList.remove('active');
+
+    // --- 步驟切換 ---
+    var stepWelcome = Utils.$('#login-step-welcome');
+    var stepForm = Utils.$('#login-step-form');
+    var btnGoLogin = Utils.$('#btn-go-login');
+    var btnBack = Utils.$('#btn-back-welcome');
+
+    if (btnGoLogin) {
+      btnGoLogin.addEventListener('click', function() {
+        stepWelcome.style.display = 'none';
+        stepForm.style.display = 'block';
+        // 載入帳號列表
+        App.loadUserList();
+      });
+    }
+
+    if (btnBack) {
+      btnBack.addEventListener('click', function() {
+        stepForm.style.display = 'none';
+        stepWelcome.style.display = 'block';
+      });
+    }
+
+    // --- 快速登入 ---
+    var userSelect = Utils.$('#user-select');
+    var btnQuickLogin = Utils.$('#btn-quick-login');
+    var loginError = Utils.$('#login-error');
+
+    if (btnQuickLogin) {
+      btnQuickLogin.addEventListener('click', async function() {
+        var phone = userSelect ? userSelect.value : '';
+        if (!phone) {
+          App.showLoginError('請選擇一個帳號');
+          return;
         }
+        await App.doLogin(phone, btnQuickLogin);
+      });
+    }
+
+    // --- 手動登入 ---
+    var phoneInput = Utils.$('#phone-input');
+    var passwordInput = Utils.$('#password-input');
+    var btnManualLogin = Utils.$('#btn-manual-login');
+
+    if (btnManualLogin) {
+      btnManualLogin.addEventListener('click', async function() {
+        var phone = phoneInput ? phoneInput.value.trim() : '';
+        var password = passwordInput ? passwordInput.value.trim() : '';
+        if (!phone) {
+          App.showLoginError('請輸入手機號碼');
+          return;
+        }
+        if (!password) {
+          App.showLoginError('請輸入密碼');
+          return;
+        }
+        await App.doLogin(phone, btnManualLogin, password);
+      });
+    }
+  },
+
+  /**
+   * 執行登入
+   */
+  async doLogin(phone, btn, password) {
+    var originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '登入中...';
+    App.hideLoginError();
+
+    var loggedInUser = await Auth.login(phone, password);
+    if (loggedInUser) {
+      App.showDashboard(loggedInUser);
+    } else {
+      App.showLoginError('登入失敗，手機號碼或密碼錯誤');
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  },
+
+  /**
+   * 顯示登入錯誤
+   */
+  showLoginError(msg) {
+    var el = Utils.$('#login-error');
+    if (el) {
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+  },
+
+  /**
+   * 隱藏登入錯誤
+   */
+  hideLoginError() {
+    var el = Utils.$('#login-error');
+    if (el) {
+      el.textContent = '';
+      el.classList.remove('show');
+    }
+  },
+
+  /**
+   * 載入可登入的帳號列表
+   */
+  async loadUserList() {
+    var select = Utils.$('#user-select');
+    if (!select) return;
+    // 避免重複載入
+    if (select.options.length > 1) return;
+
+    var result = await API.getUsers();
+    if (result && result.success && result.data) {
+      result.data.forEach(function(u) {
+        var opt = document.createElement('option');
+        opt.value = u.phone;
+        opt.textContent = u.name + ' (' + u.phone + ')';
+        select.appendChild(opt);
       });
     }
   },

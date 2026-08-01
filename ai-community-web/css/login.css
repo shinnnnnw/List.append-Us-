@@ -78,6 +78,129 @@
   transform: scale(0.98);
 }
 
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- 登入區塊分隔 --- */
+.login-section {
+  padding: 16px 0;
+}
+
+.login-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.login-section-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.login-divider span {
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-light);
+}
+
+.login-divider p {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* --- 表單欄位 --- */
+.login-field {
+  margin-bottom: 12px;
+}
+
+.login-field label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.login-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background-color: #FAFAFA;
+  transition: border-color 0.2s;
+}
+
+.login-field input:focus {
+  border-color: var(--primary);
+  background-color: #fff;
+  outline: none;
+}
+
+/* --- 下拉選單 --- */
+.login-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background-color: #FAFAFA;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+
+.login-select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+/* --- 錯誤訊息 --- */
+.login-error {
+  color: #E53935;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 12px;
+  display: none;
+}
+
+.login-error.show {
+  display: block;
+}
+
+/* --- 返回按鈕 --- */
+.login-back-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 12px;
+  margin-top: 12px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.login-back-btn:hover {
+  color: var(--primary);
+}
+
+/* --- Features List --- */
 .login-features {
   margin-top: 20px;
   padding-top: 20px;

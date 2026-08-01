@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>Ayiayi 智慧社區服務平台</title>
+  <title>Aî 智慧社區服務平台</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/login.css">
   <link rel="stylesheet" href="css/chat.css">
@@ -19,15 +19,59 @@
         <h1>Aî 智慧社區服務平台</h1>
         <p>— 智慧管家，一站搞定生活大小事 —</p>
       </div>
-      <div class="login-card">
+
+      <!-- 第一步：歡迎頁 -->
+      <div id="login-step-welcome" class="login-card">
         <h2>使用 uniopen 帳號登入</h2>
         <p class="login-desc">整合零售、物流、餐飲、生活，單一帳號免切換 App。</p>
-        <button id="login-btn" class="login-btn">OpenPî / uniopen 一鍵授權登入</button>
+        <button id="btn-go-login" class="login-btn">開始登入</button>
         <ul class="login-features">
           <li>AI 智慧管家即時服務</li>
           <li>一站整合六大生活服務</li>
           <li>消費累積點數回饋</li>
         </ul>
+      </div>
+
+      <!-- 第二步：登入表單 -->
+      <div id="login-step-form" class="login-card" style="display:none">
+        <h2>帳號登入</h2>
+
+        <!-- 快速登入區塊 -->
+        <div class="login-section">
+          <div class="login-section-title">快速登入</div>
+          <p class="login-section-desc">選擇已註冊的帳號直接登入</p>
+          <select id="user-select" class="login-select">
+            <option value="">-- 選擇帳號 --</option>
+          </select>
+          <button id="btn-quick-login" class="login-btn" style="margin-top:12px">快速登入</button>
+        </div>
+
+        <div class="login-divider">
+          <span></span>
+          <p>或</p>
+          <span></span>
+        </div>
+
+        <!-- 手動登入區塊 -->
+        <div class="login-section">
+          <div class="login-section-title">手動登入</div>
+          <p class="login-section-desc">輸入手機號碼與密碼</p>
+          <div class="login-field">
+            <label>手機號碼</label>
+            <input id="phone-input" type="tel" placeholder="例如：0912345001">
+          </div>
+          <div class="login-field">
+            <label>密碼</label>
+            <input id="password-input" type="password" placeholder="請輸入密碼">
+          </div>
+          <button id="btn-manual-login" class="login-btn" style="margin-top:12px">登入</button>
+        </div>
+
+        <!-- 錯誤訊息 -->
+        <p id="login-error" class="login-error"></p>
+
+        <!-- 返回 -->
+        <button id="btn-back-welcome" class="login-back-btn">← 返回</button>
       </div>
     </div>
   </div>
