@@ -31,7 +31,7 @@
           <span>📋 我的訂單</span>
           <span class="menu-arrow">→</span>
         </li>
-        <li class="profile-menu-item" onclick="Utils.toast('點數紀錄功能開發中')">
+        <li class="profile-menu-item" onclick="Utils.navigate('points.html')">
           <span>🎁 點數紀錄</span>
           <span class="menu-arrow">→</span>
         </li>
@@ -103,7 +103,7 @@
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     if (!Auth.requireAuth()) return;
 
     const user = Auth.getUser();
@@ -116,14 +116,21 @@
       const name = Utils.$('#profile-name');
       if (name) name.textContent = user.name || '-';
 
-      // 點數
-      const points = Utils.$('#profile-points');
-      if (points) points.textContent = `累積點數：${user.points || 0} P`;
-
       // 帳號資訊
       Utils.$('#info-name').textContent = user.name || '-';
       Utils.$('#info-phone').textContent = user.phone || '-';
       Utils.$('#info-email').textContent = user.email || '-';
+    }
+
+    // 動態計算點數（已完成訂單 x 5）
+    const pointsEl = Utils.$('#profile-points');
+    const orderResult = await API.getOrders();
+    if (orderResult && orderResult.success && orderResult.data) {
+      const completedCount = orderResult.data.filter(o => o.order_status === '80').length;
+      const totalPoints = completedCount * 5;
+      if (pointsEl) pointsEl.textContent = `累積點數：${totalPoints} P`;
+    } else {
+      if (pointsEl) pointsEl.textContent = '累積點數：0 P';
     }
 
     // 登出
