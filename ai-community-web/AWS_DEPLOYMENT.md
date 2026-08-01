@@ -199,7 +199,9 @@ aws lambda create-function \
 更新程式碼：
 
 ```bash
-zip -r function.zip index.mjs
+cd lambda/chat
+npm install
+zip -r function.zip index.mjs package.json node_modules
 aws lambda update-function-code \
   --function-name ai-community-api \
   --zip-file fileb://function.zip

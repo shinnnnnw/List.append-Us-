@@ -1,9 +1,21 @@
 /**
  * 全域設定
  */
+
+// 環境判斷：本地 localhost/127.0.0.1 用 PHP，雲端用 Lambda
+const _isLocal = (
+  location.hostname === 'localhost' ||
+  location.hostname === '127.0.0.1'
+);
+
 const CONFIG = {
-  // API base path（XAMPP 本地 PHP）
-  API_BASE: 'http://localhost/List.append-Us-/ai-community-web/php/api',
+  // API base URL：本地用 PHP，雲端用 AWS Lambda
+  API_BASE: _isLocal
+    ? 'php/api'
+    : 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod',
+
+  // 是否為本地環境
+  IS_LOCAL: _isLocal,
  
   // 服務快捷按鈕定義（對應 pms_vendor_service_type）
   QUICK_SERVICES: [
