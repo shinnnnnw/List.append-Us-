@@ -83,6 +83,10 @@ input, select, textarea {
 .page-content {
   padding: 15px;
   padding-top: var(--header-height);
+}
+
+/* 首頁 Dashboard 專用佈局 */
+.page-content.dashboard-layout {
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--nav-height));
@@ -281,7 +285,7 @@ input, select, textarea {
     --max-width: 960px;
   }
 
-  .page-content {
+  .page-content.dashboard-layout {
     flex-direction: row;
     gap: 20px;
     align-items: stretch;
