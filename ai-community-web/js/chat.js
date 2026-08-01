@@ -374,6 +374,37 @@ const Chat = {
   },
 
   /**
+   * 語音朗讀文字（Web Speech API TTS）
+   */
+  speakText(text) {
+    if (!window.speechSynthesis) return;
+
+    // 去除 HTML 標籤和 emoji 圖標
+    const plainText = text.replace(/<[^>]*>/g, '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '').trim();
+    if (!plainText) return;
+
+    // 取消正在播放的語音
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(plainText);
+    utterance.lang = 'zh-TW';
+    utterance.rate = 1.1;
+    utterance.pitch = 1.05;
+
+    // 使用固定語音（初始化時快取）
+    if (!this._cachedVoice) {
+      const voices = window.speechSynthesis.getVoices();
+      this._cachedVoice = voices.find(v => v.lang === 'zh-TW' && v.name.includes('Google')) ||
+                          voices.find(v => v.lang === 'zh-TW') ||
+                          voices.find(v => v.lang.startsWith('zh')) ||
+                          null;
+    }
+    if (this._cachedVoice) utterance.voice = this._cachedVoice;
+
+    window.speechSynthesis.speak(utterance);
+  },
+
+  /**
    * 附加引導表單按鈕（不加入 messages 陣列，獨立插入到對話末尾）
    * @param {number} formId
    * @param {string} serviceName
@@ -516,11 +547,26 @@ const Chat = {
       if (msg.imageHtml) {
         bubble.innerHTML = msg.imageHtml;
       } else if (msg.isHtml) {
-        // 將換行符轉為 <br>，讓 AI 回覆正確換行顯示
         bubble.innerHTML = msg.text.replace(/\n/g, '<br>');
       } else {
         bubble.textContent = msg.text;
       }
+
+      // AI 訊息加上語音朗讀按鈕
+      if (msg.sender === 'ai') {
+        const speakBtn = document.createElement('button');
+        speakBtn.className = 'speak-btn';
+        speakBtn.title = '朗讀此訊息';
+        speakBtn.textContent = '🔊';
+        speakBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:14px;padding:2px 6px;margin-left:4px;opacity:0.6;vertical-align:middle;';
+        speakBtn.addEventListener('click', () => {
+          this.speakText(msg.text);
+          speakBtn.style.opacity = '1';
+          setTimeout(() => { speakBtn.style.opacity = '0.6'; }, 1500);
+        });
+        bubble.appendChild(speakBtn);
+      }
+
       this.container.appendChild(bubble);
     });
 
