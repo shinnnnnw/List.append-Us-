@@ -5,14 +5,16 @@ const CONFIG = {
   // API base URL（AWS Lambda + API Gateway）
   API_BASE: 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod',
 
-  // 服務快捷按鈕定義（對應 pms_vendor_service_type）
+// 服務快捷按鈕定義（對應八大服務分類）
   QUICK_SERVICES: [
-    { name: '訂位', formId: 1, color: '#4CAF50', icon: '🍽️', serviceType: '01' },
-    { name: '購物', formId: 2, color: '#E91E63', icon: '🛒', serviceType: '02' },
-    { name: '清潔', formId: 3, color: '#2196F3', icon: '🧹', serviceType: '03' },
-    { name: '修繕', formId: 3, color: '#FFC107', icon: '🔧', serviceType: '04' },
-    { name: '社區', formId: 3, color: '#9C27B0', icon: '🏘️', serviceType: '05' },
-    { name: '藥局', formId: 3, color: '#FF5722', icon: '💊', serviceType: '06' },
+    { name: '外送', formId: 1, color: '#4CAF50', icon: '🛵', serviceType: '01', chatMessage: '我想叫外送' },
+    { name: '訂位', formId: 1, color: '#FF9800', icon: '🍽️', serviceType: '02', chatMessage: '我想訂餐廳' },
+    { name: '清潔', formId: 3, color: '#2196F3', icon: '🧹', serviceType: '03', chatMessage: '我需要清潔服務' },
+    { name: '修繕', formId: 3, color: '#FFC107', icon: '🔧', serviceType: '04', chatMessage: '我家需要修繕' },
+    { name: '宅配', formId: 4, color: '#795548', icon: '📦', serviceType: '05', chatMessage: '我要寄包裹' },
+    { name: '購物', formId: 2, color: '#E91E63', icon: '🛒', serviceType: '06', chatMessage: '我想買東西' },
+    { name: '叫車', formId: 3, color: '#00BCD4', icon: '🚕', serviceType: '07', chatMessage: '我需要叫車' },
+    { name: '領藥', formId: 3, color: '#FF5722', icon: '💊', serviceType: '08', chatMessage: '我需要代領藥品' },
   ],
 
   // 訂單狀態對照
