@@ -25,6 +25,10 @@ jobs:
           aws s3 sync ./ai-community-web/ s3://ai-community-team11/ \
             --exclude "*.pdf" \
             --exclude "*.sql" \
+            --exclude "lambda/*" \
+            --exclude "dynamodb/*" \
+            --exclude "php/*" \
+            --exclude ".kiro/*" \
             --delete
 
       - name: Invalidate CloudFront cache
