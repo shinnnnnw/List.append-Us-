@@ -1,7 +1,7 @@
 /**
  * API 封裝模組
- * 統一處理 fetch 請求
- * 本地用 PHP，雲端用 AWS Lambda + API Gateway
+ * 統一處理 fetch 請求，對應 AWS Lambda + API Gateway
+ * API Base: https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod
  */
 const API = {
 
@@ -17,6 +17,8 @@ const API = {
     try {
       const response = await fetch(url, mergedOptions);
       const data = await response.json();
+      console.log(`[API] status ${response.status}`, url);
+      console.log(`[API] result`, data);
       return data;
     } catch (error) {
       console.error(`API Error [${endpoint}]:`, error);
@@ -42,8 +44,7 @@ const API = {
     });
   },
 
-  // ── 登入 / 登出 / 驗證 ──────────────────────────────────────────────────
-
+  // 登入（Mock）
   login(phone, password) {
     const users = [
       { inbr_account_id: 'MBR001', name: '王小明', phone: '0912-345-001', email: 'wang01@example.com', point_balance: 50 },
@@ -86,8 +87,7 @@ const API = {
     ]});
   },
 
-  // ── 服務廠商 ─────────────────────────────────────────────────────────────
-
+  // 服務廠商
   getServices(type) {
     const q = type ? `?service_type=${type}` : '';
     return this.get(`/vendors${q}`);
@@ -97,8 +97,7 @@ const API = {
     return this.get(`/vendors?vendor_id=${id}`);
   },
 
-  // ── 表單 ─────────────────────────────────────────────────────────────────
-
+  // 表單（Mock）
   getForm(formId) {
     const FORMS = {
       1: { id: 1, name: '餐廳訂位', groups: [
@@ -142,15 +141,13 @@ const API = {
     return Promise.resolve({ success: true, data: FORMS[formId] || null });
   },
 
-  // ── 送出諮詢單 ──────────────────────────────────────────────────────────
-
+  // 諮詢單
   submitForm(data) {
     const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
     return this.post('/feedback', { ...data, inbr_account_id: user.inbr_account_id || 'MBR001' });
   },
 
-  // ── 訂單 ─────────────────────────────────────────────────────────────────
-
+  // 訂單
   getOrders(status) {
     const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
     return this.get(`/feedback/member?member_id=${user.inbr_account_id || 'MBR001'}`);
@@ -160,8 +157,7 @@ const API = {
     return this.get(`/feedback/member?member_id=${id}`);
   },
 
-  // ── 縣市行政區 ───────────────────────────────────────────────────────────
-
+  // 縣市行政區
   getCounties() {
     return Promise.resolve({ success: true, data: [
       { code: '01', name: '台北市' },
@@ -177,18 +173,16 @@ const API = {
     return this.get('/districts');
   },
 
-  // ── AI 聊天（打 Lambda /chat endpoint，使用 Bedrock） ──────────────────
-
+  // AI 對話
   chatConversation(message, history = []) {
-    return this.post('/chat', { message, history });
+    return this.post('/ai/intent', { text: message, history: history });
   },
 
   chat(message, history = []) {
-    return this.post('/chat', { message, history });
+    return this.post('/ai/intent', { text: message, history: history });
   },
 
-  // ── B端廠商案件 ──────────────────────────────────────────────────────────
-
+  // B端廠商
   getVendorCases(vendorId) {
     return this.get(`/cases/vendor?vendor_id=${vendorId}`);
   },
