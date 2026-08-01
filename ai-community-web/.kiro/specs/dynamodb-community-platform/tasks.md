@@ -6,13 +6,13 @@
 
 ## Tasks
 
-- [ ] 1. 建立專案結構與資料表定義模組
-  - [ ] 1.1 建立 dynamodb 目錄與 package.json
+- [x] 1. 建立專案結構與資料表定義模組
+  - [x] 1.1 建立 dynamodb 目錄與 package.json
     - 建立 `ai-community-web/dynamodb/` 目錄
     - 建立 `package.json`，設定 name、version、main，並加入 `@aws-sdk/client-dynamodb` 與 `@aws-sdk/util-dynamodb` 依賴
     - _Requirements: 4.1_
 
-  - [ ] 1.2 建立 table-definitions.js 資料表 Schema 定義模組
+  - [x] 1.2 建立 table-definitions.js 資料表 Schema 定義模組
     - 依設計文件定義 10 張資料表的 TableName、KeySchema、AttributeDefinitions、BillingMode
     - 包含所有 8 個 GSI 定義（GSI_inbr_account_id、GSI_feedback_no、GSI_vendor_id、GSI_assignment_id）
     - 匯出 TABLE_DEFINITIONS 陣列供其他模組使用

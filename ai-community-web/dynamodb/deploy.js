@@ -1,3 +1,4 @@
+// updated
 /**
  * deploy.js
  * DynamoDB 部署腳本 - 建立資料表並植入範例資料
