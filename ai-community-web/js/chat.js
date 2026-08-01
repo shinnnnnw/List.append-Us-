@@ -205,7 +205,8 @@ const Chat = {
       const bubble = document.createElement('div');
       bubble.className = `message-bubble ${msg.sender}`;
       if (msg.isHtml) {
-        bubble.innerHTML = msg.text;
+        // 將換行符轉為 <br>，讓 AI 回覆正確換行顯示
+        bubble.innerHTML = msg.text.replace(/\n/g, '<br>');
       } else {
         bubble.textContent = msg.text;
       }

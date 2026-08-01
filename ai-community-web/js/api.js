@@ -175,11 +175,17 @@ const API = {
 
   // AI 對話
   chatConversation(message, history = []) {
-    return this.post('/ai/intent', { text: message, history: history });
+    if (CONFIG.IS_LOCAL) {
+      return this.post('/chat.php', { message: message, history: history });
+    }
+    return this.post('/ai/chat', { text: message, history: history });
   },
 
   chat(message, history = []) {
-    return this.post('/ai/intent', { text: message, history: history });
+    if (CONFIG.IS_LOCAL) {
+      return this.post('/chat.php', { message: message, history: history });
+    }
+    return this.post('/ai/chat', { text: message, history: history });
   },
 
   // B端廠商
