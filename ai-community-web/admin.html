@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>廠商後台 - Aî 智慧社區</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/orders.css">
+  <style>
+    .admin-login { max-width: 400px; margin: 60px auto; padding: 0 16px; }
+    .admin-login h2 { text-align: center; margin-bottom: 24px; color: var(--text-primary); }
+    .admin-field { margin-bottom: 16px; }
+    .admin-field label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+    .admin-field input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+    .admin-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: #fff; font-size: 15px; cursor: pointer; margin-top: 8px; }
+    .admin-btn:hover { background: var(--primary-dark); }
+    .admin-error { color: #d32f2f; font-size: 13px; margin-top: 8px; text-align: center; display: none; }
+
+    .admin-dashboard { display: none; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--primary); color: #fff; }
+    .admin-header h2 { font-size: 16px; }
+    .admin-logout { background: none; border: 1px solid #fff; color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+    .admin-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; }
+    .stat-card { background: #fff; border-radius: 10px; padding: 16px; text-align: center; box-shadow: var(--shadow-sm); }
+    .stat-card .stat-num { font-size: 28px; font-weight: bold; color: var(--primary); }
+    .stat-card .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+    .admin-tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 16px; background: #fff; }
+    .admin-tab { flex: 1; text-align: center; padding: 12px 0; font-size: 14px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+    .admin-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: bold; }
+
+    .admin-list { padding: 12px 16px; }
+    .case-card { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow-sm); cursor: pointer; }
+    .case-card:hover { box-shadow: var(--shadow); }
+    .case-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .case-title { font-size: 14px; font-weight: bold; }
+    .case-badge { font-size: 11px; padding: 3px 8px; border-radius: 12px; color: #fff; }
+    .badge-pending { background: #FF9800; }
+    .badge-progress { background: #2196F3; }
+    .badge-done { background: #4CAF50; }
+    .badge-cancel { background: #9E9E9E; }
+    .case-info { font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+
+    .case-detail { display: none; padding: 16px; }
+    .detail-back { font-size: 14px; color: var(--primary); cursor: pointer; margin-bottom: 12px; display: inline-block; }
+    .detail-section { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+    .detail-section h4 { font-size: 14px; margin-bottom: 10px; color: var(--text-primary); }
+    .detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border-light); }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: var(--text-secondary); }
+    .detail-value { color: var(--text-primary); font-weight: 500; }
+
+    .status-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; width: 100%; margin-top: 8px; }
+    .reply-area { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; resize: vertical; margin-top: 8px; min-height: 80px; }
+    .reply-btn { margin-top: 8px; padding: 10px 16px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .reply-list { margin-top: 12px; }
+    .reply-item { background: var(--bg); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 12px; line-height: 1.6; }
+    .reply-item .reply-time { color: var(--text-muted); font-size: 11px; }
+  </style>
+</head>
+<body>
+
+<!-- 登入畫面 -->
+<div id="admin-login" class="admin-login">
+  <h2>廠商後台登入</h2>
+  <div class="card">
+    <div class="admin-field">
+      <label>廠商帳號</label>
+      <input type="text" id="admin-username" placeholder="請輸入帳號">
+    </div>
+    <div class="admin-field">
+      <label>密碼</label>
+      <input type="password" id="admin-password" placeholder="請輸入密碼">
+    </div>
+    <button class="admin-btn" onclick="adminLogin()">登入</button>
+    <p class="admin-error" id="admin-error">帳號或密碼錯誤</p>
+    <p style="font-size:12px;color:#999;text-align:center;margin-top:12px;">測試帳號：admin / 密碼：1234</p>
+  </div>
+</div>
+
+<!-- 後台儀表板 -->
+<div id="admin-dashboard" class="admin-dashboard">
+  <div class="admin-header">
+    <h2>廠商管理後台</h2>
+    <button class="admin-logout" onclick="adminLogout()">登出</button>
+  </div>
+
+  <!-- 統計卡片 -->
+  <div class="admin-stats">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-pending">0</div>
+      <div class="stat-label">待處理</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-progress">0</div>
+      <div class="stat-label">進行中</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-done">0</div>
+      <div class="stat-label">已完成</div>
+    </div>
+  </div>
+
+  <!-- Tab 切換 -->
+  <div class="admin-tabs">
+    <div class="admin-tab active" data-tab="all" onclick="switchTab('all')">全部</div>
+    <div class="admin-tab" data-tab="pending" onclick="switchTab('pending')">待處理</div>
+    <div class="admin-tab" data-tab="progress" onclick="switchTab('progress')">進行中</div>
+    <div class="admin-tab" data-tab="done" onclick="switchTab('done')">已完成</div>
+  </div>
+
+  <!-- 案件列表 -->
+  <div class="admin-list" id="case-list"></div>
+
+  <!-- 案件詳情 -->
+  <div class="case-detail" id="case-detail"></div>
+</div>
+
+<script>
+const API_BASE = 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod';
+
+// 模擬案件資料（實際會從 API 載入）
+let cases = [
+  {
+    id: 'FB1722500001',
+    customerName: '王小明',
+    customerPhone: '0912-345-001',
+    customerEmail: 'wang@example.com',
+    service: '居家清潔',
+    category: '清潔',
+    description: '客廳和兩間房間需要深度清潔，大約 30 坪，希望週六上午來。',
+    status: 'pending',
+    createdAt: '2026-07-30 14:30',
+    address: '台北市信義區松仁路 100 號 12F',
+    replies: [],
+  },
+  {
+    id: 'FB1722500002',
+    customerName: '李美玲',
+    customerPhone: '0923-456-002',
+    customerEmail: 'li.mei@example.com',
+    service: '水電修繕',
+    category: '修繕',
+    description: '浴室水龍頭漏水，已經滴了兩天，希望盡快處理。',
+    status: 'progress',
+    createdAt: '2026-07-29 09:15',
+    address: '台北市大安區忠孝東路四段 50 號 3F',
+    replies: [
+      { time: '2026-07-29 10:00', content: '已收到，預計明天下午 2 點到府查看。' },
+    ],
+  },
+  {
+    id: 'FB1722500003',
+    customerName: '張大偉',
+    customerPhone: '0934-567-003',
+    customerEmail: 'chang.dw@example.com',
+    service: '冷氣清洗',
+    category: '清潔',
+    description: '兩台分離式冷氣需要清洗，已經用了三年沒洗過。',
+    status: 'done',
+    createdAt: '2026-07-25 16:45',
+    address: '台北市中山區南京東路二段 80 號 5F',
+    replies: [
+      { time: '2026-07-26 09:00', content: '預約週三上午 10 點清洗。' },
+      { time: '2026-07-28 12:00', content: '已完成清洗，感謝使用。' },
+    ],
+  },
+  {
+    id: 'FB1722500004',
+    customerName: '陳雅婷',
+    customerPhone: '0945-678-004',
+    customerEmail: 'chen.yt@example.com',
+    service: '餐廳訂位',
+    category: '訂位',
+    description: '這週六晚上 6 點，4 位大人 2 位小孩，希望有兒童座椅。',
+    status: 'pending',
+    createdAt: '2026-07-31 11:20',
+    address: '',
+    replies: [],
+  },
+  {
+    id: 'FB1722500005',
+    customerName: '林志豪',
+    customerPhone: '0956-789-005',
+    customerEmail: 'lin.zh@example.com',
+    service: '包裹寄送',
+    category: '宅配',
+    description: '有一箱書要寄到高雄，大約 5 公斤，希望三天內到。',
+    status: 'progress',
+    createdAt: '2026-07-30 08:00',
+    address: '台北市松山區民生東路三段 25 號 1F',
+    replies: [
+      { time: '2026-07-30 09:30', content: '已安排明天上午取件，請準備好包裹。' },
+    ],
+  },
+];
+
+const statusMap = {
+  pending: { label: '待處理', badge: 'badge-pending' },
+  progress: { label: '進行中', badge: 'badge-progress' },
+  done: { label: '已完成', badge: 'badge-done' },
+  cancel: { label: '已取消', badge: 'badge-cancel' },
+};
+
+// 登入
+function adminLogin() {
+  const username = document.getElementById('admin-username').value.trim();
+  const password = document.getElementById('admin-password').value.trim();
+  const errorEl = document.getElementById('admin-error');
+
+  if (username === 'admin' && password === '1234') {
+    errorEl.style.display = 'none';
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-dashboard').style.display = 'block';
+    renderDashboard();
+  } else {
+    errorEl.style.display = 'block';
+  }
+}
+
+// 登出
+function adminLogout() {
+  document.getElementById('admin-login').style.display = 'block';
+  document.getElementById('admin-dashboard').style.display = 'none';
+  document.getElementById('admin-username').value = '';
+  document.getElementById('admin-password').value = '';
+}
+
+// 渲染儀表板
+function renderDashboard() {
+  const pending = cases.filter(c => c.status === 'pending').length;
+  const progress = cases.filter(c => c.status === 'progress').length;
+  const done = cases.filter(c => c.status === 'done').length;
+
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-progress').textContent = progress;
+  document.getElementById('stat-done').textContent = done;
+
+  renderCaseList('all');
+}
+
+// Tab 切換
+function switchTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.admin-tab[data-tab="${tab}"]`).classList.add('active');
+  renderCaseList(tab);
+}
+
+// 渲染案件列表
+function renderCaseList(filter) {
+  const listEl = document.getElementById('case-list');
+  const detailEl = document.getElementById('case-detail');
+  listEl.style.display = 'block';
+  detailEl.style.display = 'none';
+
+  const filtered = filter === 'all' ? cases : cases.filter(c => c.status === filter);
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<p style="text-align:center;color:#999;padding:40px 0;">目前沒有案件</p>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(c => {
+    const st = statusMap[c.status];
+    return `
+      <div class="case-card" onclick="showDetail('${c.id}')">
+        <div class="case-header">
+          <span class="case-title">${c.service} - ${c.customerName}</span>
+          <span class="case-badge ${st.badge}">${st.label}</span>
+        </div>
+        <div class="case-info">
+          <div>案件編號：${c.id}</div>
+          <div>建立時間：${c.createdAt}</div>
+          <div>需求摘要：${c.description.substring(0, 30)}${c.description.length > 30 ? '...' : ''}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 顯示案件詳情
+function showDetail(id) {
+  const c = cases.find(x => x.id === id);
+  if (!c) return;
+
+  const listEl = document.getElementById('case-list');
+  const detailEl = document.getElementById('case-detail');
+  listEl.style.display = 'none';
+  detailEl.style.display = 'block';
+
+  const st = statusMap[c.status];
+  const repliesHtml = c.replies.length > 0
+    ? c.replies.map(r => `<div class="reply-item"><div class="reply-time">${r.time}</div><div>${r.content}</div></div>`).join('')
+    : '<p style="color:#999;font-size:12px;">尚無回覆紀錄</p>';
+
+  detailEl.innerHTML = `
+    <span class="detail-back" onclick="renderCaseList(document.querySelector('.admin-tab.active').dataset.tab)">← 返回列表</span>
+
+    <div class="detail-section">
+      <h4>案件資訊</h4>
+      <div class="detail-row"><span class="detail-label">案件編號</span><span class="detail-value">${c.id}</span></div>
+      <div class="detail-row"><span class="detail-label">服務類別</span><span class="detail-value">${c.category} / ${c.service}</span></div>
+      <div class="detail-row"><span class="detail-label">建立時間</span><span class="detail-value">${c.createdAt}</span></div>
+      <div class="detail-row"><span class="detail-label">目前狀態</span><span class="case-badge ${st.badge}">${st.label}</span></div>
+    </div>
+
+    <div class="detail-section">
+      <h4>消費者資訊</h4>
+      <div class="detail-row"><span class="detail-label">姓名</span><span class="detail-value">${c.customerName}</span></div>
+      <div class="detail-row"><span class="detail-label">電話</span><span class="detail-value"><a href="tel:${c.customerPhone}" style="color:var(--primary)">${c.customerPhone}</a></span></div>
+      <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${c.customerEmail}</span></div>
+      ${c.address ? `<div class="detail-row"><span class="detail-label">地址</span><span class="detail-value">${c.address}</span></div>` : ''}
+    </div>
+
+    <div class="detail-section">
+      <h4>需求內容</h4>
+      <p style="font-size:13px;line-height:1.8;color:#333;">${c.description}</p>
+    </div>
+
+    <div class="detail-section">
+      <h4>狀態管理</h4>
+      <select class="status-select" id="status-select" onchange="updateStatus('${c.id}', this.value)">
+        <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>待處理</option>
+        <option value="progress" ${c.status === 'progress' ? 'selected' : ''}>進行中</option>
+        <option value="done" ${c.status === 'done' ? 'selected' : ''}>已完成</option>
+        <option value="cancel" ${c.status === 'cancel' ? 'selected' : ''}>已取消</option>
+      </select>
+    </div>
+
+    <div class="detail-section">
+      <h4>回覆紀錄</h4>
+      <div class="reply-list">${repliesHtml}</div>
+      <textarea class="reply-area" id="reply-input" placeholder="輸入回覆內容..."></textarea>
+      <button class="reply-btn" onclick="addReply('${c.id}')">送出回覆</button>
+    </div>
+  `;
+}
+
+// 更新狀態
+function updateStatus(id, newStatus) {
+  const c = cases.find(x => x.id === id);
+  if (c) {
+    c.status = newStatus;
+    renderDashboard();
+    showDetail(id);
+  }
+}
+
+// 新增回覆
+function addReply(id) {
+  const input = document.getElementById('reply-input');
+  const content = input.value.trim();
+  if (!content) {
+    alert('請輸入回覆內容');
+    return;
+  }
+
+  const c = cases.find(x => x.id === id);
+  if (c) {
+    const now = new Date();
+    const timeStr = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0') + ' ' +
+      String(now.getHours()).padStart(2, '0') + ':' +
+      String(now.getMinutes()).padStart(2, '0');
+    c.replies.push({ time: timeStr, content });
+    showDetail(id);
+  }
+}
+
+// Enter 登入
+document.getElementById('admin-password').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') adminLogin();
+});
+</script>
+</body>
+</html>
