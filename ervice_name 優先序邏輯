@@ -1,0 +1,85 @@
+[1mdiff --git a/ai-community-web/lambda/chat/index.mjs b/ai-community-web/lambda/chat/index.mjs[m
+[1mindex dce4209..11534a1 100644[m
+[1m--- a/ai-community-web/lambda/chat/index.mjs[m
+[1m+++ b/ai-community-web/lambda/chat/index.mjs[m
+[36m@@ -495,15 +495,42 @@[m [masync function handleAdminReply(body) {[m
+ [m
+ // ─── Orders ──────────────────────────────────────────────────────────────────[m
+ [m
+[31m-function formatOrder(o) {[m
+[32m+[m[32mconst SERVICE_ID_NAME_MAP = {[m
+[32m+[m[32m  '2': '家電清洗', '3': '寄件服務', '4': '居家清潔',[m
+[32m+[m[32m  '9': '餐廳訂位', '16': '商品購物', '17': '水電修繕',[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32masync function formatOrder(o) {[m
+[32m+[m[32m  // vendor_name：查 cms_service_vendor 表[m
+[32m+[m[32m  let vendorName = '-';[m
+[32m+[m[32m  const svid = String(o.service_vendor_id || '');[m
+[32m+[m[32m  if (svid && svid !== '' && !isNaN(svid)) {[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      const vendor = await dbGet('cms_service_vendor', { vendor_id: Number(svid) });[m
+[32m+[m[32m      if (vendor && vendor.name) vendorName = vendor.name;[m
+[32m+[m[32m    } catch (e) {[m
+[32m+[m[32m      console.error('[formatOrder] vendor lookup failed:', e.message);[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  // service_name 優先序[m
+[32m+[m[32m  let serviceName = '-';[m
+[32m+[m[32m  if (o.service_name) {[m
+[32m+[m[32m    serviceName = o.service_name;[m
+[32m+[m[32m  } else if (o.order_items && Array.isArray(o.order_items) && o.order_items.length > 0 && o.order_items[0].name) {[m
+[32m+[m[32m    serviceName = o.order_items[0].name;[m
+[32m+[m[32m  } else if (o.service_id) {[m
+[32m+[m[32m    serviceName = SERVICE_ID_NAME_MAP[String(o.service_id)] || '-';[m
+[32m+[m[32m  }[m
+[32m+[m
+   return {[m
+     record_id:    o.record_id,[m
+     order_no:     o.order_no,[m
+     order_type:   o.order_type,[m
+     order_status: o.order_status,[m
+     order_time:   o.cre_time || o.order_time || '',[m
+[31m-    vendor_name:  o.vendor_name  || o.service_vendor_id || '',[m
+[31m-    service_name: o.service_name || '',[m
+[32m+[m[32m    vendor_name:  vendorName,[m
+[32m+[m[32m    service_name: serviceName,[m
+     final_amount: Number(o.final_amount) || 0,[m
+     earn_points:  Number(o.earn_points)  || 0,[m
+     remark:       o.remark || '',[m
+[36m@@ -522,7 +549,7 @@[m [masync function handleOrders(qs) {[m
+     { ascending: false }[m
+   );[m
+ [m
+[31m-  let orders = items.map(formatOrder);[m
+[32m+[m[32m  let orders = await Promise.all(items.map(o => formatOrder(o)));[m
+   if (qs.status) orders = orders.filter(o => o.order_status === qs.status);[m
+   return ok(orders);[m
+ }[m
+[36m@@ -541,6 +568,7 @@[m [masync function handleCreateOrder(body) {[m
+     order_no: body.order_no || `ORD${Date.now()}`,[m
+     service_vendor_id: body.service_vendor_id,[m
+     service_id: body.service_id,[m
+[32m+[m[32m    service_name: body.service_name || '',[m
+     inbr_account_id: body.inbr_account_id,[m
+     order_type: body.order_type,[m
+     order_status: body.order_status || '01',[m
+[36m@@ -551,7 +579,7 @@[m [masync function handleCreateOrder(body) {[m
+   };[m
+ [m
+   await dbPut('mms_order_record', orderData);[m
+[31m-  return ok(formatOrder(orderData), '訂單建立成功');[m
+[32m+[m[32m  return ok(await formatOrder(orderData), '訂單建立成功');[m
+ }[m
+ [m
+ async function handleOrderDetail(orderId, qs) {[m
+[36m@@ -568,7 +596,7 @@[m [masync function handleOrderDetail(orderId, qs) {[m
+   if (accountId && o.inbr_account_id !== accountId) return fail('無權限查看此訂單', 403);[m
+ [m
+   const order = {[m
+[31m-    ...formatOrder(o),[m
+[32m+[m[32m    ...(await formatOrder(o)),[m
+     original_amount: Number(o.original_amount) || Number(o.final_amount) || 0,[m
+     discount_amount: Number(o.discount_amount) || 0,[m
+     order_items: typeof o.order_items === 'string'[m
