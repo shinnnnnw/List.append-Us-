@@ -495,15 +495,42 @@ async function handleAdminReply(body) {
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
-function formatOrder(o) {
+const SERVICE_ID_NAME_MAP = {
+  '2': '家電清洗', '3': '寄件服務', '4': '居家清潔',
+  '9': '餐廳訂位', '16': '商品購物', '17': '水電修繕',
+};
+
+async function formatOrder(o) {
+  // vendor_name：查 cms_service_vendor 表
+  let vendorName = '-';
+  const svid = String(o.service_vendor_id || '');
+  if (svid && svid !== '' && !isNaN(svid)) {
+    try {
+      const vendor = await dbGet('cms_service_vendor', { vendor_id: Number(svid) });
+      if (vendor && vendor.name) vendorName = vendor.name;
+    } catch (e) {
+      console.error('[formatOrder] vendor lookup failed:', e.message);
+    }
+  }
+
+  // service_name 優先序
+  let serviceName = '-';
+  if (o.service_name) {
+    serviceName = o.service_name;
+  } else if (o.order_items && Array.isArray(o.order_items) && o.order_items.length > 0 && o.order_items[0].name) {
+    serviceName = o.order_items[0].name;
+  } else if (o.service_id) {
+    serviceName = SERVICE_ID_NAME_MAP[String(o.service_id)] || '-';
+  }
+
   return {
     record_id:    o.record_id,
     order_no:     o.order_no,
     order_type:   o.order_type,
     order_status: o.order_status,
     order_time:   o.cre_time || o.order_time || '',
-    vendor_name:  o.vendor_name  || o.service_vendor_id || '',
-    service_name: o.service_name || '',
+    vendor_name:  vendorName,
+    service_name: serviceName,
     final_amount: Number(o.final_amount) || 0,
     earn_points:  Number(o.earn_points)  || 0,
     remark:       o.remark || '',
@@ -522,7 +549,7 @@ async function handleOrders(qs) {
     { ascending: false }
   );
 
-  let orders = items.map(formatOrder);
+  let orders = await Promise.all(items.map(o => formatOrder(o)));
   if (qs.status) orders = orders.filter(o => o.order_status === qs.status);
   return ok(orders);
 }
@@ -541,6 +568,7 @@ async function handleCreateOrder(body) {
     order_no: body.order_no || `ORD${Date.now()}`,
     service_vendor_id: body.service_vendor_id,
     service_id: body.service_id,
+    service_name: body.service_name || '',
     inbr_account_id: body.inbr_account_id,
     order_type: body.order_type,
     order_status: body.order_status || '01',
@@ -551,7 +579,7 @@ async function handleCreateOrder(body) {
   };
 
   await dbPut('mms_order_record', orderData);
-  return ok(formatOrder(orderData), '訂單建立成功');
+  return ok(await formatOrder(orderData), '訂單建立成功');
 }
 
 async function handleOrderDetail(orderId, qs) {
@@ -568,7 +596,7 @@ async function handleOrderDetail(orderId, qs) {
   if (accountId && o.inbr_account_id !== accountId) return fail('無權限查看此訂單', 403);
 
   const order = {
-    ...formatOrder(o),
+    ...(await formatOrder(o)),
     original_amount: Number(o.original_amount) || Number(o.final_amount) || 0,
     discount_amount: Number(o.discount_amount) || 0,
     order_items: typeof o.order_items === 'string'
