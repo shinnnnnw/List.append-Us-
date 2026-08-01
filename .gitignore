@@ -1,2 +1,3 @@
 # 資料庫連線設定（含密碼，不進版控）
 ai-community-web/sql/db_config.php
+ai-community-web/lambda/chat/function.zip
