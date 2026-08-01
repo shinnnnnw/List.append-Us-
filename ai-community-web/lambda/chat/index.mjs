@@ -132,6 +132,7 @@ export async function handler(event) {
 
     // Orders
     if (path === '/orders' && method === 'GET')         return handleOrders(qs);
+    if (path === '/orders' && method === 'POST')        return handleCreateOrder(body);
     if (/^\/orders\/(.+)$/.test(path) && method === 'GET') {
       return handleOrderDetail(path.match(/^\/orders\/(.+)$/)[1], qs);
     }
@@ -394,6 +395,33 @@ async function handleOrders(qs) {
   let orders = items.map(formatOrder);
   if (qs.status) orders = orders.filter(o => o.order_status === qs.status);
   return ok(orders);
+}
+
+async function handleCreateOrder(body) {
+  const requiredFields = ['inbr_account_id', 'service_vendor_id', 'service_id', 'order_type'];
+  for (const field of requiredFields) {
+    if (!body[field]) return fail(`缺少必填欄位: ${field}`, 400);
+  }
+
+  const now = new Date().toISOString();
+  const recordId = Date.now(); // 數字型主鍵，用毫秒時間戳確保唯一遞增
+
+  const orderData = {
+    record_id: recordId,
+    order_no: body.order_no || `ORD${Date.now()}`,
+    service_vendor_id: body.service_vendor_id,
+    service_id: body.service_id,
+    inbr_account_id: body.inbr_account_id,
+    order_type: body.order_type,
+    order_status: body.order_status || '01',
+    final_amount: body.final_amount || 0,
+    order_items: body.order_items || [],
+    cre_time: now,
+    order_time: now, // GSI_inbr_account_id 的 RANGE key，務必寫入
+  };
+
+  await dbPut('mms_order_record', orderData);
+  return ok(formatOrder(orderData), '訂單建立成功');
 }
 
 async function handleOrderDetail(orderId, qs) {
