@@ -2,9 +2,6 @@
  * 全域設定
  */
 const CONFIG = {
-  // API base path（XAMPP 本地 PHP）
-  API_BASE: 'php/api',
- 
   // 服務快捷按鈕定義
   QUICK_SERVICES: [
     { name: '訂位', formId: 1, color: '#4CAF50', icon: '🍽️', serviceType: '6' },
