@@ -140,8 +140,8 @@ const API = {
       // 本地：PHP chat.php 接收 { message, history }
       return this.post('chat.php', { message, history });
     }
-    // 雲端：Lambda /ai/chat 接收 { text, history }
-    return this.post('ai/chat', { text: message, history });
+    // 雲端：Lambda /chat 接收 { message, history }
+    return this.post('/chat', { message, history });
   },
 
   chat(message, history = []) {
