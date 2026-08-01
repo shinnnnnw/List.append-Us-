@@ -5,14 +5,14 @@ const CONFIG = {
   // API base path（XAMPP 本地 PHP）
   API_BASE: 'php/api',
  
-  // 服務快捷按鈕定義
+  // 服務快捷按鈕定義（對應 pms_vendor_service_type）
   QUICK_SERVICES: [
-    { name: '訂位', formId: 1, color: '#4CAF50', icon: '🍽️', serviceType: '6' },
-    { name: '購物', formId: 2, color: '#E91E63', icon: '🛒', serviceType: '11' },
-    { name: '清潔', formId: 3, color: '#2196F3', icon: '🧹', serviceType: '1' },
-    { name: '修繕', formId: 3, color: '#FFC107', icon: '🔧', serviceType: '10' },
-    { name: '家電', formId: 3, color: '#9C27B0', icon: '📺', serviceType: '2' },
-    { name: '寄件', formId: 4, color: '#FF5722', icon: '📦', serviceType: '3' },
+    { name: '訂位', formId: 1, color: '#4CAF50', icon: '🍽️', serviceType: '01' },
+    { name: '購物', formId: 2, color: '#E91E63', icon: '🛒', serviceType: '02' },
+    { name: '清潔', formId: 3, color: '#2196F3', icon: '🧹', serviceType: '03' },
+    { name: '修繕', formId: 3, color: '#FFC107', icon: '🔧', serviceType: '04' },
+    { name: '社區', formId: 3, color: '#9C27B0', icon: '🏘️', serviceType: '05' },
+    { name: '藥局', formId: 3, color: '#FF5722', icon: '💊', serviceType: '06' },
   ],
  
   // 訂單狀態對照

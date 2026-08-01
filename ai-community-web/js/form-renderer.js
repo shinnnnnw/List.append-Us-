@@ -446,6 +446,35 @@ const FormRenderer = {
       data: feedbackData,
       account_id: (Auth.getUser() || {}).inbr_account_id || '',
       account_name: (Auth.getUser() || {}).name || '',
+      // 從 feedbackData 解析聯絡資料，對應 PHP form-submit.php 的欄位
+      ...(() => {
+        const extra = {};
+        feedbackData.forEach(item => {
+          // type 8（含地址）或 type 10（不含地址）→ 聯絡資料
+          if ((item.type === '8' || item.type === '10') && item.answer) {
+            extra.contact_name   = item.answer.name  || '';
+            extra.contact_mobile = item.answer.phone || '';
+            extra.contact_email  = item.answer.email || '';
+          }
+          // type 8 含地址
+          if (item.type === '8' && item.answer) {
+            extra.contact_address_county   = item.answer.county   || '';
+            extra.contact_address_district = item.answer.district || '';
+            extra.contact_address_detail   = item.answer.address  || '';
+          }
+          // type 5 獨立地區欄位
+          if (item.type === '5' && item.answer) {
+            extra.contact_address_county   = item.answer.county   || '';
+            extra.contact_address_district = item.answer.district || '';
+            extra.contact_address_detail   = item.answer.address  || '';
+          }
+          // type 2 詳答 → description
+          if (item.type === '2' && item.answer) {
+            extra.description = item.answer;
+          }
+        });
+        return extra;
+      })(),
     });
 
     if (result && result.success) {

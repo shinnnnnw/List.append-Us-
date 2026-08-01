@@ -64,12 +64,13 @@ const API = {
   },
  
   // --- 服務廠商 ---
-  getServices() {
-    return this.get('vendors.php');
+  getServices(type) {
+    const typeParam = type ? `?type=${type}` : '';
+    return this.get(`services.php${typeParam}`);
   },
  
   getService(id) {
-    return this.get(`vendors.php?vendor_id=${id}`);
+    return this.get(`services.php?id=${id}`);
   },
  
   // --- 表單 ---
@@ -96,7 +97,20 @@ const API = {
     return this.get(`order-detail.php?id=${id}&account_id=${encodeURIComponent(accountId)}`);
   },
  
-  // --- 縣市行政區 ---
+  // --- 圖片上傳 ---
+  upload(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    // 上傳用 multipart，不走 request() 以免被加上 Content-Type: application/json
+    const url = `${CONFIG.API_BASE}/upload.php`;
+    console.log('[API] fetch →', url);
+    return fetch(url, { method: 'POST', body: formData })
+      .then(res => res.json())
+      .catch(err => {
+        console.error('[API] upload error:', err);
+        return { success: false, data: null, message: '上傳失敗，請稍後再試' };
+      });
+  },
   getCounties() {
     return this.get('districts.php');
   },
