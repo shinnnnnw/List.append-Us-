@@ -139,21 +139,74 @@ const API = {
 
   // --- AI 聊天（本地關鍵字比對，無 Bedrock 後端可呼叫） ---
   chatConversation(message, history = []) {
-    return this.ok(localChatReply(message));
+    return this.ok(this._localChatReply(message));
   },
 
   // --- AI 意圖辨識（舊版，保留相容） ---
   chat(message, history = []) {
     return this.chatConversation(message, history);
   },
- 
-  // --- Demo 帳號列表 ---
-  getUsers() {
-    return Promise.resolve({ success: true, data: [
-      { inbr_account_id: 'MBR001', name: '王小明', phone: '0912-345-001' },
-      { inbr_account_id: 'MBR002', name: '陳美玲', phone: '0923-456-002' },
-      { inbr_account_id: 'MBR003', name: '林大偉', phone: '0934-567-003' },
-    ]});
+
+  // --- 諮詢單（後台 demo 用） ---
+  async getFeedbacks(status) {
+    let feedbacks = DATA.FEEDBACKS.map(f => ({ ...f }));
+    if (status) {
+      feedbacks = feedbacks.filter(f => f.status === status);
+    }
+    const decrypted = [];
+    for (const fb of feedbacks) {
+      const d = await Crypto.decryptFields(fb, ['contact_name', 'contact_mobile', 'contact_email', 'contact_address_detail']);
+      decrypted.push(d);
+    }
+    return this.ok(decrypted);
+  },
+
+  async getFeedbackDetail(feedbackNo) {
+    const fb = DATA.FEEDBACKS.find(f => f.feedback_no === feedbackNo);
+    if (!fb) return this.fail('找不到該諮詢單');
+    const decrypted = await Crypto.decryptFields(fb, ['contact_name', 'contact_mobile', 'contact_email', 'contact_address_detail']);
+    const assignments = DATA.ASSIGNMENTS.filter(a => a.feedback_no === feedbackNo);
+    const statusLogs = DATA.STATUS_LOGS.filter(l => l.feedback_no === feedbackNo);
+    const assignmentIds = assignments.map(a => a.assignment_id);
+    const replies = DATA.REPLIES.filter(r => assignmentIds.includes(r.assignment_id));
+    const reviews = DATA.REVIEWS.filter(r => r.feedback_no === feedbackNo);
+    return this.ok({ ...decrypted, assignments, statusLogs, replies, reviews });
+  },
+
+  // --- 本地關鍵字比對 ---
+  _localChatReply(message) {
+    const intents = [
+      { keywords: ['吃', '餐廳', '訂位', '用餐', '聚餐', '晚餐', '午餐', '早餐', '吃飯'], intent: 'restaurant_booking', form_id: 1, service: '餐廳訂位', service_type: '01', reply: '辨識到您有餐廳訂位需求，以下是可提供服務的廠商：' },
+      { keywords: ['買', '購物', '商品', '下單', '購買', '採買', '網購'], intent: 'shopping', form_id: 2, service: '商品購買', service_type: '02', reply: '辨識到您有商品採買需求，以下是可提供服務的廠商：' },
+      { keywords: ['清潔', '打掃', '整理', '洗衣機', '冷氣', '大掃除', '家事'], intent: 'cleaning', form_id: 3, service: '社區服務', service_type: '03', reply: '辨識到您有清潔服務需求，以下是可提供服務的廠商：' },
+      { keywords: ['修', '壞', '漏水', '水電', '修繕', '維修', '馬桶', '水龍頭', '電燈'], intent: 'repair', form_id: 3, service: '社區服務', service_type: '04', reply: '辨識到您有修繕需求，以下是可提供服務的廠商：' },
+      { keywords: ['陪伴', '長者', '老人', '照顧', '看護'], intent: 'elderly_care', form_id: 3, service: '社區服務', service_type: '05', reply: '辨識到您有長者陪伴需求，以下是可提供服務的廠商：' },
+      { keywords: ['藥', '領藥', '藥局', '處方'], intent: 'pharmacy', form_id: 3, service: '社區服務', service_type: '06', reply: '辨識到您有藥局代領需求，以下是可提供服務的廠商：' },
+      { keywords: ['叫車', '計程車', '接送', '交通'], intent: 'taxi', form_id: 3, service: '社區服務', service_type: '07', reply: '辨識到您有叫車需求，以下是可提供服務的廠商：' },
+    ];
+
+    for (const intent of intents) {
+      if (intent.keywords.some(k => message.indexOf(k) >= 0)) {
+        const vendors = DATA.VENDORS.filter(v => v.service_types.indexOf(intent.service_type) >= 0);
+        let reply = intent.reply;
+        if (vendors.length > 0) {
+          reply += '<ul class="vendor-list">' + vendors.map(v => {
+            const ratingText = v.rating_avg ? ' ⭐ ' + v.rating_avg : '';
+            return `<li><strong>${v.vendor_name}</strong>${ratingText}</li>`;
+          }).join('') + '</ul><p>請點擊下方按鈕填寫需求表單，我們將為您媒合適合的服務商。</p>';
+        }
+        return { reply, intent: intent.intent, form_id: intent.form_id, service: intent.service, has_form: true, vendors, source: 'local' };
+      }
+    }
+
+    return {
+      reply: '收到您的需求！請問能再具體描述一下嗎？例如：餐廳訂位、清潔服務、水電修繕等，我可以幫您媒合社區服務。',
+      intent: 'none',
+      form_id: null,
+      service: null,
+      has_form: false,
+      vendors: [],
+      source: 'local',
+    };
   },
 };
- 
