@@ -32,35 +32,27 @@
   transform: scale(0.96);
 }
 
-/* --- 分類 Tab --- */
+/* --- 分類下拉選單 --- */
 .category-tabs {
-  display: flex;
-  overflow-x: auto;
-  gap: 8px;
   padding: 10px 0;
-  -webkit-overflow-scrolling: touch;
 }
 
-.category-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.category-tab {
-  flex-shrink: 0;
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  font-size: 13px;
+.category-select {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
   font-weight: 600;
   border: 1px solid var(--border);
   background-color: var(--bg-card);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s;
+  appearance: auto;
+  outline: none;
+  transition: border-color 0.2s;
 }
 
-.category-tab.active {
-  background-color: var(--primary);
-  color: #fff;
+.category-select:focus {
   border-color: var(--primary);
 }
 

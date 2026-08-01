@@ -194,7 +194,11 @@ const App = {
       const btn = Utils.createElement('button', {
         className: 'service-btn',
         onClick: () => {
-          Utils.navigate(`form.html?form_id=${item.formId}&service=${encodeURIComponent(item.name)}`);
+          // 點擊方塊 → 自動傳送服務需求到聊天室
+          if (typeof Chat !== 'undefined' && Chat.input) {
+            Chat.input.value = `我需要${item.name}服務`;
+            Chat.handleSend();
+          }
         },
       });
       btn.style.backgroundColor = item.color + '12';
