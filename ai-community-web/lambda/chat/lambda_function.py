@@ -8,8 +8,8 @@ import boto3
 # Bedrock Runtime client
 bedrock = boto3.client('bedrock-runtime', region_name='us-west-2')
 
-# 模型 ID（Claude 3.5 Sonnet）
-MODEL_ID = 'anthropic.claude-3-5-sonnet-20241022-v2:0'
+# 模型 ID（Claude Sonnet 4.6 — 使用 US inference profile）
+MODEL_ID = 'us.anthropic.claude-sonnet-4-6'
 
 # System Prompt
 SYSTEM_PROMPT = """你是「Aî 智慧社區管家」，一個友善、專業的 AI 助手，服務於社區住戶。
@@ -49,8 +49,15 @@ def lambda_handler(event, context):
         return cors_response(200, '')
 
     try:
-        # 解析請求
-        body = json.loads(event.get('body', '{}'))
+        # 解析請求（支援 body 為字串或已解析的 dict）
+        raw_body = event.get('body', '{}')
+        if isinstance(raw_body, dict):
+            body = raw_body
+        elif raw_body:
+            body = json.loads(raw_body)
+        else:
+            body = {}
+
         message = body.get('message', '').strip()
         history = body.get('history', [])
 
@@ -136,7 +143,7 @@ def call_bedrock(messages: list) -> dict:
     """呼叫 AWS Bedrock Claude API"""
     try:
         request_body = {
-            'anthropic_version': 'bedrock-2023-05-01',
+            'anthropic_version': 'bedrock-2023-05-31',
             'max_tokens': 800,
             'temperature': 0.7,
             'system': SYSTEM_PROMPT,
