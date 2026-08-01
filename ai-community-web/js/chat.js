@@ -1,9 +1,10 @@
 /**
  * AI 聊天模組
- * 負責訊息收發、意圖辨識回覆、表單引導
+ * 多輪對話式 AI 管家，透過自然語言收集需求
  */
 const Chat = {
   messages: [],
+  conversationHistory: [],
   container: null,
   input: null,
   recognition: null,
@@ -18,9 +19,12 @@ const Chat = {
 
     if (!this.container || !this.input) return;
 
+    // 清空歷史
+    this.conversationHistory = [];
+
     // 預設 AI 歡迎訊息
     this.messages = [
-      { id: 1, sender: 'ai', text: '你好！我是您的 AI 智慧社區管家。有任何問題都可以問我，不論是生活瑣事、社區服務，或是想訂位、叫清潔，我都能幫您安排！' },
+      { id: 1, sender: 'ai', text: '你好！我是您的 AI 智慧社區管家。有什麼我能幫您的嗎？不論是餐廳訂位、居家清潔、水電修繕、包裹寄送，或是任何生活問題，直接跟我說就好！' },
     ];
     this.render();
 
@@ -30,7 +34,10 @@ const Chat = {
       sendBtn.addEventListener('click', () => this.handleSend());
     }
     this.input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') this.handleSend();
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.handleSend();
+      }
     });
 
     // 初始化語音輸入
@@ -76,9 +83,8 @@ const Chat = {
       this.isRecording = false;
       voiceBtn.classList.remove('recording');
       voiceBtn.textContent = '🎙️';
-      this.input.placeholder = '輸入您的生活需求... (例如：我想訂明天晚上的餐廳)';
+      this.input.placeholder = '跟我說說您的需求...';
 
-      // 如果有辨識到內容，自動發送
       if (this.input.value.trim()) {
         this.handleSend();
       }
@@ -88,7 +94,7 @@ const Chat = {
       this.isRecording = false;
       voiceBtn.classList.remove('recording');
       voiceBtn.textContent = '🎙️';
-      this.input.placeholder = '輸入您的生活需求... (例如：我想訂明天晚上的餐廳)';
+      this.input.placeholder = '跟我說說您的需求...';
 
       if (event.error === 'not-allowed') {
         alert('請允許麥克風權限以使用語音輸入功能');
@@ -111,70 +117,50 @@ const Chat = {
   },
 
   /**
-   * 取得對話歷史（供 API 傳送上下文）
-   * 排除歡迎訊息，只保留純文字內容
-   */
-  getHistory() {
-    return this.messages
-      .filter(msg => msg.id !== 1) // 排除初始歡迎訊息
-      .map(msg => ({
-        sender: msg.sender === 'ai' ? 'assistant' : 'user',
-        text: msg.rawText || msg.text, // 優先使用原始文字（未加 HTML 的版本）
-      }));
-  },
-
-  /**
    * 處理發送訊息
    */
   async handleSend() {
     const text = this.input.value.trim();
     if (!text) return;
 
-    // 新增使用者訊息
+    // 新增使用者訊息到 UI
     this.addMessage('user', text);
     this.input.value = '';
+
+    // 加入對話歷史
+    this.conversationHistory.push({ role: 'user', content: text });
 
     // 顯示打字動畫
     this.showTyping();
 
-    // 呼叫 AI API，帶入對話歷史
-    const result = await API.chat(text, this.getHistory());
+    // 呼叫 AI API，帶入完整對話歷史
+    const result = await API.chatConversation(text, this.conversationHistory);
 
     // 移除打字動畫
     this.hideTyping();
 
-    if (result && result.success) {
-      const data = result.data;
-      let replyText = data.reply;
-      let replyHtml = data.reply;
+    if (result && result.success && result.data) {
+      const reply = result.data.reply || result.data;
 
-      // 如果有推薦表單，加入按鈕連結
-      if (data.has_form && data.form_id) {
-        replyHtml += `<a href="form.html?form_id=${data.form_id}&service=${encodeURIComponent(data.service || '')}" class="form-link">前往填寫表單 →</a>`;
-      }
+      // 顯示 AI 回覆
+      this.addMessage('ai', reply);
 
-      this.addMessage('ai', replyHtml, true, replyText);
-    } else if (result && result._unauthorized) {
-      this.addMessage('ai', '登入已過期，請重新登入後再使用聊天功能。');
+      // 加入對話歷史
+      this.conversationHistory.push({ role: 'assistant', content: reply });
     } else {
-      this.addMessage('ai', '抱歉，目前系統忙碌中，請稍後再試。');
+      const errorMsg = '抱歉，目前系統忙碌中，請稍後再試。';
+      this.addMessage('ai', errorMsg);
     }
   },
 
   /**
-   * 新增訊息
-   * @param {string} sender - 'user' 或 'ai'
-   * @param {string} content - 顯示內容（可能含 HTML）
-   * @param {boolean} isHtml - 是否為 HTML 內容
-   * @param {string} rawText - 原始純文字（用於傳送歷史給 API）
+   * 新增訊息到 UI
    */
-  addMessage(sender, content, isHtml = false, rawText = null) {
+  addMessage(sender, content) {
     this.messages.push({
       id: Date.now(),
       sender,
       text: content,
-      rawText: rawText || content,
-      isHtml,
     });
     this.render();
   },
@@ -189,11 +175,7 @@ const Chat = {
     this.messages.forEach(msg => {
       const bubble = document.createElement('div');
       bubble.className = `message-bubble ${msg.sender}`;
-      if (msg.isHtml) {
-        bubble.innerHTML = msg.text;
-      } else {
-        bubble.textContent = msg.text;
-      }
+      bubble.textContent = msg.text;
       this.container.appendChild(bubble);
     });
 

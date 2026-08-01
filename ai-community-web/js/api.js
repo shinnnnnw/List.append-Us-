@@ -151,7 +151,12 @@ const API = {
     return this.get('/districts');
   },
  
-  // --- AI 聊天（Bedrock Claude） ---
+  // --- AI 多輪對話（Bedrock Claude） ---
+  chatConversation(text, history = []) {
+    return this.post('/ai/chat', { text, history });
+  },
+
+  // --- AI 意圖辨識（舊版，保留相容） ---
   chat(message, history = []) {
     return this.post('/chat', { message, history });
   },
