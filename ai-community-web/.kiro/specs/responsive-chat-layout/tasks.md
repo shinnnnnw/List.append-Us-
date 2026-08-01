@@ -6,13 +6,13 @@
 
 ## Tasks
 
-- [ ] 1. 修改 HTML 結構，加入 dashboard-services wrapper
+- [x] 1. 修改 HTML 結構，加入 dashboard-services wrapper
   - [~] 1.1 在 `index.html` 的 `.page-content` 內用 `<div class="dashboard-services">` 包裹 section-title 和 service-grid
     - 將 `<h3 class="section-title">` 和 `<div id="service-grid">` 移入新的 `.dashboard-services` 容器
     - 保持 chat-section 不變
     - _Requirements: 3.1, 3.2, 4.1_
 
-- [ ] 2. 修改 style.css 加入響應式斷點和 flex 佈局
+- [x] 2. 修改 style.css 加入響應式斷點和 flex 佈局
   - [~] 2.1 將 `:root` 中的 `--max-width: 480px` 保留作為預設值，新增 media query 覆寫
     - 加入 `@media (min-width: 576px)` 設定 `--max-width: 768px`
     - 加入 `@media (min-width: 1025px)` 設定 `--max-width: 960px`
@@ -29,7 +29,7 @@
     - 桌面 (`min-width: 1025px`): `width: 35%; max-height: none; overflow-y: auto;`
     - _Requirements: 3.3, 4.1, 4.2_
 
-- [ ] 3. 修改 chat.css 讓聊天區域填滿剩餘空間
+- [x] 3. 修改 chat.css 讓聊天區域填滿剩餘空間
   - [~] 3.1 移除 `.chat-section` 原有的固定 height 計算，改用 flex: 1
     - 設定 `flex: 1; min-height: 200px; overflow: hidden;`
     - 移除原本的 `height: calc(100vh - var(--header-height) - var(--nav-height) - 160px);`
@@ -38,7 +38,7 @@
     - 在 `@media (min-width: 1025px)` 中確保 chat-section 用 `flex: 1` 填滿右側
     - _Requirements: 3.1, 3.3_
 
-- [ ] 4. 修改 services.css 限制快捷服務格子高度
+- [x] 4. 修改 services.css 限制快捷服務格子高度
   - [~] 4.1 為 `.service-grid` 加入手機版高度限制
     - 加入 `max-height: 30vh; overflow-y: auto; flex-shrink: 0;`
     - _Requirements: 4.1, 4.2_
