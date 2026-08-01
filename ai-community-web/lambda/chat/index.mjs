@@ -548,7 +548,8 @@ const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、
 3. 適時使用換行讓回覆更好閱讀
 4. 凡涉及「送達、派單、訂位、到府」的服務，最後一定要確認「聯絡人姓名」與「聯絡電話」
 5. 當使用者指定餐廳或店家名稱時，務必複述全名確認
-6. 當資訊收集完整，用以下格式整理確認單：
+6. 絕對不要主動推薦或提及任何真實存在的品牌、餐廳、店家名稱（如鼎泰豐、瓦城、一蘭等），只需詢問使用者的偏好類型（中式、日式、西式等）或讓使用者自己指定
+7. 當資訊收集完整，用以下格式整理確認單：
 
 📋 需求確認單
 ━━━━━━━━━━
@@ -566,14 +567,14 @@ const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、
 然後在回覆最末尾加上（使用者看不到）：
 [CONFIRM:服務類型]
 
-7. 使用者確認「沒問題」「確認」「OK」「對」等肯定回覆後，在末尾加上：
+8. 使用者確認「沒問題」「確認」「OK」「對」等肯定回覆後，在末尾加上：
 [SUBMIT:服務類型]
 
-8. 如果使用者說要修改某項，詢問新的內容後重新整理確認單
-9. 不涉及服務的閒聊正常聊天，不加任何標記
-10. 回覆純文字，不加 markdown 語法（不要用 **粗體** 或 # 標題）
-11. 若使用者上傳照片不清晰，請提示重新上傳
-12. 領藥服務涉及敏感事項，請加上免責提示`;
+9. 如果使用者說要修改某項，詢問新的內容後重新整理確認單
+10. 不涉及服務的閒聊正常聊天，不加任何標記
+11. 回覆純文字，不加 markdown 語法（不要用 **粗體** 或 # 標題）
+12. 若使用者上傳照片不清晰，請提示重新上傳
+13. 領藥服務涉及敏感事項，請加上免責提示`;
 
 async function handleChat(body) {
   const text    = (body.text || '').trim();
@@ -607,9 +608,33 @@ async function handleChat(body) {
     }
   }
 
+  // 偵測是否涉及餐廳/訂位，從 DynamoDB 抓餐廳清單注入 prompt
+  const bookingKeywords = ['吃', '餐廳', '訂位', '用餐', '聚餐', '晚餐', '午餐', '早餐', '吃飯', '約吃', '推薦'];
+  const allText = messages.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+  const isBookingRelated = bookingKeywords.some(kw => allText.includes(kw));
+
+  let vendorPromptAppend = '';
+  if (isBookingRelated) {
+    try {
+      const vendors = await dbScan('cms_service_vendor',
+        'service_type = :st AND is_enable = :e',
+        { ':st': 6, ':e': '1' }
+      );
+      if (vendors.length > 0) {
+        const vendorList = vendors
+          .sort((a, b) => (Number(b.rating_avg) || 0) - (Number(a.rating_avg) || 0))
+          .map(v => `- ${v.name}（${v.description}，評分 ${v.rating_avg}）`)
+          .join('\n');
+        vendorPromptAppend = `\n\n【系統資料：平台合作餐廳清單】\n當使用者問有哪些餐廳可選時，只能從以下清單推薦，不可自行編造餐廳名稱：\n${vendorList}\n\n推薦時依使用者偏好的料理類型篩選，最多列出 3-5 間供選擇。`;
+      }
+    } catch (vendorErr) {
+      console.error('[Vendor fetch error]', vendorErr);
+    }
+  }
+
   // 圖片辨識用的 system prompt 附加
   const systemPrompt = image
-    ? CHAT_SYSTEM_PROMPT + `\n\n【圖片辨識模式】
+    ? CHAT_SYSTEM_PROMPT + vendorPromptAppend + `\n\n【圖片辨識模式】
 使用者上傳了一張現場照片，請你：
 1. 辨識照片中的問題類型（如：漏水、牆壁裂縫、管線破損、家電故障、髒污程度等）
 2. 評估損壞/髒污嚴重程度（輕微/中等/嚴重）
@@ -618,7 +643,7 @@ async function handleChat(body) {
 5. 建議需要的服務類型（修繕/清潔/其他）
 
 用條列方式清楚回覆，然後繼續詢問使用者是否要預約此服務。`
-    : CHAT_SYSTEM_PROMPT;
+    : CHAT_SYSTEM_PROMPT + vendorPromptAppend;
 
   try {
     const cmd = new InvokeModelCommand({
