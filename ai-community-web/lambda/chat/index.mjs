@@ -577,18 +577,48 @@ const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、
 
 async function handleChat(body) {
   const text    = (body.text || '').trim();
+  const image   = body.image || null; // base64 encoded image
+  const imageMediaType = body.image_media_type || 'image/jpeg';
   const history = (body.history || []).slice(-30);
 
-  if (!text) return fail('訊息不能為空');
+  if (!text && !image) return fail('訊息不能為空');
 
   const messages = [];
   for (const msg of history) {
     if (!msg.role || !msg.content) continue;
     messages.push({ role: msg.role, content: msg.content });
   }
-  if (!messages.length || messages[messages.length - 1]?.content !== text) {
-    messages.push({ role: 'user', content: text });
+
+  // 組合當前使用者訊息（支援多模態：文字 + 圖片）
+  if (image) {
+    const userContent = [];
+    userContent.push({
+      type: 'image',
+      source: { type: 'base64', media_type: imageMediaType, data: image },
+    });
+    userContent.push({
+      type: 'text',
+      text: text || '請分析這張照片，辨識問題類型、嚴重程度，並預估維修工時與參考報價。',
+    });
+    messages.push({ role: 'user', content: userContent });
+  } else {
+    if (!messages.length || messages[messages.length - 1]?.content !== text) {
+      messages.push({ role: 'user', content: text });
+    }
   }
+
+  // 圖片辨識用的 system prompt 附加
+  const systemPrompt = image
+    ? CHAT_SYSTEM_PROMPT + `\n\n【圖片辨識模式】
+使用者上傳了一張現場照片，請你：
+1. 辨識照片中的問題類型（如：漏水、牆壁裂縫、管線破損、家電故障、髒污程度等）
+2. 評估損壞/髒污嚴重程度（輕微/中等/嚴重）
+3. 預估維修或清潔工時（例如：約 1-2 小時）
+4. 提供參考報價範圍（例如：約 NT$ 800-1,500）
+5. 建議需要的服務類型（修繕/清潔/其他）
+
+用條列方式清楚回覆，然後繼續詢問使用者是否要預約此服務。`
+    : CHAT_SYSTEM_PROMPT;
 
   try {
     const cmd = new InvokeModelCommand({
@@ -597,9 +627,9 @@ async function handleChat(body) {
       accept: 'application/json',
       body: JSON.stringify({
         anthropic_version: 'bedrock-2023-05-31',
-        max_tokens: 1024,
+        max_tokens: 2048,
         temperature: 0.7,
-        system: CHAT_SYSTEM_PROMPT,
+        system: systemPrompt,
         messages,
       }),
     });

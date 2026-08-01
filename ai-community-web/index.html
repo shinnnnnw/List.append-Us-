@@ -97,8 +97,16 @@
         <div id="chat-container" class="chat-container"></div>
         <div class="chat-input-bar">
           <input id="chat-input" type="text" placeholder="跟我說說您的需求...">
+          <label id="chat-image-btn" class="chat-image-btn" title="上傳照片">📷
+            <input id="chat-image-input" type="file" accept="image/*" capture="environment" style="display:none">
+          </label>
           <button id="chat-voice-btn" class="chat-voice-btn" title="語音輸入">🎙️</button>
           <button id="chat-send-btn" class="chat-send-btn">發送</button>
+        </div>
+        <!-- 圖片預覽區 -->
+        <div id="chat-image-preview" class="chat-image-preview" style="display:none">
+          <img id="chat-preview-img" src="" alt="預覽">
+          <button id="chat-image-remove" class="chat-image-remove" title="移除圖片">✕</button>
         </div>
       </div>
     </div>
