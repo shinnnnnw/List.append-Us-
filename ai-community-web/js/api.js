@@ -151,9 +151,9 @@ const API = {
     return this.get('/districts');
   },
  
-  // --- AI 意圖辨識 ---
+  // --- AI 聊天（Bedrock Claude） ---
   chat(message, history = []) {
-    return this.post('/ai/intent', { text: message });
+    return this.post('/chat', { message, history });
   },
  
   // --- Demo 帳號列表 ---
