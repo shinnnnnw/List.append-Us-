@@ -198,7 +198,7 @@ const Orders = {
     const actionsSection = Utils.$('#order-actions');
     if (actionsSection) {
       let actionsHtml = '';
-      if (['01', '02', '03', '11', '12', '13'].includes(order.order_status)) {
+      if (['01', '02', '03', '04'].includes(order.order_status)) {
         actionsHtml += `<button class="btn btn-outline btn-block" onclick="Orders.cancelOrder('${order.record_id}')">取消訂單</button>`;
       }
       if (order.order_status === '80') {
@@ -208,12 +208,24 @@ const Orders = {
     }
   },
 
+  _cancelInProgress: false,
+
   /**
    * 取消訂單
    */
   async cancelOrder(orderId) {
     if (!Utils.confirm('確定要取消此訂單嗎？')) return;
-    Utils.toast('訂單已取消（模擬）');
-    setTimeout(() => Utils.navigate('orders.html'), 1000);
+    if (this._cancelInProgress) return;
+
+    this._cancelInProgress = true;
+    const result = await API.cancelOrder(orderId);
+    this._cancelInProgress = false;
+
+    if (result && result.success) {
+      Utils.toast('訂單已取消');
+      setTimeout(() => Utils.navigate('orders.html'), 1000);
+    } else {
+      Utils.toast(result?.message || '取消失敗，請稍後再試');
+    }
   },
 };

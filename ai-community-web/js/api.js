@@ -166,6 +166,11 @@ const API = {
     return this.post('/orders', { ...orderData, inbr_account_id: user.inbr_account_id || 'MBR001' });
   },
 
+  cancelOrder(orderId) {
+    const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
+    return this.post(`/orders/${orderId}/cancel`, { inbr_account_id: user.inbr_account_id || 'MBR001' });
+  },
+
   // 縣市行政區
   getCounties() {
     return Promise.resolve({ success: true, data: [

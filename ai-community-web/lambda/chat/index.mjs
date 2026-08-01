@@ -22,6 +22,7 @@ import {
   PutItemCommand,
   QueryCommand,
   ScanCommand,
+  UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb';
 import { unmarshall, marshall } from '@aws-sdk/util-dynamodb';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
@@ -141,6 +142,9 @@ export async function handler(event) {
     // Orders
     if (path === '/orders' && method === 'GET')         return handleOrders(qs);
     if (path === '/orders' && method === 'POST')        return handleCreateOrder(body);
+    if (/^\/orders\/(.+)\/cancel$/.test(path) && method === 'POST') {
+      return handleCancelOrder(path.match(/^\/orders\/(.+)\/cancel$/)[1], body);
+    }
     if (/^\/orders\/(.+)$/.test(path) && method === 'GET') {
       return handleOrderDetail(path.match(/^\/orders\/(.+)$/)[1], qs);
     }
@@ -991,4 +995,39 @@ ${prefsLines.join('\n')}
       intent: 'none', status: 'chatting', has_form: false, form_id: null, service: null, source: 'fallback',
     });
   }
+}
+
+// ─── Cancel Order ────────────────────────────────────────────────────────────
+
+const NON_CANCELLABLE_STATUS = ['80', '90', '99'];
+
+async function handleCancelOrder(orderId, body) {
+  const accountId = (body.inbr_account_id || '').trim();
+  if (!accountId) return fail('缺少 account_id', 400);
+
+  const items = await dbScan('mms_order_record',
+    'record_id = :rid',
+    { ':rid': Number(orderId) }
+  );
+
+  if (!items.length) return fail('訂單不存在', 404);
+  const order = items[0];
+
+  if (order.inbr_account_id !== accountId) {
+    return fail('無權操作此訂單', 403);
+  }
+
+  if (NON_CANCELLABLE_STATUS.includes(order.order_status)) {
+    return fail('此訂單狀態無法取消', 400);
+  }
+
+  const now = new Date().toISOString();
+  await ddb.send(new UpdateItemCommand({
+    TableName: 'mms_order_record',
+    Key: marshall({ record_id: Number(orderId) }),
+    UpdateExpression: 'SET order_status = :s, upd_time = :t',
+    ExpressionAttributeValues: marshall({ ':s': '90', ':t': now }),
+  }));
+
+  return ok({ record_id: Number(orderId), order_status: '90', upd_time: now }, '訂單已取消');
 }
