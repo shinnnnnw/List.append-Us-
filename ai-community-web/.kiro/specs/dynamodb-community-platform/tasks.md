@@ -19,7 +19,7 @@
     - _Requirements: 1.1-1.11, 2.1-2.8_
 
 - [ ] 2. 實作範例資料模組
-  - [ ] 2.1 建立 seed-data.js 範例資料定義
+  - [-] 2.1 建立 seed-data.js 範例資料定義
     - 為 10 張資料表各建立 5-10 筆範例記錄，使用 DynamoDB marshalled 格式
     - 使用台灣在地假資料：中文姓名、台灣電話格式（09xx-xxx-xxx）、台灣地址
     - 所有時間戳記使用 ISO 8601 格式
@@ -40,7 +40,7 @@
     - **Validates: Requirements 3.5**
 
 - [ ] 3. 實作 Node.js 部署腳本
-  - [ ] 3.1 建立 deploy.js 部署腳本主程式
+  - [~] 3.1 建立 deploy.js 部署腳本主程式
     - 實作 DynamoDBClient 初始化（region: us-west-2）
     - 實作 waitForTableActive 函式（輪詢 DescribeTable，最多重試 30 次，間隔 2 秒）
     - 實作 createAllTables 函式：依序建立 10 張表，ResourceInUseException 時跳過並記錄訊息
@@ -58,11 +58,11 @@
     - 模擬非 ResourceInUseException 的 AWS 錯誤，驗證腳本輸出錯誤訊息並以非零退出碼終止
     - **Validates: Requirements 4.7**
 
-- [ ] 4. Checkpoint - 確認部署模組完整
+- [~] 4. Checkpoint - 確認部署模組完整
   - 確保所有檔案語法正確無誤，確保 table-definitions.js 與 seed-data.js 可正確被 deploy.js 引用，ask the user if questions arise.
 
 - [ ] 5. 實作 API 查詢服務模組
-  - [ ] 5.1 建立 api-service.js - GSI 查詢函式
+  - [~] 5.1 建立 api-service.js - GSI 查詢函式
     - 實作 getOrdersByMember：使用 GSI_inbr_account_id 查詢 mms_order_record
     - 實作 getAssignmentsByFeedback：使用 GSI_feedback_no 查詢 pms_case_assignment
     - 實作 getRepliesByAssignment：使用 GSI_assignment_id 查詢 pms_case_reply（依 reply_time 升序）
@@ -73,7 +73,7 @@
     - 所有函式回傳統一結構 `{ success: true, data: [...] }` 或 `{ success: false, error: '...' }`
     - _Requirements: 5.1-5.7, 5.12_
 
-  - [ ] 5.2 建立 api-service.js - 主鍵查詢與寫入函式
+  - [~] 5.2 建立 api-service.js - 主鍵查詢與寫入函式
     - 實作 getMemberById：GetItemCommand 查詢 inbr_member
     - 實作 getVendorById：GetItemCommand 查詢 cms_service_vendor
     - 實作 createOrder：PutItemCommand 寫入 mms_order_record
@@ -107,14 +107,14 @@
     - **Validates: Requirements 5.12**
 
 - [ ] 6. 實作 AWS CLI 建表 Shell 腳本
-  - [ ] 6.1 建立 create-tables.sh
+  - [-] 6.1 建立 create-tables.sh
     - 撰寫完整 bash 腳本，包含 10 張資料表的 `aws dynamodb create-table` 指令
     - 每個指令包含 `--region us-west-2` 與 `--billing-mode PAY_PER_REQUEST`
     - 包含所有 GSI 定義（--global-secondary-indexes）
     - 加入執行權限說明與使用方式註解
     - _Requirements: 6.1-6.4_
 
-- [ ] 7. Final Checkpoint - 整體驗證
+- [~] 7. Final Checkpoint - 整體驗證
   - 確保所有檔案語法正確、模組間引用一致，確認 seed-data 跨表外鍵參照正確，ask the user if questions arise.
 
 ## Notes

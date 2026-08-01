@@ -2,8 +2,8 @@
  * 全域設定
  */
 const CONFIG = {
-  // API base path（相對路徑，適用 XAMPP）
-  API_BASE: 'php/api',
+  // API base path
+  API_BASE: 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod',
 
   // 服務快捷按鈕定義（對應 pms_vendor_service_type）
   QUICK_SERVICES: [
