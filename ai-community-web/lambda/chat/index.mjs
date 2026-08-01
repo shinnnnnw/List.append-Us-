@@ -130,6 +130,11 @@ export async function handler(event) {
     // Feedback（諮詢單）
     if (path === '/feedback' && method === 'POST')      return handleFeedback(body);
 
+    // Admin（廠商後台）
+    if (path === '/admin/cases' && method === 'GET')    return handleAdminCases(qs);
+    if (path === '/admin/cases/update' && method === 'POST') return handleAdminUpdateCase(body);
+    if (path === '/admin/cases/reply' && method === 'POST')  return handleAdminReply(body);
+
     // Contact（聯絡我們）
     if (path === '/contact' && method === 'POST')       return handleContact(body);
 
@@ -397,6 +402,73 @@ async function handleContact(body) {
   });
 
   return ok(null, '感謝您的來信，我們將盡快回覆您！');
+}
+
+// ─── Admin（廠商後台）────────────────────────────────────────────────────────
+
+async function handleAdminCases(qs) {
+  const status = qs.status || '';
+  const items = await dbScan('pms_form_feedback',
+    'feedback_no > :empty',
+    { ':empty': '' }
+  );
+
+  let cases = items.map(item => ({
+    id: item.feedback_no,
+    customerName: item.contact_name || '',
+    customerPhone: item.contact_mobile || '',
+    customerEmail: item.contact_email || '',
+    service: item.description || '',
+    status: item.status || '01',
+    createdAt: item.cre_time || '',
+    address: [item.contact_address_county, item.contact_address_district, item.contact_address_detail].filter(Boolean).join(''),
+    description: item.feedback_content || '',
+    replies: item.replies ? (typeof item.replies === 'string' ? JSON.parse(item.replies) : item.replies) : [],
+  }));
+
+  if (status) {
+    cases = cases.filter(c => c.status === status);
+  }
+
+  return ok(cases);
+}
+
+async function handleAdminUpdateCase(body) {
+  const feedbackNo = body.feedback_no || body.id;
+  const newStatus = body.status;
+
+  if (!feedbackNo || !newStatus) return fail('缺少必要欄位', 400);
+
+  const existing = await dbGet('pms_form_feedback', { feedback_no: feedbackNo });
+  if (!existing) return fail('找不到該案件', 404);
+
+  existing.status = newStatus;
+  existing.upd_time = new Date().toISOString();
+
+  await dbPut('pms_form_feedback', existing);
+  return ok(null, '狀態更新成功');
+}
+
+async function handleAdminReply(body) {
+  const feedbackNo = body.feedback_no || body.id;
+  const replyContent = (body.content || '').trim();
+
+  if (!feedbackNo || !replyContent) return fail('缺少必要欄位', 400);
+
+  const existing = await dbGet('pms_form_feedback', { feedback_no: feedbackNo });
+  if (!existing) return fail('找不到該案件', 404);
+
+  const replies = existing.replies ? (typeof existing.replies === 'string' ? JSON.parse(existing.replies) : existing.replies) : [];
+  replies.push({
+    time: new Date().toISOString(),
+    content: replyContent,
+  });
+
+  existing.replies = JSON.stringify(replies);
+  existing.upd_time = new Date().toISOString();
+
+  await dbPut('pms_form_feedback', existing);
+  return ok(null, '回覆成功');
 }
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
