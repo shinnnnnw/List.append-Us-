@@ -4,8 +4,8 @@
  */
 const Services = {
   vendors: [],
-  services: [],
-  currentVendor: null,
+  serviceTypeMap: {},
+  currentType: null,
 
   /**
    * 初始化服務總覽頁
@@ -25,7 +25,7 @@ const Services = {
     const result = await API.getServices();
     if (result && result.success) {
       this.vendors = result.data.vendors || [];
-      this.services = result.data.services || [];
+      this.serviceTypeMap = result.data.service_type_map || {};
     }
   },
 
@@ -40,40 +40,47 @@ const Services = {
 
     // 「全部」Tab
     const allTab = Utils.createElement('button', {
-      className: `category-tab ${!this.currentVendor ? 'active' : ''}`,
-      onClick: () => this.filterByVendor(null),
+      className: 'category-tab' + (!this.currentType ? ' active' : ''),
+      onClick: function() { Services.filterByType(null); },
     }, '全部');
     container.appendChild(allTab);
 
-    // 各服務商 Tab
-    this.vendors.forEach(vendor => {
-      const tab = Utils.createElement('button', {
-        className: `category-tab ${this.currentVendor === vendor.id ? 'active' : ''}`,
-        onClick: () => this.filterByVendor(vendor.id),
-      }, vendor.name);
+    // 依服務類型產生 Tab
+    var typeMap = this.serviceTypeMap;
+    Object.keys(typeMap).forEach(function(typeCode) {
+      var typeName = typeMap[typeCode];
+      var tab = Utils.createElement('button', {
+        className: 'category-tab' + (Services.currentType === typeCode ? ' active' : ''),
+        onClick: function() { Services.filterByType(typeCode); },
+      }, typeName);
       container.appendChild(tab);
     });
   },
 
   /**
-   * 依服務商篩選
+   * 依服務類型篩選（未來可用，目前先用全部顯示）
    */
-  filterByVendor(vendorId) {
-    this.currentVendor = vendorId;
+  filterByType(typeCode) {
+    this.currentType = typeCode;
     this.renderCategories();
     this.renderList();
   },
 
   /**
-   * 渲染服務列表
+   * 渲染服務列表（以 pms_vendor 作為服務項目）
    */
   renderList() {
     const container = Utils.$('#service-list');
     if (!container) return;
 
-    let filtered = this.services;
-    if (this.currentVendor) {
-      filtered = this.services.filter(s => s.service_vendor_id === this.currentVendor);
+    var filtered = this.vendors;
+
+    // 依服務類型篩選
+    if (this.currentType) {
+      var typeCode = this.currentType;
+      filtered = this.vendors.filter(function(v) {
+        return v.service_types && v.service_types.indexOf(typeCode) >= 0;
+      });
     }
 
     if (filtered.length === 0) {
@@ -82,23 +89,23 @@ const Services = {
     }
 
     container.innerHTML = '';
-    filtered.forEach(service => {
-      const card = Utils.createElement('div', {
+    filtered.forEach(function(vendor) {
+      var card = Utils.createElement('div', {
         className: 'service-card',
-        onClick: () => Utils.navigate(`service-detail.html?id=${service.id}`),
+        onClick: function() {
+          Utils.navigate('service-detail.html?id=' + vendor.vendor_id);
+        },
       });
 
-      const imgUrl = service.img_url || 'assets/images/placeholder.png';
-      card.innerHTML = `
-        <img class="service-img" src="${imgUrl}" alt="${service.name}" onerror="this.style.display='none'">
-        <div class="service-info">
-          <div>
-            <div class="service-name">${service.name}</div>
-            <div class="service-desc">${service.description || ''}</div>
-          </div>
-          <span class="service-action">查看詳情 →</span>
-        </div>
-      `;
+      var ratingText = vendor.rating_avg ? '★ ' + vendor.rating_avg + ' (' + vendor.rating_count + ')' : '';
+      card.innerHTML =
+        '<div class="service-info" style="width:100%">' +
+          '<div>' +
+            '<div class="service-name">' + vendor.vendor_name + '</div>' +
+            '<div class="service-desc">' + (vendor.vendor_no || '') + (ratingText ? ' · ' + ratingText : '') + '</div>' +
+          '</div>' +
+          '<span class="service-action">查看詳情 →</span>' +
+        '</div>';
       container.appendChild(card);
     });
   },
@@ -109,13 +116,13 @@ const Services = {
   async initDetail() {
     if (!Auth.requireAuth()) return;
 
-    const serviceId = Utils.getUrlParam('id');
+    var serviceId = Utils.getUrlParam('id');
     if (!serviceId) {
       Utils.navigate('services.html');
       return;
     }
 
-    const result = await API.getService(serviceId);
+    var result = await API.getService(serviceId);
     if (result && result.success) {
       this.renderDetail(result.data);
     } else {
@@ -127,33 +134,45 @@ const Services = {
    * 渲染服務詳情
    */
   renderDetail(service) {
-    const banner = Utils.$('#service-banner');
-    const info = Utils.$('#service-info');
-    const actionBtn = Utils.$('#service-action-btn');
+    var banner = Utils.$('#service-banner');
+    var info = Utils.$('#service-info');
+    var actionBtn = Utils.$('#service-action-btn');
 
-    if (banner && service.img_url) {
-      banner.src = service.img_url;
+    if (banner) {
+      banner.style.display = 'none'; // 無圖先隱藏
     }
 
     if (info) {
-      info.innerHTML = `
-        <h1 class="service-detail-title">${service.name}</h1>
-        <p class="service-detail-desc">${service.description || ''}</p>
-        <div class="card">
-          <h3 class="section-title">服務商</h3>
-          <p>${service.vendor_name || ''}</p>
-        </div>
-      `;
+      var areasHtml = '';
+      if (service.service_areas && service.service_areas.length > 0) {
+        var areaNames = service.service_areas.map(function(a) {
+          return a.county_name + (a.district_name || '');
+        });
+        areasHtml = '<div class="card"><h3 class="section-title">服務地區</h3><p>' + areaNames.join('、') + '</p></div>';
+      }
+
+      info.innerHTML =
+        '<h1 class="service-detail-title">' + service.vendor_name + '</h1>' +
+        '<p class="service-detail-desc">聯絡人：' + (service.contact_name || '-') + '</p>' +
+        '<p class="service-detail-desc">電話：' + (service.contact_phone || '-') + '</p>' +
+        (service.rating_avg ? '<p class="service-detail-desc">評分：★ ' + service.rating_avg + ' (' + service.rating_count + ' 則)</p>' : '') +
+        areasHtml;
     }
 
     if (actionBtn) {
-      actionBtn.addEventListener('click', () => {
-        Utils.navigate(`form.html?form_id=${service.id}&service=${encodeURIComponent(service.name)}`);
+      actionBtn.addEventListener('click', function() {
+        // 根據廠商的服務類型決定導向哪個表單
+        var formId = 3; // 預設社區服務表單
+        if (service.service_types) {
+          if (service.service_types.indexOf('01') >= 0) formId = 1;
+          else if (service.service_types.indexOf('02') >= 0) formId = 2;
+        }
+        Utils.navigate('form.html?form_id=' + formId + '&service=' + encodeURIComponent(service.vendor_name));
       });
     }
 
     // 更新 header 標題
-    const headerTitle = Utils.$('.header-title');
-    if (headerTitle) headerTitle.textContent = service.name;
+    var headerTitle = Utils.$('.header-title');
+    if (headerTitle) headerTitle.textContent = service.vendor_name;
   },
 };
