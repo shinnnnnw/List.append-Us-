@@ -698,20 +698,31 @@ async function handleChat(body) {
 
   // 組合住戶偏好提示
   let prefsPrompt = '';
-  if (Object.keys(userPrefs).length > 0) {
-    const prefsLines = [];
+  const accountName = body.account_name || '';
+  const accountPhone = body.account_phone || '';
+
+  // 帳號基本資料（登入時的姓名和電話）
+  const accountInfo = [];
+  if (accountName) accountInfo.push(`帳號姓名：${accountName}`);
+  if (accountPhone) accountInfo.push(`帳號電話：${accountPhone}`);
+
+  if (accountInfo.length > 0 || Object.keys(userPrefs).length > 0) {
+    const prefsLines = [...accountInfo];
     if (userPrefs.address) prefsLines.push(`常用地址：${userPrefs.address}`);
-    if (userPrefs.phone) prefsLines.push(`聯絡電話：${userPrefs.phone}`);
-    if (userPrefs.contactName) prefsLines.push(`聯絡人姓名：${userPrefs.contactName}`);
+    if (userPrefs.phone) prefsLines.push(`常用聯絡電話：${userPrefs.phone}`);
+    if (userPrefs.contactName) prefsLines.push(`常用聯絡人：${userPrefs.contactName}`);
     if (userPrefs.paymentMethod) prefsLines.push(`慣用付款方式：${userPrefs.paymentMethod}`);
     if (userPrefs.favoriteRestaurants) prefsLines.push(`喜好餐廳：${userPrefs.favoriteRestaurants}`);
     if (userPrefs.dietaryNotes) prefsLines.push(`飲食備註：${userPrefs.dietaryNotes}`);
 
-    if (prefsLines.length > 0) {
-      prefsPrompt = `\n\n【住戶歷史偏好】
-以下是此住戶過去使用服務時留下的偏好資料，對話中可主動帶入作為預設值（例如：「要送到一樣的地址嗎？」「一樣用信用卡付款對嗎？」），但仍需確認：
-${prefsLines.join('\n')}`;
-    }
+    prefsPrompt = `\n\n【住戶資料與偏好】
+${prefsLines.join('\n')}
+
+使用規則：
+- 當需要聯絡人姓名和電話時，主動詢問：「要直接使用您帳號的姓名（${accountName || '未設定'}）和電話（${accountPhone || '未設定'}）嗎？」
+- 若住戶有常用地址，詢問：「要送到跟上次一樣的地址嗎？（${userPrefs.address || ''}）」
+- 若住戶有慣用付款方式，詢問：「一樣用${userPrefs.paymentMethod || ''}付款嗎？」
+- 使用者同意就直接帶入，不同意就重新詢問`;
   }
 
   // 圖片辨識用的 system prompt 附加

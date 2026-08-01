@@ -185,7 +185,13 @@ const API = {
   // AI 對話（AWS Lambda Bedrock，支援圖片多模態）
   chatConversation(message, history = [], imageBase64 = null, preferences = null) {
     const user = JSON.parse(localStorage.getItem('ai_user') || '{}');
-    const body = { text: message, history: history, account_id: user.inbr_account_id || '' };
+    const body = {
+      text: message,
+      history: history,
+      account_id: user.inbr_account_id || '',
+      account_name: user.name || '',
+      account_phone: user.phone || '',
+    };
     if (imageBase64) {
       const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
       const mediaType = imageBase64.match(/^data:(image\/\w+);base64,/);
