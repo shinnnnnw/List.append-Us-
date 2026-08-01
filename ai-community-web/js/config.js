@@ -25,7 +25,7 @@ const CONFIG = {
     { name: '修繕', formId: 3, color: '#FFC107', icon: '🔧', serviceType: '04', chatMessage: '我家需要修繕' },
     { name: '宅配', formId: 4, color: '#795548', icon: '📦', serviceType: '05', chatMessage: '我要寄包裹' },
     { name: '購物', formId: 2, color: '#E91E63', icon: '🛒', serviceType: '06', chatMessage: '我想買東西' },
-    { name: '影音', formId: 3, color: '#9C27B0', icon: '🎬', serviceType: '07', chatMessage: '我有影音需求' },
+    { name: '叫車', formId: 3, color: '#00BCD4', icon: '🚕', serviceType: '07', chatMessage: '我需要叫車' },
     { name: '領藥', formId: 3, color: '#FF5722', icon: '💊', serviceType: '08', chatMessage: '我需要代領藥品' },
   ],
  
