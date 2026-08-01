@@ -1,0 +1,14 @@
+# 環境變數（含 AWS credentials，絕對不能上傳）
+.env
+
+# Node.js 依賴
+node_modules/
+dynamodb/node_modules/
+lambda/chat/node_modules/
+
+# 打包檔
+*.zip
+
+# 系統檔
+.DS_Store
+Thumbs.db
