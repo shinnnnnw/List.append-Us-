@@ -74,7 +74,6 @@
     </div>
     <button class="admin-btn" onclick="adminLogin()">登入</button>
     <p class="admin-error" id="admin-error">帳號或密碼錯誤</p>
-    <p style="font-size:12px;color:#999;text-align:center;margin-top:12px;">測試帳號：vendor01 / vendor05 / vendor23<br>密碼：Vendor01! / Vendor05! / Vendor23!</p>
   </div>
 </div>
 
@@ -119,14 +118,7 @@
 <script>
 const API_BASE = 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod';
 
-// 廠商帳號資料
-const vendorAccounts = [
-  { username: 'vendor01', password: 'Vendor01!', vendorId: 1, vendorName: '潔淨居家清潔', contactName: '李佳穎' },
-  { username: 'vendor05', password: 'Vendor05!', vendorId: 5, vendorName: '水電王修繕', contactName: '王建國' },
-  { username: 'vendor23', password: 'Vendor23!', vendorId: 23, vendorName: '泰皇殿', contactName: '鄭雅文' },
-];
-
-// 當前登入的廠商
+// 廠商帳號從 API 驗證（不再寫死）
 let currentVendor = null;
 
 // 所有案件資料（含 vendorId 欄位，登入後只顯示自己的）
@@ -286,25 +278,53 @@ const statusMap = {
 };
 
 // 登入
-function adminLogin() {
+async function adminLogin() {
   const username = document.getElementById('admin-username').value.trim();
   const password = document.getElementById('admin-password').value.trim();
   const errorEl = document.getElementById('admin-error');
 
-  const vendor = vendorAccounts.find(v => v.username === username && v.password === password);
-
-  if (vendor) {
-    currentVendor = vendor;
-    // 依 vendorId 篩選只屬於該廠商的案件
-    cases = allCases.filter(c => c.vendorId === vendor.vendorId);
-    errorEl.style.display = 'none';
-    document.getElementById('admin-login').style.display = 'none';
-    document.getElementById('admin-dashboard').style.display = 'block';
-    // 更新 header 顯示廠商名稱
-    document.querySelector('.admin-header h2').textContent = vendor.vendorName + ' - 管理後台';
-    renderDashboard();
-  } else {
+  if (!username || !password) {
+    errorEl.textContent = '請輸入帳號與密碼';
     errorEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.querySelector('.admin-btn');
+  btn.disabled = true;
+  btn.textContent = '登入中...';
+
+  try {
+    const res = await fetch(API_BASE + '/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const result = await res.json();
+
+    if (result.success && result.data) {
+      currentVendor = {
+        vendorId: result.data.vendorId,
+        vendorName: result.data.shopName,
+        contactName: result.data.name,
+      };
+      cases = allCases.filter(c => c.vendorId === currentVendor.vendorId);
+      errorEl.style.display = 'none';
+      document.getElementById('admin-login').style.display = 'none';
+      document.getElementById('admin-dashboard').style.display = 'block';
+      document.querySelector('.admin-header h2').textContent = currentVendor.vendorName + ' - 管理後台';
+      renderDashboard();
+    } else {
+      errorEl.textContent = result.message || '帳號或密碼錯誤';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = '網路錯誤，請稍後再試';
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '登入';
+  }
+}
   }
 }
 

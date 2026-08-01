@@ -57,17 +57,42 @@ const App = {
     var btnBackVendor = Utils.$('#btn-back-welcome-vendor');
 
     if (btnVendorLogin) {
-      btnVendorLogin.addEventListener('click', function() {
+      btnVendorLogin.addEventListener('click', async function() {
         var username = Utils.$('#vendor-username').value.trim();
         var password = Utils.$('#vendor-password').value.trim();
         var errorEl = Utils.$('#vendor-login-error');
 
-        if (username === 'admin' && password === '1234') {
-          if (errorEl) errorEl.style.display = 'none';
-          localStorage.setItem('vendorLogin', 'true');
-          vendorShowDashboard();
-        } else {
-          if (errorEl) errorEl.style.display = 'block';
+        if (!username || !password) {
+          if (errorEl) { errorEl.textContent = '請輸入帳號與密碼'; errorEl.style.display = 'block'; }
+          return;
+        }
+
+        btnVendorLogin.disabled = true;
+        btnVendorLogin.textContent = '登入中...';
+
+        try {
+          var res = await fetch(CONFIG.API_BASE + '/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: password }),
+          });
+          var result = await res.json();
+
+          if (result.success && result.data) {
+            if (errorEl) errorEl.style.display = 'none';
+            localStorage.setItem('vendorLogin', 'true');
+            localStorage.setItem('vendorName', result.data.name);
+            localStorage.setItem('vendorId', result.data.vendorId);
+            localStorage.setItem('vendorShopName', result.data.shopName);
+            vendorShowDashboard();
+          } else {
+            if (errorEl) { errorEl.textContent = result.message || '帳號或密碼錯誤'; errorEl.style.display = 'block'; }
+          }
+        } catch (err) {
+          if (errorEl) { errorEl.textContent = '網路錯誤，請稍後再試'; errorEl.style.display = 'block'; }
+        } finally {
+          btnVendorLogin.disabled = false;
+          btnVendorLogin.textContent = '廠商登入';
         }
       });
     }
