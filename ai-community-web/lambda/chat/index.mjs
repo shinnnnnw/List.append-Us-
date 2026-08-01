@@ -628,26 +628,54 @@ async function handleChat(body) {
 
     let formId = null;
     let service = null;
-    let status = 'chatting'; // chatting | confirming | confirmed
+    let status = 'chatting'; // chatting | collecting | complete
+    let feedbackNo = null;
+    let collected = null;
 
     if (submitMatch) {
       service = submitMatch[1];
       formId  = svcMap[service] || 3;
-      status  = 'confirmed';
+      status  = 'complete';
+
+      // 自動建立諮詢單
+      feedbackNo = 'FB' + Date.now();
+      const accountId = body.account_id || '';
+      collected = { service, history_summary: reply };
+
+      try {
+        await dbPut('pms_form_feedback', {
+          feedback_no:     feedbackNo,
+          form_id:         formId,
+          platform_code:   '01',
+          inbr_account_id: accountId,
+          contact_name:    body.account_name || '',
+          contact_mobile:  '',
+          description:     `AI對話自動建單：${service}`,
+          feedback_content: JSON.stringify({ source: 'ai_chat', service, reply }),
+          status:          '01',
+          is_read:         '0',
+          cre_time:        new Date().toISOString(),
+          upd_time:        new Date().toISOString(),
+        });
+      } catch (dbErr) {
+        console.error('[Auto-submit DB error]', dbErr);
+      }
     } else if (confirmMatch) {
       service = confirmMatch[1];
       formId  = svcMap[service] || 3;
-      status  = 'confirming';
+      status  = 'collecting';
     }
 
     return ok({
       reply,
-      intent:   (confirmMatch || submitMatch) ? 'service' : 'none',
+      intent:      (confirmMatch || submitMatch) ? 'service' : 'none',
       status,
-      has_form: status === 'confirmed',
-      form_id:  formId,
+      has_form:    false,
+      form_id:     formId,
       service,
-      source:   'bedrock',
+      feedback_no: feedbackNo,
+      collected,
+      source:      'bedrock',
     });
   } catch (err) {
     console.error('[Bedrock Error]', err);

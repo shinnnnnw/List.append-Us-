@@ -143,18 +143,19 @@ const Chat = {
       const data = result.data;
       const replyText = data.reply || '';
 
-      // 顯示 AI 回覆（允許 HTML）
-      this.addMessage('ai', replyText, true);
+      // 顯示 AI 回覆
+      this.addMessage('ai', replyText, false);
 
-      // 根據狀態決定下一步
-      if (data.status === 'confirmed' && data.has_form && data.form_id) {
-        // AI 收集完資訊且用戶已確認 → 顯示送出按鈕
-        this.addSubmitButton(data.form_id, data.service);
+      // 收集完成 → PHP 已自動建立訂單，顯示成功卡片
+      if (data.status === 'complete' && data.feedback_no) {
+        this.addOrderConfirmCard(data.feedback_no, data.intent, data.collected);
+      } else if (data.has_form && data.form_id) {
+        // fallback：Bedrock 不可用時顯示表單按鈕
+        this.addFormButton(data.form_id, data.service);
       }
 
-      // 加入對話歷史（存純文字）
-      const plainReply = replyText.replace(/<[^>]*>/g, '');
-      this.conversationHistory.push({ role: 'assistant', content: plainReply });
+      // 加入對話歷史
+      this.conversationHistory.push({ role: 'assistant', content: replyText });
     } else {
       this.addMessage('ai', '抱歉，目前系統忙碌中，請稍後再試。', false);
     }
@@ -192,6 +193,67 @@ const Chat = {
       </button>
     `;
     this.container.appendChild(btn);
+    this.container.scrollTop = this.container.scrollHeight;
+  },
+
+  /**
+   * 附加確認送出按鈕（fallback 用，Bedrock 不可用時）
+   * @param {number} formId
+   * @param {string} serviceName
+   */
+  addFormButton(formId, serviceName) {
+    if (!this.container) return;
+    const btn = document.createElement('div');
+    btn.className = 'message-form-action';
+    btn.setAttribute('role', 'region');
+    btn.setAttribute('aria-label', '填寫表單');
+    btn.innerHTML = `
+      <button class="btn-primary form-guide-btn"
+              onclick="Utils.navigate('form.html?form_id=${formId}&service=${encodeURIComponent(serviceName || '')}')">
+        📋 填寫${serviceName ? ' ' + serviceName : ''}需求表單
+      </button>
+    `;
+    this.container.appendChild(btn);
+    this.container.scrollTop = this.container.scrollHeight;
+  },
+
+  /**
+   * 顯示建單成功確認卡片（AI 收集完畢，PHP 已自動建單）
+   * @param {string} feedbackNo  - 諮詢單號
+   * @param {string} intent      - 服務類型代碼
+   * @param {Object} collected   - AI 收集到的資料
+   */
+  addOrderConfirmCard(feedbackNo, intent, collected) {
+    if (!this.container) return;
+
+    const intentLabels = {
+      restaurant_booking: '餐廳訂位',
+      shopping:           '商品購買',
+      cleaning:           '居家清潔',
+      repair:             '水電修繕',
+      appliance:          '家電清洗',
+      delivery:           '包裹寄件',
+    };
+    const serviceLabel = intentLabels[intent] || '服務需求';
+
+    const card = document.createElement('div');
+    card.className = 'order-confirm-card';
+    card.setAttribute('role', 'region');
+    card.setAttribute('aria-label', '建單成功');
+    card.innerHTML = `
+      <div class="confirm-icon" aria-hidden="true">✅</div>
+      <div class="confirm-title">${serviceLabel}需求已建立</div>
+      <div class="confirm-no">單號：${feedbackNo || '已記錄'}</div>
+      <div class="confirm-detail">
+        ${collected && collected.name  ? `<span>姓名：${collected.name}</span><br>` : ''}
+        ${collected && collected.phone ? `<span>手機：${collected.phone}</span>` : ''}
+      </div>
+      <p class="confirm-hint">廠商將在 24 小時內與您聯繫確認細節。</p>
+      <button class="btn-primary form-guide-btn" onclick="Utils.navigate('orders.html')">
+        📋 查看我的訂單
+      </button>
+    `;
+    this.container.appendChild(card);
     this.container.scrollTop = this.container.scrollHeight;
   },
 
