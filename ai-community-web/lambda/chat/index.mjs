@@ -309,9 +309,19 @@ const STATIC_FORMS = {
     intro_content: '<p>想吃什麼告訴我們，外送到府享美食。</p>',
     notice_content: null, terms_content: null,
   },
+  '7': {
+    id: 7, name: '外送服務需求表單',
+    intro_content: '<p>美食外送到府，留下需求由專人為您送達。</p>',
+    notice_content: null, terms_content: null,
+  },
   '10': {
     id: 10, name: '水電修繕需求表單',
     intro_content: '<p>水管、電路、設備維修等問題，留下需求由師傅為您處理。</p>',
+    notice_content: null, terms_content: null,
+  },
+  '8': {
+    id: 8, name: '叫車接送需求表單',
+    intro_content: '<p>預約叫車或醫療接送服務，留下時間與地點由司機為您安排。</p>',
     notice_content: null, terms_content: null,
   },
   '11': {
@@ -415,6 +425,26 @@ const STATIC_TOPICS = {
     { id: 44, form_id: 10, type: '6',  title: '上傳現場照片',    is_required: '0', sort: 6, options: [], feature: null },
     { id: 45, form_id: 10, type: '9',  title: '希望到府時間',    is_required: '0', sort: 7, options: [], feature: null },
   ],
+  '8': [
+    { id: 46, form_id: 8, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 47, form_id: 8, type: '9',  title: '乘車日期時間',     is_required: '1', sort: 2, options: [], feature: null },
+    { id: 48, form_id: 8, type: '1',  title: '上車地點',         is_required: '1', sort: 3, options: [], feature: null },
+    { id: 49, form_id: 8, type: '1',  title: '目的地',           is_required: '1', sort: 4, options: [], feature: null },
+    { id: 50, form_id: 8, type: '1',  title: '乘車人數',         is_required: '1', sort: 5, options: [], feature: null, is_number_only: '1' },
+    { id: 51, form_id: 8, type: '3',  title: '特殊需求',         is_required: '0', sort: 6, options: [
+      { id: 37, topic_id: 51, option_name: '輪椅接送' }, { id: 38, topic_id: 51, option_name: '大型行李' },
+      { id: 39, topic_id: 51, option_name: '寵物同行' }, { id: 40, topic_id: 51, option_name: '無' },
+    ], feature: null },
+  ],
+  '7': [
+    { id: 52, form_id: 7, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 53, form_id: 7, type: '5',  title: '外送地區',         is_required: '1', sort: 2, options: [], feature: null },
+    { id: 54, form_id: 7, type: '2',  title: '想吃的餐點或餐廳', is_required: '1', sort: 3, options: [], feature: null },
+    { id: 55, form_id: 7, type: '1',  title: '用餐人數',         is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 56, form_id: 7, type: '9',  title: '希望送達時間',     is_required: '1', sort: 5, options: [], feature: null },
+    { id: 57, form_id: 7, type: '1',  title: '預算上限（元）',   is_required: '0', sort: 6, options: [], feature: null, is_number_only: '1' },
+    { id: 58, form_id: 7, type: '2',  title: '其他備註（過敏原、忌口）', is_required: '0', sort: 7, options: [], feature: null },
+  ],
 };
 
 async function handleForm(formId) {
@@ -462,7 +492,7 @@ async function handleFeedback(body) {
   await dbPut('pms_form_feedback', item);
 
   // 同時建立一筆待媒合訂單到 mms_order_record
-  const serviceTypeToOrderType = { 1:'01', 2:'01', 3:'01', 6:'02', 9:'06', 10:'01', 11:'05' };
+  const serviceTypeToOrderType = { 1:'01', 2:'01', 3:'01', 6:'02', 7:'06', 8:'04', 9:'06', 10:'01', 11:'05' };
   const orderType = serviceTypeToOrderType[formId] || '04';
   const recordId = Date.now();
   const orderData = {
@@ -601,29 +631,15 @@ async function handleAdminLogin(body) {
 
   if (!username || !password) return fail('請輸入帳號與密碼', 400);
 
-  // 查詢 pms_vendor_account 表，用 account_no 比對
-  const accounts = await dbScan('pms_vendor_account',
-    'account_no = :u',
-    { ':u': username }
-  );
-
-  if (!accounts.length) return fail('帳號或密碼錯誤', 401);
-  const account = accounts[0];
-
-  // 密碼明文比對
-  if (account.password_hash !== password) return fail('帳號或密碼錯誤', 401);
-
-  // 帳號停用檢查
-  if (account.is_enable !== '1') return fail('此帳號已停用', 401);
-
-  // 查詢廠商主檔取得店名
-  const vendor = await dbGet('cms_service_vendor', { vendor_id: account.vendor_id });
-  const shopName = vendor ? vendor.name : '';
+  const account = await dbGet('vendor_accounts', { username });
+  if (!account) return fail('帳號或密碼錯誤', 401);
+  if (account.password !== password) return fail('帳號或密碼錯誤', 401);
 
   return ok({
+    username: account.username,
+    name: account.name,
     vendorId: account.vendor_id,
-    name: account.account_name,
-    shopName,
+    shopName: account.shop_name,
   }, '登入成功');
 }
 
@@ -1232,16 +1248,54 @@ ${prefsLines.join('\n')}
 
       const now = new Date().toISOString();
 
+      // 從確認單中提取欄位，轉成與表單一致的格式
+      const allText = messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n') + '\n' + reply;
+      const extractField = (pattern) => {
+        const match = allText.match(pattern);
+        return match ? match[1].trim() : '';
+      };
+
+      const parsedDate = extractField(/▪\s*日期時間[：:](.+)/);
+      const parsedPeople = extractField(/▪\s*(?:用餐)?人數[：:](.+)/);
+      const parsedTime = extractField(/▪\s*(?:用餐)?時段[：:](.+)/);
+      const parsedContent = extractField(/▪\s*(?:詳細內容|需求內容|服務內容|餐點|商品)[：:](.+)/);
+      const parsedAddress = extractField(/▪\s*(?:地點|地址|送達地址|服務地址)[/／]?(?:地址)?[：:](.+)/);
+      const parsedContact = extractField(/▪\s*聯絡人[：:](.+)/);
+      const parsedPhone = extractField(/▪\s*聯絡電話[：:](.+)/);
+      const parsedRemark = extractField(/▪\s*備註[：:](.+)/);
+      const parsedPayment = extractField(/▪\s*付款方式[：:](.+)/);
+
+      // 組成統一的 feedback_content 陣列格式
+      const feedbackItems = [];
+      if (parsedDate) feedbackItems.push({ topicId: 1, type: '9', answer: parsedDate });
+      if (parsedPeople) feedbackItems.push({ topicId: 2, type: '1', answer: parsedPeople });
+      if (parsedTime) feedbackItems.push({ topicId: 3, type: '3', answer: parsedTime });
+      if (parsedContent) feedbackItems.push({ topicId: 5, type: '2', answer: parsedContent });
+      if (parsedAddress) feedbackItems.push({ topicId: 17, type: '8', answer: parsedAddress });
+      if (parsedContact || parsedPhone) {
+        feedbackItems.push({ topicId: 6, type: '10', answer: {
+          name: parsedContact || body.account_name || '',
+          phone: parsedPhone || body.account_phone || '',
+        }});
+      }
+      if (parsedRemark) feedbackItems.push({ topicId: 5, type: '2', answer: parsedRemark });
+      if (parsedPayment) feedbackItems.push({ topicId: 99, type: '1', answer: parsedPayment });
+
+      // 若解析不出任何欄位，fallback 放整段確認單文字
+      const feedbackContent = feedbackItems.length > 0
+        ? JSON.stringify(feedbackItems)
+        : JSON.stringify([{ topicId: 5, type: '2', answer: reply }]);
+
       try {
         await dbPut('pms_form_feedback', {
           feedback_no:     feedbackNo,
           form_id:         formId,
           platform_code:   '01',
           inbr_account_id: accountId,
-          contact_name:    body.account_name || '',
-          contact_mobile:  body.account_phone || '',
-          description:     `AI對話自動建單：${service}`,
-          feedback_content: JSON.stringify({ source: 'ai_chat', service, reply }),
+          contact_name:    parsedContact || body.account_name || '',
+          contact_mobile:  parsedPhone || body.account_phone || '',
+          description:     `AI對話建單：${service}`,
+          feedback_content: feedbackContent,
           status:          '01',
           is_read:         '0',
           cre_time:        now,

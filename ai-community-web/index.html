@@ -358,12 +358,71 @@ function getVendorMyCases() {
   return vendorCases;
 }
 
+// 縮短服務名稱（處理 AI 對話一大段文字的情況）
+function vendorShortServiceName(service) {
+  if (!service || service.length <= 20) return service || '服務';
+  // 嘗試提取服務類型欄位
+  const svcMatch = service.match(/服務類型[：:](.+?)(?:[，。▪\n]|$)/);
+  if (svcMatch) return svcMatch[1].trim();
+  // 嘗試提取 AI 對話建單前綴
+  const aiMatch = service.match(/^AI對話(?:自動)?建單[：:](.+?)$/);
+  if (aiMatch) return aiMatch[1].trim();
+  // fallback: 取前 15 字
+  return service.substring(0, 15) + '...';
+}
+
+// 從純文字中提取確認單欄位（處理 AI 對話包含 ▪ 欄位的情況）
+function vendorExtractFromText(text) {
+  if (!text) return null;
+  // 確認單關鍵字對照
+  const fieldPatterns = [
+    { label: '服務類型', pattern: /▪\s*服務類型[：:](.+)/m },
+    { label: '詳細內容', pattern: /▪\s*(?:詳細內容|需求內容|服務內容|餐點|商品)[：:](.+)/m },
+    { label: '清潔類型', pattern: /▪\s*(?:清潔類型|服務類型偏好)[：:](.+)/m },
+    { label: '清潔範圍', pattern: /▪\s*(?:清潔範圍|坪數)[：:](.+)/m },
+    { label: '日期時間', pattern: /▪\s*(?:日期時間|希望時間|預約時間|用餐時間)[：:](.+)/m },
+    { label: '用餐人數', pattern: /▪\s*(?:用餐)?人數[：:](.+)/m },
+    { label: '用餐時段', pattern: /▪\s*(?:用餐)?時段[：:](.+)/m },
+    { label: '地點/地址', pattern: /▪\s*(?:地點|地址|送達地址|服務地址|清潔地址)[/／]?(?:地址)?[：:](.+)/m },
+    { label: '聯絡人', pattern: /▪\s*聯絡人[：:](.+)/m },
+    { label: '聯絡電話', pattern: /▪\s*聯絡電話[：:](.+)/m },
+    { label: '付款方式', pattern: /▪\s*付款方式[：:](.+)/m },
+    { label: '備註', pattern: /▪\s*備註[：:](.+)/m },
+    { label: '特殊需求', pattern: /▪\s*特殊需求[：:](.+)/m },
+  ];
+
+  let html = '';
+  let matched = 0;
+  for (const fp of fieldPatterns) {
+    const m = text.match(fp.pattern);
+    if (m) {
+      matched++;
+      html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">${fp.label}</span><span style="text-align:right;max-width:60%;">${m[1].trim()}</span></div>`;
+    }
+  }
+
+  // 至少要匹配到 2 個欄位才視為有效確認單
+  return matched >= 2 ? html : null;
+}
+
 // 解析 feedback_content JSON 為可讀的表單欄位 HTML
 function vendorParseFeedbackContent(rawContent) {
   let items = [];
   try {
-    items = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent;
+    const parsed = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent;
+    // 舊版 AI 建單格式：{source:"ai_chat", service, reply}
+    if (parsed && !Array.isArray(parsed) && parsed.source === 'ai_chat') {
+      // 嘗試從 reply 中解析確認單欄位
+      const extracted = vendorExtractFromText(parsed.reply || '');
+      if (extracted) return extracted;
+      const replyText = parsed.reply || '';
+      return `<p style="font-size:13px;line-height:1.8;color:#333;white-space:pre-wrap;">${replyText}</p>`;
+    }
+    items = parsed;
   } catch (e) {
+    // 不是 JSON，可能是純文字（含確認單內容）
+    const extracted = vendorExtractFromText(rawContent || '');
+    if (extracted) return extracted;
     return `<p style="font-size:13px;line-height:1.8;color:#333;">${rawContent || '無'}</p>`;
   }
 
@@ -486,7 +545,7 @@ function vendorRenderList(filter) {
     return `
       <div class="card" style="padding:14px;margin-bottom:10px;cursor:pointer;" onclick="vendorShowDetail('${c.id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-size:14px;font-weight:bold;">${c.service} - ${c.customerName}</span>
+          <span style="font-size:14px;font-weight:bold;">${vendorShortServiceName(c.service)} - ${c.customerName}</span>
           <span style="font-size:11px;padding:3px 8px;border-radius:12px;color:#fff;background:${st.color};">${st.label}</span>
         </div>
         <div style="font-size:12px;color:#666;line-height:1.8;">
@@ -511,13 +570,33 @@ function vendorShowDetail(id) {
   const displayTime = vendorFormatTime(c.createdAt);
   const displayCategory = c.category ? `${c.category} / ${c.service}` : c.service;
 
+  // 嘗試從 description（即 service 欄位）或 feedback_content 解析需求內容
+  let parsedDescription = '';
+  const extractedFromService = vendorExtractFromText(c.service || '');
+  if (extractedFromService) {
+    parsedDescription = extractedFromService;
+  } else if (c.description) {
+    parsedDescription = vendorParseFeedbackContent(c.description);
+  } else {
+    parsedDescription = '<p style="font-size:13px;color:#999;">無</p>';
+  }
+
+  // 服務類別：如果 service 是一大段文字，只取前面關鍵部分
+  let shortService = c.service || '';
+  if (shortService.length > 30) {
+    // 嘗試從文字中提取服務類型
+    const svcMatch = shortService.match(/▪\s*服務類型[：:](.+)/m);
+    shortService = svcMatch ? svcMatch[1].trim() : 'AI 對話建單';
+  }
+  const finalCategory = c.category ? `${c.category} / ${shortService}` : shortService;
+
   detailEl.innerHTML = `
     <span style="font-size:14px;color:#4CAF50;cursor:pointer;" onclick="vendorSwitchTab(document.querySelector('.v-tab.active').dataset.tab)">← 返回列表</span>
 
     <div class="card" style="padding:14px;margin-top:12px;">
       <h4 style="font-size:14px;margin-bottom:10px;">案件資訊</h4>
       <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">案件編號</span><span>${c.id}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">服務類別</span><span>${displayCategory}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">服務類別</span><span>${finalCategory}</span></div>
       <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">建立時間</span><span>${displayTime}</span></div>
       <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#666;">目前狀態</span><span style="padding:3px 8px;border-radius:12px;color:#fff;background:${st.color};font-size:11px;">${st.label}</span></div>
     </div>
@@ -532,7 +611,7 @@ function vendorShowDetail(id) {
 
     <div class="card" style="padding:14px;margin-top:12px;">
       <h4 style="font-size:14px;margin-bottom:10px;">需求內容</h4>
-      ${vendorParseFeedbackContent(c.description)}
+      ${parsedDescription}
     </div>
 
     <div class="card" style="padding:14px;margin-top:12px;">

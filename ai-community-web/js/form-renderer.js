@@ -31,7 +31,7 @@ const FormRenderer = {
       // API.getForm 回傳格式為 { id, name, groups: [{ topics }] }
       // 將其轉換為 FormRenderer 需要的 { form, topics } 格式
       const allTopics = [];
-      if (raw.groups) {
+      if (raw.groups && raw.groups.length > 0) {
         raw.groups.forEach(function(group) {
           (group.topics || []).forEach(function(t) {
             // options 可能是字串陣列，需轉為 { id, option_name } 格式
