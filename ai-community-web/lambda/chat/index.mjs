@@ -396,7 +396,29 @@ async function handleFeedback(body) {
   };
 
   await dbPut('pms_form_feedback', item);
-  return ok({ feedback_no: feedbackNo }, '表單提交成功');
+
+  // 同時建立一筆待媒合訂單到 mms_order_record
+  const serviceTypeToOrderType = { 1:'01', 2:'01', 3:'01', 6:'02', 9:'06', 10:'01', 11:'05' };
+  const orderType = serviceTypeToOrderType[formId] || '04';
+  const recordId = Date.now();
+  const orderData = {
+    record_id:          recordId,
+    order_no:           `ORD${recordId}`,
+    service_vendor_id:  body.service_vendor_id || '',
+    service_id:         formId,
+    service_name:       body.service_name || '',
+    inbr_account_id:    accountId,
+    order_type:         orderType,
+    order_status:       '01', // 待媒合
+    final_amount:       0,
+    order_items:        [],
+    feedback_no:        feedbackNo,
+    cre_time:           now,
+    order_time:         now,
+  };
+  await dbPut('mms_order_record', orderData);
+
+  return ok({ feedback_no: feedbackNo, order_no: orderData.order_no }, '表單提交成功');
 }
 
 // ─── Contact（聯絡我們）──────────────────────────────────────────────────────
