@@ -18,6 +18,9 @@ const SEED_DATA = {
     { vendor_id:{S:'V003'}, name:{S:'快速寄件服務'}, service_type:{N:'3'}, description:{S:'到府收件，全台配送，當日到府'}, rating_avg:{N:'4.5'}, rating_count:{N:'203'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'台中市'},{S:'高雄市'}]}, is_enable:{S:'1'} },
     { vendor_id:{S:'V005'}, name:{S:'水電王修繕'}, service_type:{N:'10'}, description:{S:'水管、電路、冷氣安裝等修繕服務'}, rating_avg:{N:'4.9'}, rating_count:{N:'178'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
     { vendor_id:{S:'V006'}, name:{S:'統一購物商城'}, service_type:{N:'11'}, description:{S:'生活用品、食品、家電線上購物'}, rating_avg:{N:'4.4'}, rating_count:{N:'521'}, service_counties:{L:[{S:'全台'}]}, is_enable:{S:'1'} },
+    { vendor_id:{S:'V024'}, name:{S:'萬事通五金行'}, service_type:{N:'11'}, description:{S:'五金工具、居家修繕材料，品項齊全'}, rating_avg:{N:'4.5'}, rating_count:{N:'98'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
+    { vendor_id:{S:'V025'}, name:{S:'鮮果園水果行'}, service_type:{N:'11'}, description:{S:'當季新鮮水果，產地直送，禮盒客製'}, rating_avg:{N:'4.7'}, rating_count:{N:'215'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'桃園市'}]}, is_enable:{S:'1'} },
+    { vendor_id:{S:'V026'}, name:{S:'毛孩生活館'}, service_type:{N:'11'}, description:{S:'寵物食品、用品、美容保健，毛小孩的一站式商城'}, rating_avg:{N:'4.8'}, rating_count:{N:'342'}, service_counties:{L:[{S:'台北市'},{S:'新北市'},{S:'台中市'}]}, is_enable:{S:'1'} },
     // ── 中式餐廳 ──
     { vendor_id:{S:'V004'}, name:{S:'饗食天堂'}, service_type:{N:'6'}, description:{S:'精緻中式料理，提供包廂訂位，適合家庭聚餐'}, rating_avg:{N:'4.7'}, rating_count:{N:'312'}, service_counties:{L:[{S:'台北市'},{S:'新北市'}]}, is_enable:{S:'1'} },
     { vendor_id:{S:'V010'}, name:{S:'鼎泰豐信義店'}, service_type:{N:'6'}, description:{S:'世界知名小籠包，經典台灣中式餐廳'}, rating_avg:{N:'4.9'}, rating_count:{N:'856'}, service_counties:{L:[{S:'台北市'}]}, is_enable:{S:'1'} },
