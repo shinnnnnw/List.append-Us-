@@ -647,6 +647,45 @@ async function handleAdminCases(qs) {
   const status = qs.status || '';
   const vendorId = qs.vendor_id || '';
 
+  // 有 vendor_id：用 GSI_vendor_id 查 pms_case_assignment，再 join pms_form_feedback
+  if (vendorId) {
+    const assignments = await dbQuery(
+      'pms_case_assignment',
+      'GSI_vendor_id',
+      'vendor_id = :v',
+      { ':v': Number(vendorId) }
+    );
+
+    // 對每筆 assignment 查詢對應的 feedback 詳細資料
+    const cases = [];
+    for (const asn of assignments) {
+      if (status && asn.status !== status) continue; // 狀態篩選
+
+      const feedback = await dbGet('pms_form_feedback', { feedback_no: asn.feedback_no });
+      if (!feedback) continue; // feedback 已刪除或不存在，跳過
+
+      cases.push({
+        id: asn.feedback_no,
+        feedback_no: asn.feedback_no,
+        assignmentId: asn.assignment_id,
+        vendorId: asn.vendor_id,
+        assignmentStatus: asn.status || '01',
+        customerName: feedback.contact_name || '',
+        customerPhone: feedback.contact_mobile || '',
+        customerEmail: feedback.contact_email || '',
+        service: feedback.description || '',
+        status: asn.status || '01',
+        createdAt: feedback.cre_time || '',
+        address: [feedback.contact_address_county, feedback.contact_address_district, feedback.contact_address_detail].filter(Boolean).join(''),
+        description: feedback.feedback_content || '',
+        replies: feedback.replies ? (typeof feedback.replies === 'string' ? JSON.parse(feedback.replies) : feedback.replies) : [],
+      });
+    }
+
+    return ok(cases);
+  }
+
+  // 無 vendor_id：向下相容，撈全部 pms_form_feedback
   const items = await dbScan('pms_form_feedback',
     'feedback_no > :empty',
     { ':empty': '' }
@@ -659,45 +698,12 @@ async function handleAdminCases(qs) {
     customerPhone: item.contact_mobile || '',
     customerEmail: item.contact_email || '',
     service: item.description || '',
-    form_id: item.form_id,
     status: item.status || '01',
     createdAt: item.cre_time || '',
     address: [item.contact_address_county, item.contact_address_district, item.contact_address_detail].filter(Boolean).join(''),
     description: item.feedback_content || '',
     replies: item.replies ? (typeof item.replies === 'string' ? JSON.parse(item.replies) : item.replies) : [],
   }));
-
-  // 若帶入 vendor_id，查詢該廠商的 service_type 進行篩選
-  if (vendorId) {
-    try {
-      const vendorResult = await ddb.send(new GetItemCommand({
-        TableName: 'cms_service_vendor',
-        Key: { vendor_id: { N: String(vendorId) } },
-      }));
-      if (vendorResult.Item) {
-        const vendor = unmarshall(vendorResult.Item);
-        const vendorServiceType = String(vendor.service_type || '');
-        // service_type 對應可能的 form_id（含前端 Mock 與 Lambda 靜態表單兩套）
-        const serviceTypeToFormIds = {
-          '1': [3],           // 家事服務
-          '2': [3],           // 家電清洗
-          '3': [4],           // 寄件服務
-          '6': [1, 6],        // 餐廳訂位（Lambda 靜態=1，前端 Mock=6）
-          '7': [1, 9],        // 外送服務
-          '8': [3],           // 叫車服務
-          '9': [3],           // 領藥服務
-          '10': [3, 10],      // 水電修繕
-          '11': [2, 11],      // 商品購買
-        };
-        const matchFormIds = serviceTypeToFormIds[vendorServiceType];
-        if (matchFormIds) {
-          cases = cases.filter(c => matchFormIds.includes(Number(c.form_id)));
-        }
-      }
-    } catch (err) {
-      console.error('[handleAdminCases] vendor lookup error:', err);
-    }
-  }
 
   if (status) {
     cases = cases.filter(c => c.status === status);
