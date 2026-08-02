@@ -4,26 +4,29 @@
 
 /* --- CSS Variables --- */
 :root {
-  --primary: #4CAF50;
-  --primary-dark: #388E3C;
-  --primary-light: #C8E6C9;
-  --accent: #FF5722;
-  --accent-light: #FFCCBC;
-  --bg: #F8F9FA;
+  --primary: #2E7D32;
+  --primary-dark: #1B5E20;
+  --primary-light: #A5D6A7;
+  --primary-surface: #E8F5E9;
+  --accent: #FF6D00;
+  --accent-light: #FFE0B2;
+  --bg: #F5F7F5;
   --bg-card: #FFFFFF;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --border: #E0E0E0;
-  --border-light: #EEEEEE;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.08);
-  --radius: 12px;
-  --radius-sm: 8px;
+  --text-primary: #1A1A2E;
+  --text-secondary: #4A4A68;
+  --text-muted: #8E8EA0;
+  --border: #D4E2D4;
+  --border-light: #E8F0E8;
+  --shadow: 0 4px 16px rgba(46, 125, 50, 0.08);
+  --shadow-sm: 0 2px 8px rgba(46, 125, 50, 0.06);
+  --shadow-lg: 0 8px 32px rgba(46, 125, 50, 0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
   --radius-full: 50px;
   --max-width: 480px;
-  --nav-height: 56px;
-  --header-height: 60px;
+  --nav-height: 60px;
+  --header-height: 64px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* --- Reset --- */
@@ -42,8 +45,10 @@ body {
   font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
   background-color: var(--bg);
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.6;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -102,12 +107,13 @@ input, select, textarea {
   width: 100%;
   max-width: var(--max-width);
   height: var(--header-height);
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 15px;
+  padding: 0 18px;
   z-index: 100;
+  box-shadow: 0 2px 12px rgba(46, 125, 50, 0.15);
 }
 
 .page-header .header-title {
@@ -140,31 +146,40 @@ input, select, textarea {
   max-width: var(--max-width);
   height: var(--nav-height);
   background-color: var(--bg-card);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 100;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 6px 12px;
+  gap: 3px;
+  padding: 8px 14px;
   color: var(--text-muted);
   font-size: 11px;
+  font-weight: 500;
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color var(--transition), transform var(--transition);
+  border-radius: var(--radius-sm);
+}
+
+.nav-item:hover {
+  color: var(--primary);
+  transform: translateY(-1px);
 }
 
 .nav-item.active {
   color: var(--primary);
+  font-weight: 600;
 }
 
 .nav-item .nav-icon {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 /* --- Card --- */
@@ -172,8 +187,15 @@ input, select, textarea {
   background-color: var(--bg-card);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  padding: 16px;
+  padding: 18px;
   margin-bottom: 12px;
+  border: 1px solid var(--border-light);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
 }
 
 /* --- Button --- */
@@ -181,19 +203,25 @@ input, select, textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: var(--radius-full);
   font-size: 14px;
-  font-weight: bold;
-  transition: opacity 0.2s;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all var(--transition);
 }
 
 .btn:hover {
-  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+}
+
+.btn:active {
+  transform: translateY(0);
 }
 
 .btn-primary {
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: #fff;
 }
 

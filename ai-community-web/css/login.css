@@ -4,7 +4,7 @@
 
 .login-view {
   min-height: 100vh;
-  background-color: #F4F6F8;
+  background: linear-gradient(165deg, #E8F5E9 0%, #F1F8E9 40%, #FAFAFA 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -18,26 +18,29 @@
 
 .login-logo {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 36px;
 }
 
 .login-logo h1 {
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 26px;
+  font-weight: 800;
   color: var(--primary);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
 }
 
 .login-logo p {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
+  letter-spacing: 1px;
 }
 
 .login-card {
   background-color: var(--bg-card);
-  padding: 30px 25px;
-  border-radius: 16px;
-  box-shadow: var(--shadow);
+  padding: 32px 28px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
 }
 
 .login-card h2 {
@@ -59,23 +62,25 @@
 .login-btn {
   display: block;
   width: 100%;
-  background-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, #E65100 100%);
   color: #fff;
   font-size: 15px;
-  font-weight: bold;
+  font-weight: 700;
   padding: 14px;
   border: none;
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
+  transition: all var(--transition);
+  letter-spacing: 0.5px;
 }
 
 .login-btn:hover {
-  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 109, 0, 0.3);
 }
 
 .login-btn:active {
-  transform: scale(0.98);
+  transform: translateY(0);
 }
 
 .login-btn:disabled {
@@ -134,17 +139,18 @@
 
 .login-field input {
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
+  padding: 13px 16px;
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  background-color: #FAFAFA;
-  transition: border-color 0.2s;
+  background-color: var(--bg);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .login-field input:focus {
   border-color: var(--primary);
   background-color: #fff;
+  box-shadow: 0 0 0 3px var(--primary-surface);
   outline: none;
 }
 
