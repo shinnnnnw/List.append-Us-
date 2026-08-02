@@ -358,6 +358,19 @@ function getVendorMyCases() {
   return vendorCases;
 }
 
+// 縮短服務名稱（處理 AI 對話一大段文字的情況）
+function vendorShortServiceName(service) {
+  if (!service || service.length <= 20) return service || '服務';
+  // 嘗試提取服務類型欄位
+  const svcMatch = service.match(/服務類型[：:](.+?)(?:[，。▪\n]|$)/);
+  if (svcMatch) return svcMatch[1].trim();
+  // 嘗試提取 AI 對話建單前綴
+  const aiMatch = service.match(/^AI對話(?:自動)?建單[：:](.+?)$/);
+  if (aiMatch) return aiMatch[1].trim();
+  // fallback: 取前 15 字
+  return service.substring(0, 15) + '...';
+}
+
 // 從純文字中提取確認單欄位（處理 AI 對話包含 ▪ 欄位的情況）
 function vendorExtractFromText(text) {
   if (!text) return null;
@@ -532,7 +545,7 @@ function vendorRenderList(filter) {
     return `
       <div class="card" style="padding:14px;margin-bottom:10px;cursor:pointer;" onclick="vendorShowDetail('${c.id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-size:14px;font-weight:bold;">${c.service} - ${c.customerName}</span>
+          <span style="font-size:14px;font-weight:bold;">${vendorShortServiceName(c.service)} - ${c.customerName}</span>
           <span style="font-size:11px;padding:3px 8px;border-radius:12px;color:#fff;background:${st.color};">${st.label}</span>
         </div>
         <div style="font-size:12px;color:#666;line-height:1.8;">
