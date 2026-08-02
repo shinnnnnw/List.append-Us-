@@ -323,9 +323,14 @@ const Chat = {
       // 顯示 AI 回覆
       this.addMessage('ai', replyText, false);
 
-      // 收集完成 → PHP 已自動建立訂單，顯示成功卡片
+      // 收集完成 → 已自動建立訂單，顯示成功卡片 + 行事曆提醒
       if (data.status === 'complete' && data.feedback_no) {
         this.addOrderConfirmCard(data.feedback_no, data.intent, data.collected);
+        // 觸發行事曆提醒 Modal
+        if (typeof CalendarModal !== 'undefined') {
+          const calEvent = CalendarModal.createEvent(data.service, data.feedback_no, new Date());
+          CalendarModal.show(calEvent);
+        }
       } else if (data.has_form && data.form_id) {
         // fallback：Bedrock 不可用時顯示表單按鈕
         this.addFormButton(data.form_id, data.service);
