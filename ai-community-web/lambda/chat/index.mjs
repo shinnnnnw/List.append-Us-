@@ -482,6 +482,10 @@ async function handleFeedback(body) {
   };
   await dbPut('mms_order_record', orderData);
 
+  // 自動媒合廠商
+  const serviceType = FORM_ID_TO_SERVICE_TYPE[formId] || null;
+  await autoAssignVendor(feedbackNo, serviceType, body.contact_address_county || '');
+
   return ok({ feedback_no: feedbackNo, order_no: orderData.order_no }, '表單提交成功');
 }
 
@@ -512,6 +516,81 @@ async function handleContact(body) {
   });
 
   return ok(null, '感謝您的來信，我們將盡快回覆您！');
+}
+
+// ─── Auto Assign Vendor（自動媒合）─────────────────────────────────────────────
+
+const SERVICE_NAME_TO_TYPE = {
+  '外送': 6, '餐廳外送': 6, '訂位': 6, '餐廳訂位': 6,
+  '清潔': 1, '居家清潔': 1,
+  '家電清洗': 2,
+  '修繕': 10, '水電修繕': 10,
+  '宅配': 3, '包裹寄送': 3, '寄件': 3,
+  '購物': 11, '商品購買': 11,
+  '叫車': 13, '計程車': 13,
+  '領藥': 12, '代領藥品': 12,
+};
+
+const FORM_ID_TO_SERVICE_TYPE = {
+  1: 6, 2: 11, 3: 1, 4: 3, 9: 6, 10: 10,
+};
+
+async function autoAssignVendor(feedbackNo, serviceType, county) {
+  try {
+    if (!serviceType) {
+      console.warn('[AutoAssign] 無法判斷 serviceType，跳過媒合');
+      return;
+    }
+
+    // 篩選符合 service_type 且啟用的廠商
+    const vendors = await dbScan('cms_service_vendor',
+      'service_type = :st AND is_enable = :e',
+      { ':st': serviceType, ':e': '1' }
+    );
+
+    if (!vendors.length) {
+      console.warn(`[AutoAssign] 無符合 service_type=${serviceType} 的廠商`);
+      return;
+    }
+
+    // 地區篩選（如果有提供 county）
+    let filtered = vendors;
+    if (county) {
+      const byCounty = vendors.filter(v =>
+        v.service_counties && Array.isArray(v.service_counties) &&
+        v.service_counties.some(c => c === county || c === '全台')
+      );
+      if (byCounty.length > 0) filtered = byCounty;
+      // 如果地區篩選後沒結果，退回用全部符合 service_type 的
+    }
+
+    // 依 rating_avg 降序排序
+    filtered.sort((a, b) => (Number(b.rating_avg) || 0) - (Number(a.rating_avg) || 0));
+
+    // 取前 2-3 家
+    const selected = filtered.slice(0, Math.min(filtered.length, 3));
+
+    // 建立指派記錄
+    const now = new Date().toISOString();
+    for (let i = 0; i < selected.length; i++) {
+      const vendor = selected[i];
+      try {
+        await dbPut('pms_case_assignment', {
+          assignment_id: Date.now() * 1000 + i,
+          feedback_no:   feedbackNo,
+          vendor_id:     vendor.vendor_id,
+          status:        '01',
+          cre_time:      now,
+        });
+      } catch (putErr) {
+        console.error(`[AutoAssign] 寫入 assignment 失敗 (vendor_id=${vendor.vendor_id}):`, putErr.message);
+      }
+    }
+
+    console.log(`[AutoAssign] 成功指派 ${selected.length} 家廠商給 ${feedbackNo}`);
+  } catch (err) {
+    console.error('[AutoAssign] 媒合過程發生錯誤:', err.message);
+  }
 }
 
 // ─── Admin（廠商後台）────────────────────────────────────────────────────────
@@ -1171,6 +1250,10 @@ ${prefsLines.join('\n')}
       } catch (dbErr) {
         console.error('[Auto-submit feedback error]', dbErr);
       }
+
+      // 自動媒合廠商
+      const assignServiceType = SERVICE_NAME_TO_TYPE[service] || null;
+      await autoAssignVendor(feedbackNo, assignServiceType, '');
 
       // 同時建立訂單紀錄（讓訂單頁面能看到）
       // 確保訂單類型至少是八大分類之一
