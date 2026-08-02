@@ -314,6 +314,11 @@ const STATIC_FORMS = {
     intro_content: '<p>水管、電路、設備維修等問題，留下需求由師傅為您處理。</p>',
     notice_content: null, terms_content: null,
   },
+  '8': {
+    id: 8, name: '叫車接送需求表單',
+    intro_content: '<p>預約叫車或醫療接送服務，留下時間與地點由司機為您安排。</p>',
+    notice_content: null, terms_content: null,
+  },
   '11': {
     id: 11, name: '商城購物需求表單',
     intro_content: '<p>告訴我們您想採買的商品，我們協助媒合合適賣家。</p>',
@@ -415,6 +420,17 @@ const STATIC_TOPICS = {
     { id: 44, form_id: 10, type: '6',  title: '上傳現場照片',    is_required: '0', sort: 6, options: [], feature: null },
     { id: 45, form_id: 10, type: '9',  title: '希望到府時間',    is_required: '0', sort: 7, options: [], feature: null },
   ],
+  '8': [
+    { id: 46, form_id: 8, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 47, form_id: 8, type: '9',  title: '乘車日期時間',     is_required: '1', sort: 2, options: [], feature: null },
+    { id: 48, form_id: 8, type: '1',  title: '上車地點',         is_required: '1', sort: 3, options: [], feature: null },
+    { id: 49, form_id: 8, type: '1',  title: '目的地',           is_required: '1', sort: 4, options: [], feature: null },
+    { id: 50, form_id: 8, type: '1',  title: '乘車人數',         is_required: '1', sort: 5, options: [], feature: null, is_number_only: '1' },
+    { id: 51, form_id: 8, type: '3',  title: '特殊需求',         is_required: '0', sort: 6, options: [
+      { id: 37, topic_id: 51, option_name: '輪椅接送' }, { id: 38, topic_id: 51, option_name: '大型行李' },
+      { id: 39, topic_id: 51, option_name: '寵物同行' }, { id: 40, topic_id: 51, option_name: '無' },
+    ], feature: null },
+  ],
 };
 
 async function handleForm(formId) {
@@ -462,7 +478,7 @@ async function handleFeedback(body) {
   await dbPut('pms_form_feedback', item);
 
   // 同時建立一筆待媒合訂單到 mms_order_record
-  const serviceTypeToOrderType = { 1:'01', 2:'01', 3:'01', 6:'02', 9:'06', 10:'01', 11:'05' };
+  const serviceTypeToOrderType = { 1:'01', 2:'01', 3:'01', 6:'02', 8:'04', 9:'06', 10:'01', 11:'05' };
   const orderType = serviceTypeToOrderType[formId] || '04';
   const recordId = Date.now();
   const orderData = {
