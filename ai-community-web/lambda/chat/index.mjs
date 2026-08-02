@@ -552,29 +552,15 @@ async function handleAdminLogin(body) {
 
   if (!username || !password) return fail('請輸入帳號與密碼', 400);
 
-  // 查詢 pms_vendor_account 表，用 account_no 比對
-  const accounts = await dbScan('pms_vendor_account',
-    'account_no = :u',
-    { ':u': username }
-  );
-
-  if (!accounts.length) return fail('帳號或密碼錯誤', 401);
-  const account = accounts[0];
-
-  // 密碼明文比對
-  if (account.password_hash !== password) return fail('帳號或密碼錯誤', 401);
-
-  // 帳號停用檢查
-  if (account.is_enable !== '1') return fail('此帳號已停用', 401);
-
-  // 查詢廠商主檔取得店名
-  const vendor = await dbGet('cms_service_vendor', { vendor_id: account.vendor_id });
-  const shopName = vendor ? vendor.name : '';
+  const account = await dbGet('vendor_accounts', { username });
+  if (!account) return fail('帳號或密碼錯誤', 401);
+  if (account.password !== password) return fail('帳號或密碼錯誤', 401);
 
   return ok({
+    username: account.username,
+    name: account.name,
     vendorId: account.vendor_id,
-    name: account.account_name,
-    shopName,
+    shopName: account.shop_name,
   }, '登入成功');
 }
 
