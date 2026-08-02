@@ -246,10 +246,10 @@ const API = {
 
   // B端廠商
   getVendorCases(vendorId) {
-    return this.get(`/cases/vendor?vendor_id=${vendorId}`);
+    return this.get(`/admin/cases?vendor_id=${vendorId}`);
   },
 
   updateCaseStatus(assignmentId, status) {
-    return this.put('/cases/status', { assignment_id: assignmentId, status: status });
+    return this.post('/admin/cases/update', { feedback_no: assignmentId, status: status });
   },
 };
