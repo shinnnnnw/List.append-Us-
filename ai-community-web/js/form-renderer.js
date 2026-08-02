@@ -113,6 +113,82 @@ const FormRenderer = {
     if (submitBtn) {
       submitBtn.addEventListener('click', () => this.handleSubmit());
     }
+
+    // 商城購物：收貨方式切換配送欄位（宅配=地址 / 超商=門市選擇 / 門市自取=隱藏）
+    this._initDeliveryToggle();
+  },
+
+  /**
+   * 商城購物：監聽收貨方式切換配送欄位
+   */
+  _initDeliveryToggle() {
+    const formId = Utils.getUrlParam('form_id');
+    if (String(formId) !== '11') return; // 只對商城購物表單生效
+
+    // 找到收貨方式的 radio group（選項包含「宅配到府」「超商取貨」「門市自取」）
+    const radios = document.querySelectorAll('input[type="radio"][name]');
+    let deliveryRadios = [];
+    radios.forEach(r => {
+      if (r.value === '宅配到府' || r.value === '超商取貨' || r.value === '門市自取') {
+        deliveryRadios.push(r);
+      }
+    });
+    if (deliveryRadios.length === 0) return;
+
+    // 找到配送資料欄位（type 8 的 form-field）
+    const contactFields = document.querySelectorAll('.form-field[data-type="8"]');
+    const deliveryField = contactFields.length > 0 ? contactFields[contactFields.length - 1] : null;
+    if (!deliveryField) return;
+
+    // 7-11 門市清單 mock
+    const storeOptions = [
+      '信義威秀門市 (台北市信義區松壽路12號)',
+      '忠孝復興門市 (台北市大安區忠孝東路四段77號)',
+      '板橋車站門市 (新北市板橋區站前路5號)',
+      '中壢站前門市 (桃園市中壢區中正路89號)',
+      '台中火車站門市 (台中市中區建國路172號)',
+    ];
+
+    const updateDeliveryUI = () => {
+      const selected = deliveryRadios.find(r => r.checked);
+      if (!selected) return;
+
+      // 取得地址相關元素
+      const districtDiv = deliveryField.querySelector('.district-selects');
+      const addressInput = deliveryField.querySelector('[data-field="address"]');
+      let storeSelect = deliveryField.querySelector('#store-select');
+
+      if (selected.value === '超商取貨') {
+        // 隱藏縣市+地址，顯示門市選單
+        if (districtDiv) districtDiv.style.display = 'none';
+        if (addressInput) addressInput.style.display = 'none';
+        if (!storeSelect) {
+          storeSelect = document.createElement('select');
+          storeSelect.id = 'store-select';
+          storeSelect.className = 'form-select';
+          storeSelect.setAttribute('data-field', 'address');
+          storeSelect.style.marginTop = '8px';
+          storeSelect.innerHTML = '<option value="">選擇 7-11 門市</option>' +
+            storeOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+          const insertPoint = districtDiv || addressInput;
+          if (insertPoint) insertPoint.parentNode.insertBefore(storeSelect, insertPoint);
+          else deliveryField.appendChild(storeSelect);
+        }
+        storeSelect.style.display = '';
+      } else if (selected.value === '門市自取') {
+        // 隱藏所有地址欄位
+        if (districtDiv) districtDiv.style.display = 'none';
+        if (addressInput) addressInput.style.display = 'none';
+        if (storeSelect) storeSelect.style.display = 'none';
+      } else {
+        // 宅配：顯示縣市+地址
+        if (districtDiv) districtDiv.style.display = '';
+        if (addressInput) addressInput.style.display = '';
+        if (storeSelect) storeSelect.style.display = 'none';
+      }
+    };
+
+    deliveryRadios.forEach(r => r.addEventListener('change', updateDeliveryUI));
   },
 
   /**
@@ -279,6 +355,21 @@ const FormRenderer = {
     });
   },
 
+  /**
+   * 共用：初始化縣市下拉（不含行政區）
+   */
+  async _initCountyOnly(countySelectId) {
+    const countySelect = Utils.$(`#${countySelectId}`);
+    if (!countySelect) return;
+
+    const result = await API.getCounties();
+    if (result && result.success) {
+      result.data.forEach(c => {
+        countySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+      });
+    }
+  },
+
   /** 上傳照片 */
   renderUpload(topic) {
     const wrapper = document.createElement('div');
@@ -346,19 +437,16 @@ const FormRenderer = {
           <select class="form-select" id="contact_county_${topic.id}" data-topic-id="${topic.id}" data-field="county">
             <option value="">選擇縣市</option>
           </select>
-          <select class="form-select" id="contact_district_${topic.id}" data-topic-id="${topic.id}" data-field="district">
-            <option value="">選擇行政區</option>
-          </select>
         </div>
-        <input type="text" class="form-input" data-topic-id="${topic.id}" data-field="address" placeholder="詳細地址" style="margin-top:8px">
+        <input type="text" class="form-input" data-topic-id="${topic.id}" data-field="address" placeholder="完整地址（含行政區）" style="margin-top:8px">
       `;
     }
     wrapper.innerHTML = html;
 
-    // 有地址欄位才需要載入縣市/行政區
+    // 有地址欄位才需要載入縣市
     if (withAddress) {
       setTimeout(() => {
-        this._initCountyDistrict(`contact_county_${topic.id}`, `contact_district_${topic.id}`);
+        this._initCountyOnly(`contact_county_${topic.id}`);
       }, 0);
     }
 
