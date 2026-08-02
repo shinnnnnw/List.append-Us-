@@ -169,21 +169,10 @@ const Services = {
 
     if (actionBtn) {
       actionBtn.addEventListener('click', function() {
-        // service_type 與 form_id 對照：01=餐廳訂位, 02=商品購買, 03=家事服務, 04=水電修繕, 05=社區服務, 06=藥局代領, 07=叫車服務, 08=影音娛樂
-        var serviceTypeToForm = {
-          '01': 1,
-          '02': 2,
-          '03': 3,
-          '04': 4,
-          '05': 5,
-          '06': 6,
-          '07': 7,
-          '08': 8,
-        };
-        var formId = 5; // 預設社區服務表單
+        // service_type 直接作為 form_id（與 DynamoDB cms_service_vendor.service_type 一致）
+        var formId = 1; // 預設居家清潔
         if (service.service_types && service.service_types.length > 0) {
-          var firstType = service.service_types[0];
-          formId = serviceTypeToForm[firstType] || 5;
+          formId = service.service_types[0];
         }
         Utils.navigate('form.html?form_id=' + formId + '&service=' + encodeURIComponent(service.vendor_name));
       });

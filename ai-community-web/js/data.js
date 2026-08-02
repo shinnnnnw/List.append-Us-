@@ -32,25 +32,24 @@ const DATA = {
   ],
 
   SERVICE_TYPE_MAP: {
-    '01': '餐廳訂位',
-    '02': '商品購買',
-    '03': '家事服務',
-    '04': '水電修繕',
-    '05': '社區服務',
-    '06': '藥局代領',
-    '07': '叫車服務',
-    '08': '影音娛樂',
+    '1': '一般居家清潔',
+    '2': '家電清洗',
+    '3': '包裹寄送',
+    '6': '餐廳訂位',
+    '9': '美食外送',
+    '10': '水電修繕',
+    '11': '商城購物',
   },
 
   VENDORS: [
-    { vendor_id: 1, vendor_name: '美味山海餐廳', vendor_no: 'VD0001', contact_name: '陳主廚', contact_phone: '02-2700-1001', contact_email: 'chef@meishan.example.com', rating_avg: '5.00', rating_count: 1, service_types: ['01'], service_areas: [{ county_code: '01', district_code: '' }] },
-    { vendor_id: 2, vendor_name: '幸福小舖購物', vendor_no: 'VD0002', contact_name: '林經理', contact_phone: '02-8500-1002', contact_email: 'service@happyshop.example.com', rating_avg: null, rating_count: 0, service_types: ['02'], service_areas: [{ county_code: '02', district_code: '' }] },
-    { vendor_id: 3, vendor_name: '安心家事服務', vendor_no: 'VD0003', contact_name: '張督導', contact_phone: '03-300-1003', contact_email: 'support@ansin.example.com', rating_avg: '4.00', rating_count: 1, service_types: ['03'], service_areas: [{ county_code: '01', district_code: '011' }, { county_code: '01', district_code: '012' }] },
-    { vendor_id: 4, vendor_name: '快修水電行', vendor_no: 'VD0004', contact_name: '李師傅', contact_phone: '03-400-1004', contact_email: 'fix@quickfix.example.com', rating_avg: null, rating_count: 0, service_types: ['04'], service_areas: [{ county_code: '03', district_code: '' }] },
-    { vendor_id: 5, vendor_name: '敦親社區服務中心', vendor_no: 'VD0005', contact_name: '黃社工', contact_phone: '04-2200-1005', contact_email: 'care@dunqin.example.com', rating_avg: null, rating_count: 0, service_types: ['03', '05'], service_areas: [{ county_code: '04', district_code: '' }] },
-    { vendor_id: 6, vendor_name: '康健藥局', vendor_no: 'VD0006', contact_name: '吳藥師', contact_phone: '06-200-1006', contact_email: 'pharmacy@kanghealth.example.com', rating_avg: null, rating_count: 0, service_types: ['06'], service_areas: [{ county_code: '05', district_code: '' }] },
-    { vendor_id: 7, vendor_name: '順風叫車服務', vendor_no: 'VD0007', contact_name: '劉隊長', contact_phone: '07-300-1007', contact_email: 'dispatch@shunfeng.example.com', rating_avg: null, rating_count: 0, service_types: ['07'], service_areas: [{ county_code: '06', district_code: '' }] },
-    { vendor_id: 8, vendor_name: '歡樂影音娛樂', vendor_no: 'VD0008', contact_name: '周企劃', contact_phone: '02-2700-1008', contact_email: 'fun@happyent.example.com', rating_avg: null, rating_count: 0, service_types: ['08'], service_areas: [{ county_code: '01', district_code: '' }] },
+    { vendor_id: 1, vendor_name: '潔淨居家清潔', vendor_no: 'V001', contact_name: '陳管理', contact_phone: '02-2700-1001', contact_email: 'clean@jiejing.example.com', rating_avg: '4.80', rating_count: 126, service_types: ['1'], service_areas: [{ county_code: '01', district_code: '' }, { county_code: '02', district_code: '' }] },
+    { vendor_id: 2, vendor_name: '全能家電清洗', vendor_no: 'V002', contact_name: '林技師', contact_phone: '02-8500-1002', contact_email: 'service@allclean.example.com', rating_avg: '4.60', rating_count: 89, service_types: ['2'], service_areas: [{ county_code: '01', district_code: '' }, { county_code: '02', district_code: '' }, { county_code: '03', district_code: '' }] },
+    { vendor_id: 3, vendor_name: '快速寄件服務', vendor_no: 'V003', contact_name: '張專員', contact_phone: '03-300-1003', contact_email: 'ship@fastship.example.com', rating_avg: '4.50', rating_count: 203, service_types: ['3'], service_areas: [{ county_code: '01', district_code: '' }, { county_code: '02', district_code: '' }, { county_code: '04', district_code: '' }, { county_code: '06', district_code: '' }] },
+    { vendor_id: 4, vendor_name: '饗食天堂', vendor_no: 'V004', contact_name: '陳主廚', contact_phone: '02-2700-1004', contact_email: 'chef@xiangshi.example.com', rating_avg: '4.70', rating_count: 312, service_types: ['6'], service_areas: [{ county_code: '01', district_code: '' }, { county_code: '02', district_code: '' }] },
+    { vendor_id: 5, vendor_name: '水電王修繕', vendor_no: 'V005', contact_name: '李師傅', contact_phone: '03-400-1005', contact_email: 'fix@waterking.example.com', rating_avg: '4.90', rating_count: 178, service_types: ['10'], service_areas: [{ county_code: '01', district_code: '' }, { county_code: '02', district_code: '' }] },
+    { vendor_id: 6, vendor_name: '統一購物商城', vendor_no: 'V006', contact_name: '吳經理', contact_phone: '02-2200-1006', contact_email: 'shop@unimall.example.com', rating_avg: '4.40', rating_count: 521, service_types: ['11'], service_areas: [{ county_code: '01', district_code: '' }, { county_code: '02', district_code: '' }, { county_code: '03', district_code: '' }, { county_code: '04', district_code: '' }, { county_code: '05', district_code: '' }, { county_code: '06', district_code: '' }] },
+    { vendor_id: 7, vendor_name: '飛速外送', vendor_no: 'V007', contact_name: '劉隊長', contact_phone: '02-3300-1007', contact_email: 'delivery@fast.example.com', rating_avg: '4.30', rating_count: 167, service_types: ['9'], service_areas: [{ county_code: '01', district_code: '' }, { county_code: '02', district_code: '' }] },
+    { vendor_id: 8, vendor_name: '鼎泰豐信義店', vendor_no: 'V010', contact_name: '楊店長', contact_phone: '02-2700-1010', contact_email: 'dtf@example.com', rating_avg: '4.90', rating_count: 856, service_types: ['6'], service_areas: [{ county_code: '01', district_code: '' }] },
   ],
 
   // Demo 登入帳號 — 個資欄位已 AES-256-GCM 加密
@@ -72,20 +71,20 @@ const DATA = {
     { record_id: 8, order_no: 'ORD20260707008', service_vendor_id: 7, vendor_name: '順風叫車服務', service_name: '叫車服務', order_type: '04', order_status: '80', order_time: '2026-07-07 20:00:00', confirm_time: '2026-07-07 20:01:00', service_time: '2026-07-07 20:05:00', complete_time: '2026-07-07 20:35:00', original_amount: 280, discount_amount: 0, final_amount: 280, earn_points: 5, remark: null },
   ],
 
-  // 表單（form_id 1~3 取自種子資料，其餘 form_id 使用通用範本）
+  // 表單（以 service_type 為 key，對應 DynamoDB cms_service_vendor.service_type）
   FORMS: {
-    1: {
-      form: { id: 1, name: '餐廳訂位需求表單', intro_content: '<p>請留下您的訂位需求，我們將盡快為您安排。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
+    6: {
+      form: { id: 6, name: '餐廳訂位需求表單', intro_content: '<p>請留下您的訂位需求，我們將盡快為您安排。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
       topics: [
         { id: 1, type: '8', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
         { id: 2, type: '5', title: '用餐地區', remark: null, is_required: '1', options: [] },
         { id: 3, type: '9', title: '希望訂位日期時間', remark: null, is_required: '1', options: [] },
         { id: 4, type: '1', title: '用餐人數', remark: null, is_required: '1', is_number_only: '1', options: [] },
-        { id: 5, type: '3', title: '餐廳類型偏好', remark: null, is_required: '0', options: [{ id: 1, option_name: '中式' }, { id: 2, option_name: '日式' }, { id: 3, option_name: '西式' }] },
+        { id: 5, type: '3', title: '餐廳類型偏好', remark: null, is_required: '0', options: [{ id: 1, option_name: '中式' }, { id: 2, option_name: '日式' }, { id: 3, option_name: '西式' }, { id: 4, option_name: '韓式' }, { id: 5, option_name: '泰式' }, { id: 6, option_name: '海鮮' }] },
       ],
     },
-    2: {
-      form: { id: 2, name: '商品購買需求表單', intro_content: '<p>告訴我們您想採買的商品，我們協助媒合合適賣家。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
+    11: {
+      form: { id: 11, name: '商城購物需求表單', intro_content: '<p>告訴我們您想採買的商品，我們協助媒合合適賣家。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
       topics: [
         { id: 6, type: '8', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
         { id: 7, type: '2', title: '想購買的商品描述', remark: null, is_required: '1', options: [] },
@@ -93,68 +92,60 @@ const DATA = {
         { id: 9, type: '1', title: '預算上限(元)', remark: null, is_required: '0', is_number_only: '1', options: [] },
       ],
     },
-    3: {
-      form: { id: 3, name: '家事服務需求表單', intro_content: '<p>一般居家清潔、家電清洗等家事服務，留下需求由專人為您安排。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
+    1: {
+      form: { id: 1, name: '居家清潔需求表單', intro_content: '<p>一般居家清潔服務，留下需求由專人為您安排。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
       topics: [
         { id: 10, type: '10', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
         { id: 11, type: '5', title: '服務地區', remark: null, is_required: '1', options: [] },
-        { id: 12, type: '3', title: '服務項目', remark: null, is_required: '1', options: [{ id: 8, option_name: '一般居家清潔' }, { id: 9, option_name: '家電清洗' }, { id: 10, option_name: '收納整理' }, { id: 11, option_name: '其他' }] },
+        { id: 12, type: '3', title: '清潔類型', remark: null, is_required: '1', options: [{ id: 8, option_name: '一般清潔' }, { id: 9, option_name: '深度清潔' }, { id: 10, option_name: '搬遷清潔' }, { id: 11, option_name: '其他' }] },
         { id: 13, type: '1', title: '坪數', remark: '請填寫大約坪數', is_required: '0', is_number_only: '1', options: [] },
         { id: 14, type: '9', title: '希望服務時間', remark: null, is_required: '1', options: [] },
         { id: 15, type: '2', title: '其他需求說明', remark: '如有特殊注意事項請於此說明', is_required: '0', options: [] },
       ],
     },
-    4: {
-      form: { id: 4, name: '水電修繕需求表單', intro_content: '<p>水管、電路、設備維修等問題，留下需求由師傅為您處理。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
+    2: {
+      form: { id: 2, name: '家電清洗需求表單', intro_content: '<p>冷氣、洗衣機、冰箱等家電深層清洗服務。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
       topics: [
         { id: 16, type: '10', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
-        { id: 17, type: '5', title: '服務地址', remark: null, is_required: '1', options: [] },
-        { id: 18, type: '3', title: '修繕類型', remark: null, is_required: '1', options: [{ id: 12, option_name: '水管漏水' }, { id: 13, option_name: '馬桶堵塞' }, { id: 14, option_name: '電路問題' }, { id: 15, option_name: '熱水器維修' }, { id: 16, option_name: '其他' }] },
-        { id: 19, type: '3', title: '急迫程度', remark: null, is_required: '1', options: [{ id: 17, option_name: '緊急（當天）' }, { id: 18, option_name: '本週內' }, { id: 19, option_name: '可彈性安排' }] },
-        { id: 20, type: '7', title: '問題描述', remark: '請詳述問題狀況，方便師傅評估', is_required: '1', options: [] },
-        { id: 21, type: '9', title: '希望到府時間', remark: null, is_required: '0', options: [] },
+        { id: 17, type: '5', title: '服務地區', remark: null, is_required: '1', options: [] },
+        { id: 18, type: '4', title: '清洗項目', remark: null, is_required: '1', options: [{ id: 12, option_name: '冷氣清洗' }, { id: 13, option_name: '洗衣機清洗' }, { id: 14, option_name: '冰箱清洗' }, { id: 15, option_name: '抽油煙機清洗' }, { id: 16, option_name: '其他' }] },
+        { id: 19, type: '1', title: '數量（台）', remark: null, is_required: '1', is_number_only: '1', options: [] },
+        { id: 20, type: '3', title: '希望時段', remark: null, is_required: '1', options: [{ id: 17, option_name: '越快越好（緊急）' }, { id: 18, option_name: '本週內' }, { id: 19, option_name: '彈性配合' }] },
+        { id: 21, type: '2', title: '其他需求說明', remark: null, is_required: '0', options: [] },
       ],
     },
-    5: {
-      form: { id: 5, name: '社區服務諮詢表單', intro_content: '<p>長者陪伴、社區關懷等服務，留下需求由專人為您評估。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
+    3: {
+      form: { id: 3, name: '包裹寄送需求表單', intro_content: '<p>到府收件，全台配送，讓寄件更方便。</p>', notice_content: '<ol><li>易碎物品請事先告知</li><li>超過20公斤需另行報價</li></ol>', terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
       topics: [
         { id: 22, type: '10', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
-        { id: 23, type: '5', title: '服務地區', remark: null, is_required: '1', options: [] },
-        { id: 24, type: '3', title: '需求類型', remark: null, is_required: '1', options: [{ id: 20, option_name: '長者陪伴' }, { id: 21, option_name: '居家照護' }, { id: 22, option_name: '社區活動' }, { id: 23, option_name: '其他' }] },
-        { id: 25, type: '7', title: '需求詳細說明', remark: '如有特殊注意事項請於此說明', is_required: '0', options: [] },
-        { id: 26, type: '9', title: '希望服務時間', remark: null, is_required: '0', options: [] },
+        { id: 23, type: '3', title: '包裹大小', remark: null, is_required: '1', options: [{ id: 20, option_name: '小型（60cm以下）' }, { id: 21, option_name: '中型（60-120cm）' }, { id: 22, option_name: '大型（120cm以上）' }] },
+        { id: 24, type: '1', title: '重量（公斤）', remark: null, is_required: '0', is_number_only: '1', options: [] },
+        { id: 25, type: '3', title: '收件方式', remark: null, is_required: '1', options: [{ id: 23, option_name: '到府收件' }, { id: 24, option_name: '自行送至門市' }] },
+        { id: 26, type: '8', title: '收件地址', remark: '寄件目的地', is_required: '1', options: [] },
+        { id: 27, type: '2', title: '寄件備註', remark: '如有易碎物品請註明', is_required: '0', options: [] },
       ],
     },
-    6: {
-      form: { id: 6, name: '藥局代領需求表單', intro_content: '<p>慢性病處方箋代領、藥品諮詢等服務，由藥師為您處理。</p>', notice_content: '<ol><li>代領處方藥需提供健保卡資訊</li><li>服務僅限合作藥局範圍內</li></ol>', terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
+    9: {
+      form: { id: 9, name: '美食外送需求表單', intro_content: '<p>想吃什麼告訴我們，外送到府享美食。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
       topics: [
-        { id: 27, type: '10', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
-        { id: 28, type: '5', title: '取藥地區', remark: null, is_required: '1', options: [] },
-        { id: 29, type: '3', title: '需求類型', remark: null, is_required: '1', options: [{ id: 24, option_name: '慢性病處方代領' }, { id: 25, option_name: '一般藥品購買' }, { id: 26, option_name: '藥品諮詢' }] },
-        { id: 30, type: '2', title: '藥品名稱或說明', remark: '請填寫需要代領的藥品資訊', is_required: '1', options: [] },
-        { id: 31, type: '9', title: '希望取藥時間', remark: null, is_required: '0', options: [] },
+        { id: 28, type: '10', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
+        { id: 29, type: '5', title: '外送地區', remark: null, is_required: '1', options: [] },
+        { id: 30, type: '2', title: '想吃的餐點或餐廳', remark: '請描述您想點的餐點內容', is_required: '1', options: [] },
+        { id: 31, type: '1', title: '用餐人數', remark: null, is_required: '1', is_number_only: '1', options: [] },
+        { id: 32, type: '9', title: '希望送達時間', remark: null, is_required: '1', options: [] },
+        { id: 33, type: '1', title: '預算上限(元)', remark: null, is_required: '0', is_number_only: '1', options: [] },
+        { id: 34, type: '2', title: '其他備註', remark: '過敏原、忌口等', is_required: '0', options: [] },
       ],
     },
-    7: {
-      form: { id: 7, name: '叫車服務需求表單', intro_content: '<p>預約叫車接送服務，留下時間與地點由司機為您安排。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
+    10: {
+      form: { id: 10, name: '水電修繕需求表單', intro_content: '<p>水管、電路、設備維修等問題，留下需求由師傅為您處理。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
       topics: [
-        { id: 32, type: '10', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
-        { id: 33, type: '9', title: '乘車日期時間', remark: null, is_required: '1', options: [] },
-        { id: 34, type: '1', title: '上車地點', remark: '請填寫詳細地址', is_required: '1', options: [] },
-        { id: 35, type: '1', title: '目的地', remark: '請填寫詳細地址', is_required: '1', options: [] },
-        { id: 36, type: '1', title: '乘車人數', remark: null, is_required: '1', is_number_only: '1', options: [] },
-        { id: 37, type: '3', title: '特殊需求', remark: null, is_required: '0', options: [{ id: 27, option_name: '輪椅接送' }, { id: 28, option_name: '大型行李' }, { id: 29, option_name: '寵物同行' }, { id: 30, option_name: '無' }] },
-      ],
-    },
-    8: {
-      form: { id: 8, name: '影音娛樂服務表單', intro_content: '<p>活動表演、影音設備租借等娛樂服務，留下需求為您安排。</p>', notice_content: null, terms_content: '<p>提交表單即表示您同意我們的服務條款。</p>' },
-      topics: [
-        { id: 38, type: '10', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
-        { id: 39, type: '3', title: '服務類型', remark: null, is_required: '1', options: [{ id: 31, option_name: '活動主持' }, { id: 32, option_name: '樂團表演' }, { id: 33, option_name: '影音設備租借' }, { id: 34, option_name: 'KTV包廂預約' }, { id: 35, option_name: '其他' }] },
-        { id: 40, type: '9', title: '活動日期時間', remark: null, is_required: '1', options: [] },
-        { id: 41, type: '1', title: '活動地點', remark: null, is_required: '1', options: [] },
-        { id: 42, type: '1', title: '預估參加人數', remark: null, is_required: '0', is_number_only: '1', options: [] },
-        { id: 43, type: '2', title: '其他需求說明', remark: null, is_required: '0', options: [] },
+        { id: 35, type: '10', title: '聯絡資訊', remark: null, is_required: '1', options: [] },
+        { id: 36, type: '5', title: '服務地址', remark: null, is_required: '1', options: [] },
+        { id: 37, type: '3', title: '修繕類型', remark: null, is_required: '1', options: [{ id: 25, option_name: '水管漏水' }, { id: 26, option_name: '馬桶堵塞' }, { id: 27, option_name: '電路問題' }, { id: 28, option_name: '熱水器維修' }, { id: 29, option_name: '冷氣安裝' }, { id: 30, option_name: '其他' }] },
+        { id: 38, type: '3', title: '急迫程度', remark: null, is_required: '1', options: [{ id: 31, option_name: '緊急（當天）' }, { id: 32, option_name: '本週內' }, { id: 33, option_name: '可彈性安排' }] },
+        { id: 39, type: '7', title: '問題描述', remark: '請詳述問題狀況，方便師傅評估', is_required: '1', options: [] },
+        { id: 40, type: '9', title: '希望到府時間', remark: null, is_required: '0', options: [] },
       ],
     },
   },
