@@ -4,7 +4,7 @@
 
 本設計文件描述智慧社區服務平台 DynamoDB 資料庫的架構設計、元件結構、資料模型及部署策略。系統產出三個核心檔案：Node.js 部署腳本（含資料表建立與範例資料植入）、API 查詢服務模組、以及獨立 AWS CLI Shell 腳本。
 
-> ⚠️ **注意：** 實際實作中，所有 ID 欄位（vendor_id, account_id, assignment_id, reply_id, log_id, review_id, record_id）在 seed-data.js 中皆使用 **String (S)** 類型，並採用有意義的字串前綴（如 V001, ASN001, ORD001）。table-definitions.js 中部分仍定義為 Number (N) 類型，部署前需統一。
+> ⚠️ **注意：** 實際部署的 DynamoDB 中，`cms_service_vendor.vendor_id` 和 `mms_order_record.record_id` 使用 **Number (N)** 類型（純數字，如 1、2、3）。seed-data.js 中部分使用字串前綴（如 V001）屬於早期開發殘留，與實際資料庫不符。以實際 DynamoDB describe-table 結果為準。
 
 ## Architecture Overview
 
@@ -147,12 +147,14 @@ module.exports = {
 const CONFIG = {
   API_BASE: 'https://adjvx2bs1a.execute-api.us-west-2.amazonaws.com/prod',
   QUICK_SERVICES: [
-    { name: '訂位', formId: 1, serviceType: '6' },
-    { name: '購物', formId: 2, serviceType: '11' },
-    { name: '清潔', formId: 3, serviceType: '1' },
-    { name: '修繕', formId: 3, serviceType: '10' },
-    { name: '家電', formId: 3, serviceType: '2' },
-    { name: '寄件', formId: 4, serviceType: '3' },
+    { name: '外送', formId: 1, serviceType: '01', chatMessage: '我想叫外送' },
+    { name: '訂位', formId: 1, serviceType: '02', chatMessage: '我想訂餐廳' },
+    { name: '清潔', formId: 3, serviceType: '03', chatMessage: '我需要清潔服務' },
+    { name: '修繕', formId: 3, serviceType: '04', chatMessage: '我家需要修繕' },
+    { name: '宅配', formId: 4, serviceType: '05', chatMessage: '我要寄包裹' },
+    { name: '購物', formId: 2, serviceType: '06', chatMessage: '我想買東西' },
+    { name: '叫車', formId: 3, serviceType: '07', chatMessage: '我需要叫車' },
+    { name: '領藥', formId: 3, serviceType: '08', chatMessage: '我需要代領藥品' },
   ],
   ORDER_STATUS: {
     '01': '待媒合', '02': '媒合中', '03': '已確認',
@@ -179,7 +181,7 @@ const CONFIG = {
 |-------|----|----|------|----------------|
 | inbr_member | inbr_account_id (S) | - | - | member_name, member_phone, member_email, home_county, home_district, home_address, point_balance, platform_code |
 | pms_vendor_account | account_id (S) | - | GSI_vendor_id (vendor_id:S) | vendor_id, account_name, role_code, is_enable |
-| cms_service_vendor | vendor_id (S) | - | - | name, service_type(N), description, rating_avg(N), rating_count(N), service_counties(L) |
+| cms_service_vendor | vendor_id (N) | - | - | name, service_type(N), description, rating_avg(N), rating_count(N), service_counties(L) |
 | pms_form_feedback | feedback_no (S) | - | GSI_inbr_account_id (inbr_account_id:S, cre_time:S) | service_id(N), form_id(N), inbr_account_id, contact_name, contact_mobile, feedback_content(M), status |
 | pms_case_assignment | assignment_id (S) | - | GSI_feedback_no (feedback_no:S), GSI_vendor_id (vendor_id:S) | feedback_no, vendor_id, match_score(N), is_primary, status |
 | pms_case_reply | reply_id (S) | - | GSI_feedback_no (feedback_no:S) | feedback_no, vendor_id, reply_type, content, cre_time, cre_id |
