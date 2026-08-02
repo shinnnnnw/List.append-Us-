@@ -172,7 +172,7 @@
     </div>
 
     <!-- 統計卡片 -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px;">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px;">
       <div class="card" style="text-align:center;padding:16px;">
         <div id="v-stat-pending" style="font-size:28px;font-weight:bold;color:#FF9800;">0</div>
         <div style="font-size:12px;color:#666;margin-top:4px;">待處理</div>
@@ -185,6 +185,10 @@
         <div id="v-stat-done" style="font-size:28px;font-weight:bold;color:#4CAF50;">0</div>
         <div style="font-size:12px;color:#666;margin-top:4px;">已完成</div>
       </div>
+      <div class="card" style="text-align:center;padding:16px;">
+        <div id="v-stat-cancel" style="font-size:28px;font-weight:bold;color:#9E9E9E;">0</div>
+        <div style="font-size:12px;color:#666;margin-top:4px;">已結束</div>
+      </div>
     </div>
 
     <!-- Tab 切換 -->
@@ -193,6 +197,7 @@
       <div class="v-tab" data-tab="pending" onclick="vendorSwitchTab('pending')" style="flex:1;text-align:center;padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;color:#666;">待處理</div>
       <div class="v-tab" data-tab="progress" onclick="vendorSwitchTab('progress')" style="flex:1;text-align:center;padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;color:#666;">進行中</div>
       <div class="v-tab" data-tab="done" onclick="vendorSwitchTab('done')" style="flex:1;text-align:center;padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;color:#666;">已完成</div>
+      <div class="v-tab" data-tab="cancel" onclick="vendorSwitchTab('cancel')" style="flex:1;text-align:center;padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;color:#666;">已結束</div>
     </div>
 
     <!-- 案件列表 -->
@@ -335,7 +340,7 @@ const vendorStatusMap = {
   pending: { label: '待處理', color: '#FF9800' },
   progress: { label: '進行中', color: '#2196F3' },
   done: { label: '已完成', color: '#4CAF50' },
-  cancel: { label: '已取消', color: '#9E9E9E' },
+  cancel: { label: '已結束', color: '#9E9E9E' },
 };
 
 function vendorLogout() {
@@ -369,9 +374,11 @@ function vendorRenderStats() {
   const pending = myCases.filter(c => c.status === 'pending').length;
   const progress = myCases.filter(c => c.status === 'progress').length;
   const done = myCases.filter(c => c.status === 'done').length;
+  const cancel = myCases.filter(c => c.status === 'cancel').length;
   document.getElementById('v-stat-pending').textContent = pending;
   document.getElementById('v-stat-progress').textContent = progress;
   document.getElementById('v-stat-done').textContent = done;
+  document.getElementById('v-stat-cancel').textContent = cancel;
 }
 
 function vendorSwitchTab(tab) {
@@ -467,7 +474,7 @@ function vendorShowDetail(id) {
         <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>待處理</option>
         <option value="progress" ${c.status === 'progress' ? 'selected' : ''}>進行中</option>
         <option value="done" ${c.status === 'done' ? 'selected' : ''}>已完成</option>
-        <option value="cancel" ${c.status === 'cancel' ? 'selected' : ''}>已取消</option>
+        <option value="cancel" ${c.status === 'cancel' ? 'selected' : ''}>已結束</option>
       </select>
     </div>
 
