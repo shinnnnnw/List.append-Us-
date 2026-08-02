@@ -97,7 +97,7 @@ const API = {
     return this.get(`/vendors/${id}`);
   },
 
-  // 表單（Mock，key 為 service_type）
+  // 表單（Mock，key 為 service_type；若 mock 無對應則打 Lambda API）
   getForm(formId) {
     const FORMS = {
       6: { id: 6, name: '餐廳訂位', groups: [
@@ -179,7 +179,11 @@ const API = {
         { id: 16, name: '聯絡資料', topics: [{ id: 44, type: '10', title: '聯絡資料', is_required: '1' }] },
       ]},
     };
-    return Promise.resolve({ success: true, data: FORMS[formId] || null });
+    if (FORMS[formId]) {
+      return Promise.resolve({ success: true, data: FORMS[formId] });
+    }
+    // Mock 沒有對應表單時，打 Lambda API
+    return this.get(`/forms/${formId}`);
   },
 
   // 諮詢單
