@@ -37,7 +37,7 @@ const CalendarModal = {
    */
   createEvent(service, feedbackNo, baseDate) {
     const title = service || '服務提醒';
-    const description = `服務已成立，諮詢單號 ${feedbackNo || ''}，廠商將盡快與您聯繫確認詳細時段`;
+    const description = `本提醒為系統自動安排的預設時段，非您原訂的實際服務時間，請於廠商聯繫確認後自行調整。諮詢單號：${feedbackNo || ''}`;
     const { startTime, endTime } = this.calcEventTime(baseDate || new Date());
     return { title, description, location: '', startTime, endTime };
   },
@@ -115,7 +115,8 @@ const CalendarModal = {
         <h3 class="calendar-modal-title">📅 加入行事曆提醒</h3>
         <p class="calendar-modal-desc">
           <strong>${event.title}</strong><br>
-          預定提醒時間：${dateStr}
+          預設提醒時間：${dateStr}<br>
+          <small>（僅供提醒，非實際服務時間，請依廠商確認為準）</small>
         </p>
         <div class="calendar-modal-actions">
           <button class="btn btn-primary btn-block calendar-btn-google">加入 Google 日曆</button>
