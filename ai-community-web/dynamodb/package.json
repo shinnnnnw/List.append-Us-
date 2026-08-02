@@ -8,7 +8,7 @@
     "test": "echo \"No tests configured\" && exit 0"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.650.0",
+    "@aws-sdk/client-dynamodb": "^3.1101.0",
     "@aws-sdk/util-dynamodb": "^3.650.0"
   },
   "private": true

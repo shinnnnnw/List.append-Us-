@@ -1,0 +1,25 @@
+﻿[
+    {
+        "contact_name": {
+            "S": "���p��"
+        },
+        "platform_code": {
+            "S": "01"
+        },
+        "contact_mobile": {
+            "S": "0912-345-001"
+        },
+        "form_id": {
+            "N": "3"
+        },
+        "is_read": {
+            "S": "0"
+        },
+        "feedback_no": {
+            "S": "FB1785641479496"
+        },
+        "status": {
+            "S": "01"
+        },
+        "feedback_content": {
+            "S": 
