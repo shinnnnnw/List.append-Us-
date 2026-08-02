@@ -285,71 +285,135 @@ async function handleVendorDetail(vendorId) {
 
 const STATIC_FORMS = {
   '1': {
-    id: 1, name: '餐廳訂位需求表單',
-    intro_content: '<p>請留下您的訂位需求，我們將盡快為您安排。</p>',
+    id: 1, name: '居家清潔需求表單',
+    intro_content: '<p>一般居家清潔服務，留下需求由專人為您安排。</p>',
     notice_content: null, terms_content: null,
   },
   '2': {
-    id: 2, name: '商品購買需求表單',
-    intro_content: '<p>請描述您的商品需求，我們將為您推薦適合的商品。</p>',
+    id: 2, name: '家電清洗需求表單',
+    intro_content: '<p>冷氣、洗衣機、冰箱等家電深層清洗服務。</p>',
     notice_content: null, terms_content: null,
   },
   '3': {
-    id: 3, name: '居家服務需求表單',
-    intro_content: '<p>請填寫您的服務需求，我們將安排合適的服務商聯繫您。</p>',
+    id: 3, name: '包裹寄送需求表單',
+    intro_content: '<p>到府收件，全台配送，讓寄件更方便。</p>',
+    notice_content: '<ol><li>易碎物品請事先告知</li><li>超過20公斤需另行報價</li></ol>', terms_content: null,
+  },
+  '6': {
+    id: 6, name: '餐廳訂位需求表單',
+    intro_content: '<p>請留下您的訂位需求，我們將盡快為您安排。</p>',
     notice_content: null, terms_content: null,
   },
-  '4': {
-    id: 4, name: '包裹寄送需求表單',
-    intro_content: '<p>請填寫寄件資訊，我們將安排到府收件。</p>',
+  '9': {
+    id: 9, name: '美食外送需求表單',
+    intro_content: '<p>想吃什麼告訴我們，外送到府享美食。</p>',
+    notice_content: null, terms_content: null,
+  },
+  '10': {
+    id: 10, name: '水電修繕需求表單',
+    intro_content: '<p>水管、電路、設備維修等問題，留下需求由師傅為您處理。</p>',
+    notice_content: null, terms_content: null,
+  },
+  '11': {
+    id: 11, name: '商城購物需求表單',
+    intro_content: '<p>告訴我們您想採買的商品，我們協助媒合合適賣家。</p>',
     notice_content: null, terms_content: null,
   },
 };
 
 const STATIC_TOPICS = {
-  '1': [
-    { id: 1, form_id: 1, type: '8',  title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
-    { id: 2, form_id: 1, type: '5',  title: '希望用餐地區',     is_required: '1', sort: 2, options: [], feature: null },
-    { id: 3, form_id: 1, type: '9',  title: '希望訂位日期',     is_required: '1', sort: 3, options: [], feature: null },
-    { id: 4, form_id: 1, type: '1',  title: '用餐人數',         is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
-    { id: 5, form_id: 1, type: '3',  title: '餐廳類型偏好',     is_required: '0', sort: 5, options: [
+  '6': [
+    { id: 1, form_id: 6, type: '8',  title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 2, form_id: 6, type: '5',  title: '希望用餐地區',     is_required: '1', sort: 2, options: [], feature: null },
+    { id: 3, form_id: 6, type: '9',  title: '希望訂位日期',     is_required: '1', sort: 3, options: [], feature: null },
+    { id: 4, form_id: 6, type: '1',  title: '用餐人數',         is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 5, form_id: 6, type: '3',  title: '餐廳類型偏好',     is_required: '0', sort: 5, options: [
       { id: 1, topic_id: 5, option_name: '中式' }, { id: 2, topic_id: 5, option_name: '日式' },
       { id: 3, topic_id: 5, option_name: '西式' }, { id: 4, topic_id: 5, option_name: '韓式' },
+      { id: 5, topic_id: 5, option_name: '泰式' }, { id: 6, topic_id: 5, option_name: '海鮮' },
     ], feature: null },
   ],
-  '2': [
-    { id: 6,  form_id: 2, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
-    { id: 7,  form_id: 2, type: '2',  title: '商品描述',         is_required: '1', sort: 2, options: [], feature: null },
-    { id: 8,  form_id: 2, type: '4',  title: '商品類別',         is_required: '0', sort: 3, options: [
+  '11': [
+    { id: 6,  form_id: 11, type: '10', title: '聯絡資訊',        is_required: '1', sort: 1, options: [], feature: null },
+    { id: 7,  form_id: 11, type: '2',  title: '商品描述',        is_required: '1', sort: 2, options: [], feature: null },
+    { id: 8,  form_id: 11, type: '4',  title: '商品類別',        is_required: '0', sort: 3, options: [
       { id: 5, topic_id: 8, option_name: '生鮮食品' }, { id: 6, topic_id: 8, option_name: '日用品' },
       { id: 7, topic_id: 8, option_name: '3C家電' },   { id: 8, topic_id: 8, option_name: '服飾' },
     ], feature: null },
-    { id: 9,  form_id: 2, type: '8',  title: '配送地址',         is_required: '1', sort: 4, options: [], feature: null },
-    { id: 10, form_id: 2, type: '1',  title: '預算上限（元）',   is_required: '0', sort: 5, options: [], feature: null, is_number_only: '1' },
+    { id: 9,  form_id: 11, type: '1',  title: '預算上限（元）',  is_required: '0', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 10, form_id: 11, type: '3',  title: '收貨方式',        is_required: '1', sort: 5, options: [
+      { id: 9, topic_id: 10, option_name: '宅配到府' }, { id: 10, topic_id: 10, option_name: '超商取貨' },
+      { id: 11, topic_id: 10, option_name: '門市自取' },
+    ], feature: null },
+    { id: 38, form_id: 11, type: '6',  title: '上傳商品參考照片', is_required: '0', sort: 6, options: [], feature: null },
+    { id: 11, form_id: 11, type: '8',  title: '聯絡與配送資料',  is_required: '1', sort: 7, options: [], feature: null },
+  ],
+  '1': [
+    { id: 12, form_id: 1, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 13, form_id: 1, type: '5',  title: '服務地區',         is_required: '1', sort: 2, options: [], feature: null },
+    { id: 14, form_id: 1, type: '3',  title: '清潔類型',         is_required: '1', sort: 3, options: [
+      { id: 12, topic_id: 14, option_name: '一般清潔' }, { id: 13, topic_id: 14, option_name: '深度清潔' },
+      { id: 14, topic_id: 14, option_name: '搬遷清潔' }, { id: 15, topic_id: 14, option_name: '其他' },
+    ], feature: null },
+    { id: 15, form_id: 1, type: '1',  title: '坪數',             is_required: '0', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 16, form_id: 1, type: '9',  title: '希望服務時間',     is_required: '1', sort: 5, options: [], feature: null },
+    { id: 17, form_id: 1, type: '6',  title: '上傳目前環境照片', is_required: '0', sort: 6, options: [], feature: null },
+    { id: 18, form_id: 1, type: '2',  title: '其他需求說明',     is_required: '0', sort: 7, options: [], feature: null },
+  ],
+  '2': [
+    { id: 19, form_id: 2, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 20, form_id: 2, type: '5',  title: '服務地區',         is_required: '1', sort: 2, options: [], feature: null },
+    { id: 21, form_id: 2, type: '4',  title: '清洗項目',         is_required: '1', sort: 3, options: [
+      { id: 16, topic_id: 21, option_name: '冷氣清洗' }, { id: 17, topic_id: 21, option_name: '洗衣機清洗' },
+      { id: 18, topic_id: 21, option_name: '冰箱清洗' }, { id: 19, topic_id: 21, option_name: '抽油煙機清洗' },
+    ], feature: null },
+    { id: 22, form_id: 2, type: '1',  title: '數量（台）',       is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 23, form_id: 2, type: '3',  title: '希望時段',         is_required: '1', sort: 5, options: [
+      { id: 20, topic_id: 23, option_name: '越快越好（緊急）' }, { id: 21, topic_id: 23, option_name: '本週內' },
+      { id: 22, topic_id: 23, option_name: '彈性配合' },
+    ], feature: null },
+    { id: 24, form_id: 2, type: '6',  title: '上傳家電照片',     is_required: '0', sort: 6, options: [], feature: null },
+    { id: 25, form_id: 2, type: '2',  title: '其他需求說明',     is_required: '0', sort: 7, options: [], feature: null },
   ],
   '3': [
-    { id: 11, form_id: 3, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
-    { id: 12, form_id: 3, type: '3',  title: '需求類型',         is_required: '1', sort: 2, options: [
-      { id: 9,  topic_id: 12, option_name: '家事清潔' }, { id: 10, topic_id: 12, option_name: '水電修繕' },
-      { id: 11, topic_id: 12, option_name: '家電清洗' }, { id: 12, topic_id: 12, option_name: '其他' },
+    { id: 26, form_id: 3, type: '10', title: '寄件人資訊',       is_required: '1', sort: 1, options: [], feature: null },
+    { id: 27, form_id: 3, type: '3',  title: '包裹大小',         is_required: '1', sort: 2, options: [
+      { id: 23, topic_id: 27, option_name: '小型（60cm以下）' },
+      { id: 24, topic_id: 27, option_name: '中型（60-120cm）' },
+      { id: 25, topic_id: 27, option_name: '大型（120cm以上）' },
     ], feature: null },
-    { id: 13, form_id: 3, type: '2',  title: '需求詳細說明',     is_required: '1', sort: 3, options: [], feature: null },
-    { id: 14, form_id: 3, type: '5',  title: '服務地址',         is_required: '1', sort: 4, options: [], feature: null },
-    { id: 15, form_id: 3, type: '9',  title: '希望服務時間',     is_required: '0', sort: 5, options: [], feature: null },
+    { id: 28, form_id: 3, type: '1',  title: '重量（公斤）',     is_required: '0', sort: 3, options: [], feature: null, is_number_only: '1' },
+    { id: 29, form_id: 3, type: '3',  title: '收件方式',         is_required: '1', sort: 4, options: [
+      { id: 26, topic_id: 29, option_name: '到府收件' },
+      { id: 27, topic_id: 29, option_name: '自行送至門市' },
+    ], feature: null },
+    { id: 30, form_id: 3, type: '8',  title: '收件地址',         is_required: '1', sort: 5, options: [], feature: null },
+    { id: 31, form_id: 3, type: '2',  title: '寄件備註',         is_required: '0', sort: 6, options: [], feature: null },
   ],
-  '4': [
-    { id: 16, form_id: 4, type: '10', title: '寄件人資訊',       is_required: '1', sort: 1, options: [], feature: null },
-    { id: 17, form_id: 4, type: '3',  title: '包裹大小',         is_required: '1', sort: 2, options: [
-      { id: 13, topic_id: 17, option_name: '小型（鞋盒以下）' },
-      { id: 14, topic_id: 17, option_name: '中型' },
-      { id: 15, topic_id: 17, option_name: '大型' },
+  '9': [
+    { id: 32, form_id: 9, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 33, form_id: 9, type: '5',  title: '外送地區',         is_required: '1', sort: 2, options: [], feature: null },
+    { id: 34, form_id: 9, type: '2',  title: '想吃的餐點或餐廳', is_required: '1', sort: 3, options: [], feature: null },
+    { id: 35, form_id: 9, type: '1',  title: '用餐人數',         is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 36, form_id: 9, type: '9',  title: '希望送達時間',     is_required: '1', sort: 5, options: [], feature: null },
+    { id: 37, form_id: 9, type: '1',  title: '預算上限（元）',   is_required: '0', sort: 6, options: [], feature: null, is_number_only: '1' },
+    { id: 38, form_id: 9, type: '2',  title: '其他備註（過敏原、忌口）', is_required: '0', sort: 7, options: [], feature: null },
+  ],
+  '10': [
+    { id: 39, form_id: 10, type: '10', title: '聯絡資訊',        is_required: '1', sort: 1, options: [], feature: null },
+    { id: 40, form_id: 10, type: '5',  title: '服務地址',        is_required: '1', sort: 2, options: [], feature: null },
+    { id: 41, form_id: 10, type: '3',  title: '修繕類型',        is_required: '1', sort: 3, options: [
+      { id: 28, topic_id: 41, option_name: '水管漏水' }, { id: 29, topic_id: 41, option_name: '馬桶堵塞' },
+      { id: 30, topic_id: 41, option_name: '電路問題' }, { id: 31, topic_id: 41, option_name: '熱水器維修' },
+      { id: 32, topic_id: 41, option_name: '冷氣安裝' }, { id: 33, topic_id: 41, option_name: '其他' },
     ], feature: null },
-    { id: 18, form_id: 4, type: '1',  title: '重量（公斤）',     is_required: '0', sort: 3, options: [], feature: null, is_number_only: '1' },
-    { id: 19, form_id: 4, type: '3',  title: '收件方式',         is_required: '1', sort: 4, options: [
-      { id: 16, topic_id: 19, option_name: '到府收件' },
-      { id: 17, topic_id: 19, option_name: '自行送至門市' },
+    { id: 42, form_id: 10, type: '3',  title: '急迫程度',        is_required: '1', sort: 4, options: [
+      { id: 34, topic_id: 42, option_name: '緊急（當天）' }, { id: 35, topic_id: 42, option_name: '本週內' },
+      { id: 36, topic_id: 42, option_name: '可彈性安排' },
     ], feature: null },
-    { id: 20, form_id: 4, type: '5',  title: '取件地址',         is_required: '1', sort: 5, options: [], feature: null },
+    { id: 43, form_id: 10, type: '2',  title: '問題描述',        is_required: '1', sort: 5, options: [], feature: null },
+    { id: 44, form_id: 10, type: '6',  title: '上傳現場照片',    is_required: '0', sort: 6, options: [], feature: null },
+    { id: 45, form_id: 10, type: '9',  title: '希望到府時間',    is_required: '0', sort: 7, options: [], feature: null },
   ],
 };
 
