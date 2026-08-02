@@ -180,6 +180,14 @@ input, select, textarea {
 
 .nav-item .nav-icon {
   font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-item .nav-icon svg {
+  width: 22px;
+  height: 22px;
 }
 
 /* --- Card --- */

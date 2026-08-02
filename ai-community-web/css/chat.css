@@ -278,10 +278,17 @@
   border-radius: 6px;
   white-space: nowrap;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .attach-option:hover {
-  background-color: #f0f0f0;
+  background-color: var(--primary-surface);
+}
+
+.attach-option svg {
+  flex-shrink: 0;
 }
 
 /* 圖片預覽區 */

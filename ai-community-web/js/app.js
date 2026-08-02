@@ -273,10 +273,10 @@ const App = {
           }
         },
       });
-      btn.style.backgroundColor = item.color + '12';
+      btn.style.backgroundColor = item.color + '0A';
       btn.style.color = item.color;
-      btn.style.borderColor = item.color + '30';
-      btn.innerHTML = `<span style="font-size:20px">${item.icon}</span><br>${item.name}`;
+      btn.style.borderColor = item.color + '25';
+      btn.innerHTML = `<span class="service-btn-icon">${item.icon}</span><span class="service-btn-label">${item.name}</span>`;
       grid.appendChild(btn);
     });
   },
