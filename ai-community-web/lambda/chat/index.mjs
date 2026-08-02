@@ -309,6 +309,11 @@ const STATIC_FORMS = {
     intro_content: '<p>想吃什麼告訴我們，外送到府享美食。</p>',
     notice_content: null, terms_content: null,
   },
+  '7': {
+    id: 7, name: '外送服務需求表單',
+    intro_content: '<p>美食外送到府，留下需求由專人為您送達。</p>',
+    notice_content: null, terms_content: null,
+  },
   '10': {
     id: 10, name: '水電修繕需求表單',
     intro_content: '<p>水管、電路、設備維修等問題，留下需求由師傅為您處理。</p>',
@@ -431,6 +436,15 @@ const STATIC_TOPICS = {
       { id: 39, topic_id: 51, option_name: '寵物同行' }, { id: 40, topic_id: 51, option_name: '無' },
     ], feature: null },
   ],
+  '7': [
+    { id: 52, form_id: 7, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
+    { id: 53, form_id: 7, type: '5',  title: '外送地區',         is_required: '1', sort: 2, options: [], feature: null },
+    { id: 54, form_id: 7, type: '2',  title: '想吃的餐點或餐廳', is_required: '1', sort: 3, options: [], feature: null },
+    { id: 55, form_id: 7, type: '1',  title: '用餐人數',         is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
+    { id: 56, form_id: 7, type: '9',  title: '希望送達時間',     is_required: '1', sort: 5, options: [], feature: null },
+    { id: 57, form_id: 7, type: '1',  title: '預算上限（元）',   is_required: '0', sort: 6, options: [], feature: null, is_number_only: '1' },
+    { id: 58, form_id: 7, type: '2',  title: '其他備註（過敏原、忌口）', is_required: '0', sort: 7, options: [], feature: null },
+  ],
 };
 
 async function handleForm(formId) {
@@ -478,7 +492,7 @@ async function handleFeedback(body) {
   await dbPut('pms_form_feedback', item);
 
   // 同時建立一筆待媒合訂單到 mms_order_record
-  const serviceTypeToOrderType = { 1:'01', 2:'01', 3:'01', 6:'02', 8:'04', 9:'06', 10:'01', 11:'05' };
+  const serviceTypeToOrderType = { 1:'01', 2:'01', 3:'01', 6:'02', 7:'06', 8:'04', 9:'06', 10:'01', 11:'05' };
   const orderType = serviceTypeToOrderType[formId] || '04';
   const recordId = Date.now();
   const orderData = {
