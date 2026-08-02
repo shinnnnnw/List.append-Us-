@@ -26,8 +26,38 @@ const FormRenderer = {
 
     // 載入表單結構
     const result = await API.getForm(formId);
-    if (result && result.success) {
-      this.formData = result.data;
+    if (result && result.success && result.data) {
+      const raw = result.data;
+      // API.getForm 回傳格式為 { id, name, groups: [{ topics }] }
+      // 將其轉換為 FormRenderer 需要的 { form, topics } 格式
+      const allTopics = [];
+      if (raw.groups) {
+        raw.groups.forEach(function(group) {
+          (group.topics || []).forEach(function(t) {
+            // options 可能是字串陣列，需轉為 { id, option_name } 格式
+            if (t.options && Array.isArray(t.options) && t.options.length > 0 && typeof t.options[0] === 'string') {
+              t.options = t.options.map(function(opt, idx) {
+                return { id: idx + 1, option_name: opt };
+              });
+            }
+            allTopics.push(t);
+          });
+        });
+      } else if (raw.topics) {
+        // 已經是扁平 topics 格式（Lambda /forms/:id 回傳）
+        raw.topics.forEach(function(t) {
+          if (t.options && Array.isArray(t.options) && t.options.length > 0 && typeof t.options[0] === 'string') {
+            t.options = t.options.map(function(opt, idx) {
+              return { id: idx + 1, option_name: opt };
+            });
+          }
+          allTopics.push(t);
+        });
+      }
+      this.formData = {
+        form: { id: raw.id, name: raw.name, intro_content: raw.intro_content || null, notice_content: raw.notice_content || null, terms_content: raw.terms_content || null },
+        topics: allTopics,
+      };
       this.render();
     } else {
       Utils.toast('載入表單失敗');
