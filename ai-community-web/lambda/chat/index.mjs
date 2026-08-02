@@ -1169,16 +1169,54 @@ ${prefsLines.join('\n')}
 
       const now = new Date().toISOString();
 
+      // 從確認單中提取欄位，轉成與表單一致的格式
+      const allText = messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n') + '\n' + reply;
+      const extractField = (pattern) => {
+        const match = allText.match(pattern);
+        return match ? match[1].trim() : '';
+      };
+
+      const parsedDate = extractField(/▪\s*日期時間[：:](.+)/);
+      const parsedPeople = extractField(/▪\s*(?:用餐)?人數[：:](.+)/);
+      const parsedTime = extractField(/▪\s*(?:用餐)?時段[：:](.+)/);
+      const parsedContent = extractField(/▪\s*(?:詳細內容|需求內容|服務內容|餐點|商品)[：:](.+)/);
+      const parsedAddress = extractField(/▪\s*(?:地點|地址|送達地址|服務地址)[/／]?(?:地址)?[：:](.+)/);
+      const parsedContact = extractField(/▪\s*聯絡人[：:](.+)/);
+      const parsedPhone = extractField(/▪\s*聯絡電話[：:](.+)/);
+      const parsedRemark = extractField(/▪\s*備註[：:](.+)/);
+      const parsedPayment = extractField(/▪\s*付款方式[：:](.+)/);
+
+      // 組成統一的 feedback_content 陣列格式
+      const feedbackItems = [];
+      if (parsedDate) feedbackItems.push({ topicId: 1, type: '9', answer: parsedDate });
+      if (parsedPeople) feedbackItems.push({ topicId: 2, type: '1', answer: parsedPeople });
+      if (parsedTime) feedbackItems.push({ topicId: 3, type: '3', answer: parsedTime });
+      if (parsedContent) feedbackItems.push({ topicId: 5, type: '2', answer: parsedContent });
+      if (parsedAddress) feedbackItems.push({ topicId: 17, type: '8', answer: parsedAddress });
+      if (parsedContact || parsedPhone) {
+        feedbackItems.push({ topicId: 6, type: '10', answer: {
+          name: parsedContact || body.account_name || '',
+          phone: parsedPhone || body.account_phone || '',
+        }});
+      }
+      if (parsedRemark) feedbackItems.push({ topicId: 5, type: '2', answer: parsedRemark });
+      if (parsedPayment) feedbackItems.push({ topicId: 99, type: '1', answer: parsedPayment });
+
+      // 若解析不出任何欄位，fallback 放整段確認單文字
+      const feedbackContent = feedbackItems.length > 0
+        ? JSON.stringify(feedbackItems)
+        : JSON.stringify([{ topicId: 5, type: '2', answer: reply }]);
+
       try {
         await dbPut('pms_form_feedback', {
           feedback_no:     feedbackNo,
           form_id:         formId,
           platform_code:   '01',
           inbr_account_id: accountId,
-          contact_name:    body.account_name || '',
-          contact_mobile:  body.account_phone || '',
-          description:     `AI對話自動建單：${service}`,
-          feedback_content: JSON.stringify({ source: 'ai_chat', service, reply }),
+          contact_name:    parsedContact || body.account_name || '',
+          contact_mobile:  parsedPhone || body.account_phone || '',
+          description:     `AI對話建單：${service}`,
+          feedback_content: feedbackContent,
           status:          '01',
           is_read:         '0',
           cre_time:        now,
