@@ -426,7 +426,9 @@ const FormRenderer = {
   /** 聯絡資料 */
   renderContact(topic, withAddress) {
     const wrapper = document.createElement('div');
+    const user = Auth.getUser() || {};
     let html = `
+      <button type="button" class="btn-autofill" data-topic-id="${topic.id}" style="margin-bottom:8px;padding:6px 12px;background:#4CAF50;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px">📋 帶入會員資料</button>
       <input type="text" class="form-input" data-topic-id="${topic.id}" data-field="name" placeholder="姓名" style="margin-bottom:8px">
       <input type="tel" class="form-input" data-topic-id="${topic.id}" data-field="phone" placeholder="手機號碼 (09xxxxxxxx)" style="margin-bottom:8px">
       <input type="email" class="form-input" data-topic-id="${topic.id}" data-field="email" placeholder="Email">
@@ -442,6 +444,22 @@ const FormRenderer = {
       `;
     }
     wrapper.innerHTML = html;
+
+    // 帶入會員資料按鈕
+    setTimeout(() => {
+      const btn = wrapper.querySelector('.btn-autofill');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const nameInput = wrapper.querySelector('[data-field="name"]');
+          const phoneInput = wrapper.querySelector('[data-field="phone"]');
+          const emailInput = wrapper.querySelector('[data-field="email"]');
+          if (nameInput && user.name) nameInput.value = user.name;
+          if (phoneInput && user.phone) phoneInput.value = user.phone;
+          if (emailInput && user.email) emailInput.value = user.email;
+          Utils.toast('已帶入會員資料');
+        });
+      }
+    }, 0);
 
     // 有地址欄位才需要載入縣市
     if (withAddress) {

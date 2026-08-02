@@ -247,116 +247,9 @@
 
 <!-- 廠商後台邏輯 -->
 <script>
-// 廠商模擬案件資料（與消費者端共用同一份資料來源）
-let vendorCases = [
-  {
-    id: 'FB1722500001',
-    vendorId: 1,
-    customerName: '王小明',
-    customerPhone: '0912-345-001',
-    customerEmail: 'wang@example.com',
-    service: '居家清潔',
-    category: '清潔',
-    description: '客廳和兩間房間需要深度清潔，大約 30 坪，希望週六上午來。',
-    status: 'pending',
-    createdAt: '2026-07-30 14:30',
-    address: '台北市信義區松仁路 100 號 12F',
-    replies: [],
-  },
-  {
-    id: 'FB1722500002',
-    vendorId: 5,
-    customerName: '陳美玲',
-    customerPhone: '0923-456-002',
-    customerEmail: 'chen.ml@example.com',
-    service: '水電修繕',
-    category: '修繕',
-    description: '浴室水龍頭漏水，已經滴了兩天，希望盡快處理。',
-    status: 'progress',
-    createdAt: '2026-07-29 09:15',
-    address: '台北市大安區忠孝東路四段 50 號 3F',
-    replies: [
-      { time: '2026-07-29 10:00', content: '已收到，預計明天下午 2 點到府查看。' },
-    ],
-  },
-  {
-    id: 'FB1722500003',
-    vendorId: 1,
-    customerName: '林大偉',
-    customerPhone: '0934-567-003',
-    customerEmail: 'lin.dw@example.com',
-    service: '冷氣清洗',
-    category: '清潔',
-    description: '兩台分離式冷氣需要清洗，已經用了三年沒洗過。',
-    status: 'done',
-    createdAt: '2026-07-25 16:45',
-    address: '台北市中山區南京東路二段 80 號 5F',
-    replies: [
-      { time: '2026-07-26 09:00', content: '預約週三上午 10 點清洗。' },
-      { time: '2026-07-28 12:00', content: '已完成清洗，感謝使用。' },
-    ],
-  },
-  {
-    id: 'FB1722500004',
-    vendorId: 23,
-    customerName: '黃志豪',
-    customerPhone: '0945-678-004',
-    customerEmail: 'huang.zh@example.com',
-    service: '餐廳訂位',
-    category: '訂位',
-    description: '這週六晚上 6 點，4 位大人 2 位小孩，希望有兒童座椅。',
-    status: 'pending',
-    createdAt: '2026-07-31 11:20',
-    address: '',
-    replies: [],
-  },
-  {
-    id: 'FB1722500005',
-    vendorId: 5,
-    customerName: '李小芳',
-    customerPhone: '0956-789-005',
-    customerEmail: 'li.xf@example.com',
-    service: '水管維修',
-    category: '修繕',
-    description: '廚房水管堵塞，排水很慢，希望盡快來看。',
-    status: 'progress',
-    createdAt: '2026-07-30 08:00',
-    address: '台北市松山區民生東路三段 25 號 1F',
-    replies: [
-      { time: '2026-07-30 09:30', content: '已安排明天上午到府查看。' },
-    ],
-  },
-  {
-    id: 'FB1722500006',
-    vendorId: 23,
-    customerName: '張美華',
-    customerPhone: '0967-890-006',
-    customerEmail: 'chang.mh@example.com',
-    service: '餐廳訂位',
-    category: '訂位',
-    description: '下週三中午 12 點，8 位大人商務聚餐，需要包廂。',
-    status: 'progress',
-    createdAt: '2026-07-31 09:00',
-    address: '',
-    replies: [
-      { time: '2026-07-31 09:30', content: '包廂已為您保留，歡迎蒞臨。' },
-    ],
-  },
-  {
-    id: 'FB1722500007',
-    vendorId: 1,
-    customerName: '陳建志',
-    customerPhone: '0978-901-007',
-    customerEmail: 'chen.jz@example.com',
-    service: '居家清潔',
-    category: '清潔',
-    description: '搬家前需要全屋清潔，約 25 坪，含廚房油汙清理。',
-    status: 'pending',
-    createdAt: '2026-08-01 10:00',
-    address: '台北市內湖區成功路四段 30 號 8F',
-    replies: [],
-  },
-];
+// 從 API 載入的廠商案件資料（來自 pms_form_feedback + pms_case_assignment）
+let vendorCases = [];
+let vendorLoading = false;
 
 const vendorStatusMap = {
   pending: { label: '待處理', color: '#FF9800' },
@@ -367,11 +260,79 @@ const vendorStatusMap = {
 
 function vendorLogout() {
   localStorage.removeItem('vendorLogin');
+  vendorCases = [];
   document.getElementById('view-vendor').classList.remove('active');
   document.getElementById('view-login').classList.add('active');
 }
 
-function vendorShowDashboard() {
+// 從 API 載入廠商案件（pms_form_feedback 透過 /admin/cases 取得）
+async function vendorLoadCases() {
+  const vendorId = localStorage.getItem('vendorId') || '0';
+  vendorLoading = true;
+  try {
+    const result = await API.getVendorCases(vendorId);
+    if (result && result.success && Array.isArray(result.data)) {
+      vendorCases = result.data.map(item => ({
+        id: item.feedback_no || item.id || '',
+        assignmentId: item.feedback_no || item.id || '',
+        vendorId: parseInt(vendorId),
+        customerName: item.customerName || '',
+        customerPhone: item.customerPhone || '',
+        customerEmail: item.customerEmail || '',
+        service: item.service || '服務',
+        category: '',
+        description: item.description || '',
+        status: vendorMapApiStatus(item.status || '01'),
+        createdAt: item.createdAt || '',
+        address: item.address || '',
+        replies: Array.isArray(item.replies) ? item.replies : [],
+      }));
+    } else {
+      vendorCases = [];
+    }
+  } catch (err) {
+    console.error('[Vendor] 載入案件失敗:', err);
+    vendorCases = [];
+  }
+  vendorLoading = false;
+}
+
+// 格式化 ISO 時間為可讀的台灣時間（YYYY-MM-DD HH:mm）
+function vendorFormatTime(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const date = new Date(isoStr);
+    if (isNaN(date.getTime())) return isoStr;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${d} ${h}:${min}`;
+  } catch (e) {
+    return isoStr;
+  }
+}
+
+// 將 API 回傳的狀態碼對應到前端狀態
+function vendorMapApiStatus(apiStatus) {
+  const statusMap = {
+    '01': 'pending',
+    '02': 'pending',
+    '03': 'progress',
+    '04': 'progress',
+    '80': 'done',
+    '90': 'cancel',
+    '99': 'cancel',
+    'pending': 'pending',
+    'progress': 'progress',
+    'done': 'done',
+    'cancel': 'cancel',
+  };
+  return statusMap[apiStatus] || 'pending';
+}
+
+async function vendorShowDashboard() {
   document.getElementById('view-login').classList.remove('active');
   document.getElementById('view-dashboard').classList.remove('active');
   document.getElementById('view-vendor').classList.add('active');
@@ -381,14 +342,100 @@ function vendorShowDashboard() {
   const vendorHeader = document.querySelector('#view-vendor h2');
   if (vendorHeader) vendorHeader.textContent = shopName + ' — 管理後台';
 
+  // 顯示載入狀態
+  const listEl = document.getElementById('v-case-list');
+  if (listEl) listEl.innerHTML = '<p style="text-align:center;color:#999;padding:40px 0;">載入中...</p>';
+
+  // 從 API 載入真實資料
+  await vendorLoadCases();
+
   vendorRenderStats();
   vendorRenderList('all');
 }
 
-// 取得當前廠商的案件（根據 vendorId 篩選）
+// 取得當前廠商的案件
 function getVendorMyCases() {
-  const myVendorId = parseInt(localStorage.getItem('vendorId') || '0');
-  return vendorCases.filter(c => c.vendorId === myVendorId);
+  return vendorCases;
+}
+
+// 解析 feedback_content JSON 為可讀的表單欄位 HTML
+function vendorParseFeedbackContent(rawContent) {
+  let items = [];
+  try {
+    items = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent;
+  } catch (e) {
+    return `<p style="font-size:13px;line-height:1.8;color:#333;">${rawContent || '無'}</p>`;
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return `<p style="font-size:13px;line-height:1.8;color:#333;">${rawContent || '無'}</p>`;
+  }
+
+  // 表單題目名稱對照（根據 form_id=6 餐廳訂位 & 其他表單）
+  const topicTitleMap = {
+    1: '希望訂位日期', 2: '用餐人數', 3: '用餐時段',
+    4: '特殊需求', 5: '備註', 6: '聯絡資料',
+    7: '商品名稱或類別', 8: '詳細需求', 9: '預算上限（元）',
+    10: '收貨方式', 11: '聯絡與配送資料',
+    12: '清潔類型', 13: '坪數', 14: '希望時段',
+    15: '上傳環境照片', 16: '需求說明', 17: '聯絡與服務地址',
+    22: '包裹大小', 23: '重量（公斤）', 24: '收件方式',
+    25: '寄件備註', 26: '收件人聯絡與地址',
+    27: '想吃的餐點或餐廳', 28: '用餐人數', 29: '希望送達時間',
+    30: '預算上限（元）', 31: '其他備註',
+    33: '修繕類型', 34: '急迫程度', 35: '問題描述',
+    38: '上傳參考照片',
+  };
+
+  // 用餐時段選項對照
+  const mealTimeOptions = ['午餐 11:30', '午餐 12:00', '晚餐 17:30', '晚餐 18:00', '晚餐 18:30', '晚餐 19:00'];
+  // 特殊需求選項對照
+  const specialOptions = ['兒童椅', '無障礙座位', '包廂', '生日蛋糕', '素食'];
+
+  let html = '';
+  for (const item of items) {
+    const title = topicTitleMap[item.topicId] || `題目 ${item.topicId}`;
+    let answer = '';
+
+    if (item.type === '10' || item.type === '8') {
+      // 聯絡資料物件
+      if (item.answer && typeof item.answer === 'object') {
+        const parts = [];
+        if (item.answer.name) parts.push(`姓名：${item.answer.name}`);
+        if (item.answer.phone) parts.push(`電話：${item.answer.phone}`);
+        if (item.answer.email) parts.push(`Email：${item.answer.email}`);
+        if (item.answer.address) parts.push(`地址：${item.answer.address}`);
+        answer = parts.join('、');
+      } else {
+        answer = String(item.answer || '');
+      }
+    } else if (item.type === '4') {
+      // 複選題 — answer 是索引陣列
+      if (Array.isArray(item.answer)) {
+        if (item.topicId === 4) {
+          answer = item.answer.map(idx => specialOptions[parseInt(idx) - 1] || idx).join('、');
+        } else {
+          answer = item.answer.join('、');
+        }
+      } else {
+        answer = String(item.answer || '');
+      }
+    } else if (item.type === '3') {
+      // 單選題 — answer 是選項索引
+      if (item.topicId === 3) {
+        const idx = parseInt(item.answer) - 1;
+        answer = mealTimeOptions[idx] || item.answer;
+      } else {
+        answer = String(item.answer || '');
+      }
+    } else {
+      answer = String(item.answer || '');
+    }
+
+    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">${title}</span><span style="text-align:right;max-width:60%;">${answer}</span></div>`;
+  }
+
+  return html;
 }
 
 function vendorRenderStats() {
@@ -444,8 +491,7 @@ function vendorRenderList(filter) {
         </div>
         <div style="font-size:12px;color:#666;line-height:1.8;">
           <div>案件編號：${c.id}</div>
-          <div>建立時間：${c.createdAt}</div>
-          <div>需求摘要：${c.description.substring(0, 30)}${c.description.length > 30 ? '...' : ''}</div>
+          <div>建立時間：${vendorFormatTime(c.createdAt)}</div>
         </div>
       </div>
     `;
@@ -462,6 +508,8 @@ function vendorShowDetail(id) {
   detailEl.style.display = 'block';
 
   const st = vendorStatusMap[c.status];
+  const displayTime = vendorFormatTime(c.createdAt);
+  const displayCategory = c.category ? `${c.category} / ${c.service}` : c.service;
 
   detailEl.innerHTML = `
     <span style="font-size:14px;color:#4CAF50;cursor:pointer;" onclick="vendorSwitchTab(document.querySelector('.v-tab.active').dataset.tab)">← 返回列表</span>
@@ -469,8 +517,8 @@ function vendorShowDetail(id) {
     <div class="card" style="padding:14px;margin-top:12px;">
       <h4 style="font-size:14px;margin-bottom:10px;">案件資訊</h4>
       <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">案件編號</span><span>${c.id}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">服務類別</span><span>${c.category} / ${c.service}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">建立時間</span><span>${c.createdAt}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">服務類別</span><span>${displayCategory}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;"><span style="color:#666;">建立時間</span><span>${displayTime}</span></div>
       <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#666;">目前狀態</span><span style="padding:3px 8px;border-radius:12px;color:#fff;background:${st.color};font-size:11px;">${st.label}</span></div>
     </div>
 
@@ -484,7 +532,7 @@ function vendorShowDetail(id) {
 
     <div class="card" style="padding:14px;margin-top:12px;">
       <h4 style="font-size:14px;margin-bottom:10px;">需求內容</h4>
-      <p style="font-size:13px;line-height:1.8;color:#333;">${c.description}</p>
+      ${vendorParseFeedbackContent(c.description)}
     </div>
 
     <div class="card" style="padding:14px;margin-top:12px;">
@@ -500,15 +548,41 @@ function vendorShowDetail(id) {
   `;
 }
 
-function vendorSubmitStatus(id) {
+async function vendorSubmitStatus(id) {
   const select = document.getElementById('v-status-select');
   const newStatus = select.value;
   const c = vendorCases.find(x => x.id === id);
-  if (c) {
-    c.status = newStatus;
-    alert('狀態已更新為：' + vendorStatusMap[newStatus].label);
-    vendorRenderStats();
-    vendorShowDetail(id);
+  if (!c) return;
+
+  // 前端狀態對應回 API 狀態碼
+  const frontToApiStatus = {
+    'pending': '01',
+    'progress': '03',
+    'done': '80',
+    'cancel': '90',
+  };
+  const apiStatus = frontToApiStatus[newStatus] || '01';
+
+  // 呼叫 API 更新狀態
+  const btn = select.nextElementSibling;
+  if (btn) { btn.disabled = true; btn.textContent = '更新中...'; }
+
+  try {
+    const assignmentId = c.assignmentId || c.id;
+    const result = await API.updateCaseStatus(assignmentId, apiStatus);
+    if (result && result.success) {
+      c.status = newStatus;
+      alert('狀態已更新為：' + vendorStatusMap[newStatus].label);
+      vendorRenderStats();
+      vendorShowDetail(id);
+    } else {
+      alert('更新失敗：' + (result.message || '請稍後再試'));
+      if (btn) { btn.disabled = false; btn.textContent = '送出最新狀態'; }
+    }
+  } catch (err) {
+    console.error('[Vendor] 更新狀態失敗:', err);
+    alert('網路錯誤，請稍後再試');
+    if (btn) { btn.disabled = false; btn.textContent = '送出最新狀態'; }
   }
 }
 </script>
