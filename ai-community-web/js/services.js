@@ -174,7 +174,7 @@ const Services = {
         if (service.service_types && service.service_types.length > 0) {
           formId = service.service_types[0];
         }
-        Utils.navigate('form.html?form_id=' + formId + '&service=' + encodeURIComponent(service.vendor_name));
+        Utils.navigate('form.html?form_id=' + formId + '&service=' + encodeURIComponent(service.vendor_name) + '&vendor_id=' + (service.vendor_id || ''));
       });
     }
 

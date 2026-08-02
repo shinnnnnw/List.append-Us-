@@ -473,6 +473,8 @@ const FormRenderer = {
 
     const result = await API.submitForm({
       form_id: parseInt(formId),
+      service_vendor_id: Utils.getUrlParam('vendor_id') || '',
+      service_name: Utils.getUrlParam('service') || '',
       data: feedbackData,
       account_id: (Auth.getUser() || {}).inbr_account_id || '',
       account_name: (Auth.getUser() || {}).name || '',
