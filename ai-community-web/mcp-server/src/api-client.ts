@@ -28,3 +28,19 @@ export async function apiPost<T = unknown>(path: string, body: Record<string, un
   });
   return res.json() as Promise<ApiResponse<T>>;
 }
+
+/**
+ * 將 API 回應轉換為 MCP Tool 回傳格式
+ * 成功時回傳資料 JSON，失敗時標記 isError: true
+ */
+export function toToolResult(result: ApiResponse) {
+  if (result.success) {
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+  return {
+    content: [{ type: 'text' as const, text: `Error: ${result.message || 'Unknown error'}` }],
+    isError: true,
+  };
+}

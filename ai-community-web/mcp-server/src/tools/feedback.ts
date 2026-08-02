@@ -3,7 +3,7 @@
  */
 import { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { apiPost } from '../api-client.js';
+import { apiPost, toToolResult } from '../api-client.js';
 
 export function registerFeedbackTools(server: McpServer): void {
   server.registerTool(
@@ -28,7 +28,7 @@ export function registerFeedbackTools(server: McpServer): void {
         description,
         data: [{ topicId: 1, type: '2', answer: description }],
       });
-      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      return toToolResult(result);
     }
   );
 }

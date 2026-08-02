@@ -3,7 +3,7 @@
  */
 import { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { apiGet } from '../api-client.js';
+import { apiGet, toToolResult } from '../api-client.js';
 
 export function registerOrderTools(server: McpServer): void {
   server.registerTool(
@@ -18,7 +18,7 @@ export function registerOrderTools(server: McpServer): void {
     async ({ account_id, status }) => {
       const statusParam = status ? `&status=${status}` : '';
       const result = await apiGet(`/orders?account_id=${encodeURIComponent(account_id)}${statusParam}`);
-      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      return toToolResult(result);
     }
   );
 
@@ -33,7 +33,7 @@ export function registerOrderTools(server: McpServer): void {
     },
     async ({ order_id, account_id }) => {
       const result = await apiGet(`/orders/${order_id}?account_id=${encodeURIComponent(account_id)}`);
-      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      return toToolResult(result);
     }
   );
 }

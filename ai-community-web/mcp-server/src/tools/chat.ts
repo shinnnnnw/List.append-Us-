@@ -3,7 +3,7 @@
  */
 import { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { apiPost } from '../api-client.js';
+import { apiPost, toToolResult } from '../api-client.js';
 
 export function registerChatTools(server: McpServer): void {
   server.registerTool(
@@ -25,7 +25,7 @@ export function registerChatTools(server: McpServer): void {
         account_id: account_id || '',
         history: history || [],
       });
-      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      return toToolResult(result);
     }
   );
 }
