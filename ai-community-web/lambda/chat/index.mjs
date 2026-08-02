@@ -437,13 +437,11 @@ const STATIC_TOPICS = {
     ], feature: null },
   ],
   '7': [
-    { id: 52, form_id: 7, type: '10', title: '聯絡資訊',         is_required: '1', sort: 1, options: [], feature: null },
-    { id: 53, form_id: 7, type: '5',  title: '外送地區',         is_required: '1', sort: 2, options: [], feature: null },
-    { id: 54, form_id: 7, type: '2',  title: '想吃的餐點或餐廳', is_required: '1', sort: 3, options: [], feature: null },
-    { id: 55, form_id: 7, type: '1',  title: '用餐人數',         is_required: '1', sort: 4, options: [], feature: null, is_number_only: '1' },
-    { id: 56, form_id: 7, type: '9',  title: '希望送達時間',     is_required: '1', sort: 5, options: [], feature: null },
-    { id: 57, form_id: 7, type: '1',  title: '預算上限（元）',   is_required: '0', sort: 6, options: [], feature: null, is_number_only: '1' },
-    { id: 58, form_id: 7, type: '2',  title: '其他備註（過敏原、忌口）', is_required: '0', sort: 7, options: [], feature: null },
+    { id: 59, form_id: 7, type: '1', title: '餐廳名稱',       is_required: '1', sort: 1, options: [], feature: null },
+    { id: 60, form_id: 7, type: '2', title: '想吃的餐點',     is_required: '1', sort: 2, options: [], feature: null },
+    { id: 61, form_id: 7, type: '2', title: '備註',           is_required: '0', sort: 3, options: [], feature: null },
+    { id: 62, form_id: 7, type: '9', title: '希望送達時間',   is_required: '1', sort: 4, options: [], feature: null },
+    { id: 63, form_id: 7, type: '8', title: '聯絡與外送地址', is_required: '1', sort: 5, options: [], feature: null },
   ],
 };
 
