@@ -90,6 +90,7 @@ const DATA = {
         { id: 7, type: '2', title: '想購買的商品描述', remark: null, is_required: '1', options: [] },
         { id: 8, type: '4', title: '商品類別', remark: null, is_required: '0', options: [{ id: 4, option_name: '生鮮食品' }, { id: 5, option_name: '日用品' }, { id: 6, option_name: '3C家電' }, { id: 7, option_name: '服飾' }] },
         { id: 9, type: '1', title: '預算上限(元)', remark: null, is_required: '0', is_number_only: '1', options: [] },
+        { id: 42, type: '6', title: '上傳商品參考照片', remark: '可附上想購買商品的截圖或實拍照，方便賣家了解需求', is_required: '0', options: [] },
       ],
     },
     1: {
@@ -100,7 +101,8 @@ const DATA = {
         { id: 12, type: '3', title: '清潔類型', remark: null, is_required: '1', options: [{ id: 8, option_name: '一般清潔' }, { id: 9, option_name: '深度清潔' }, { id: 10, option_name: '搬遷清潔' }, { id: 11, option_name: '其他' }] },
         { id: 13, type: '1', title: '坪數', remark: '請填寫大約坪數', is_required: '0', is_number_only: '1', options: [] },
         { id: 14, type: '9', title: '希望服務時間', remark: null, is_required: '1', options: [] },
-        { id: 15, type: '2', title: '其他需求說明', remark: '如有特殊注意事項請於此說明', is_required: '0', options: [] },
+        { id: 15, type: '6', title: '上傳目前環境照片', remark: '拍攝需清潔區域的現況，方便師傅評估', is_required: '0', options: [] },
+        { id: 16, type: '2', title: '其他需求說明', remark: '如有特殊注意事項請於此說明', is_required: '0', options: [] },
       ],
     },
     2: {
@@ -111,7 +113,8 @@ const DATA = {
         { id: 18, type: '4', title: '清洗項目', remark: null, is_required: '1', options: [{ id: 12, option_name: '冷氣清洗' }, { id: 13, option_name: '洗衣機清洗' }, { id: 14, option_name: '冰箱清洗' }, { id: 15, option_name: '抽油煙機清洗' }, { id: 16, option_name: '其他' }] },
         { id: 19, type: '1', title: '數量（台）', remark: null, is_required: '1', is_number_only: '1', options: [] },
         { id: 20, type: '3', title: '希望時段', remark: null, is_required: '1', options: [{ id: 17, option_name: '越快越好（緊急）' }, { id: 18, option_name: '本週內' }, { id: 19, option_name: '彈性配合' }] },
-        { id: 21, type: '2', title: '其他需求說明', remark: null, is_required: '0', options: [] },
+        { id: 21, type: '6', title: '上傳家電照片', remark: '拍攝需清洗的家電外觀，方便評估報價', is_required: '0', options: [] },
+        { id: 22, type: '2', title: '其他需求說明', remark: null, is_required: '0', options: [] },
       ],
     },
     3: {
@@ -145,6 +148,7 @@ const DATA = {
         { id: 37, type: '3', title: '修繕類型', remark: null, is_required: '1', options: [{ id: 25, option_name: '水管漏水' }, { id: 26, option_name: '馬桶堵塞' }, { id: 27, option_name: '電路問題' }, { id: 28, option_name: '熱水器維修' }, { id: 29, option_name: '冷氣安裝' }, { id: 30, option_name: '其他' }] },
         { id: 38, type: '3', title: '急迫程度', remark: null, is_required: '1', options: [{ id: 31, option_name: '緊急（當天）' }, { id: 32, option_name: '本週內' }, { id: 33, option_name: '可彈性安排' }] },
         { id: 39, type: '7', title: '問題描述', remark: '請詳述問題狀況，方便師傅評估', is_required: '1', options: [] },
+        { id: 41, type: '6', title: '上傳現場照片', remark: '拍攝損壞部位（如漏水、電線外露等），加速師傅判斷', is_required: '0', options: [] },
         { id: 40, type: '9', title: '希望到府時間', remark: null, is_required: '0', options: [] },
       ],
     },
