@@ -43,6 +43,8 @@ npm run dev
 
 ## MCP Client 設定範例
 
+> 以下路徑為範例，請替換為你本機實際的專案路徑。
+
 ### Claude Desktop / Kiro / 其他 MCP Client
 
 ```json
@@ -50,7 +52,7 @@ npm run dev
   "mcpServers": {
     "ai-community": {
       "command": "node",
-      "args": ["<path-to>/mcp-server/dist/index.js"]
+      "args": ["<你的專案路徑>/mcp-server/dist/index.js"]
     }
   }
 }
