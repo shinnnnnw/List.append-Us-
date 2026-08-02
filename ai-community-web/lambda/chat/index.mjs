@@ -828,7 +828,16 @@ const CHAT_SYSTEM_PROMPT = `你是「Aî 智慧社區管家」，一個友善、
 10. 不涉及服務的閒聊正常聊天，不加任何標記
 11. 回覆純文字，不加 markdown 語法（不要用 **粗體** 或 # 標題）
 12. 若使用者上傳照片不清晰，請提示重新上傳
-13. 領藥服務涉及敏感事項，請加上免責提示`;
+13. 領藥服務涉及敏感事項，請加上免責提示
+14. 當訂單涉及特定日期時間（訂位、清潔、修繕等），送出需求後主動詢問使用者是否要加入 Google 行事曆。若使用者同意，產生 Google Calendar 連結，格式必須嚴格遵守：
+https://calendar.google.com/calendar/render?action=TEMPLATE&text=事件標題&dates=YYYYMMDDTHHmmss/YYYYMMDDTHHmmss&details=備註&location=地點
+注意：
+- dates 參數的時間格式必須是 YYYYMMDDTHHmmss（不加時區後綴，Google 會依用戶設定判斷）
+- 開始與結束時間用斜線 / 分隔
+- 若只知道日期不知道時間，開始設為當天 T000000，結束設為當天 T235959
+- 若知道具體時段（如晚上6點），開始設為 T180000，結束設為 T200000（預設2小時）
+- 所有中文需要用 encodeURIComponent 編碼（但你直接給出人類可讀的連結即可，瀏覽器會自動編碼）
+- 範例：2026年8月10日晚上6點訂位 → dates=20260810T180000/20260810T200000`;
 
 async function handleChat(body) {
   const text    = (body.text || '').trim();
