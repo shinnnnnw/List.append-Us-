@@ -963,7 +963,17 @@ ${prefsLines.join('\n')}
   }
 
   // 圖片辨識用的 system prompt 附加
+  // 注入當前日期時間，讓 AI 能正確計算「這週六」「明天」等相對日期
+  const now = new Date();
+  const taipeiOffset = 8 * 60; // UTC+8
+  const taipeiTime = new Date(now.getTime() + (taipeiOffset - now.getTimezoneOffset()) * 60000);
+  const dateStr = taipeiTime.toISOString().slice(0, 10); // YYYY-MM-DD
+  const timeStr = taipeiTime.toISOString().slice(11, 16); // HH:mm
+  const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+  const dayOfWeek = dayNames[taipeiTime.getDay()];
+
   let systemPrompt = CHAT_SYSTEM_PROMPT + vendorPromptAppend + prefsPrompt;
+  systemPrompt += `\n\n【系統時間】現在是 ${dateStr}（星期${dayOfWeek}）${timeStr}，時區為台灣 UTC+8。請依此計算所有相對日期（「今天」「明天」「這週六」等），生成行事曆連結時務必使用正確的絕對日期。`;
   if (image) {
     systemPrompt += `\n\n【圖片辨識模式】
 使用者上傳了一張現場照片，請你：
