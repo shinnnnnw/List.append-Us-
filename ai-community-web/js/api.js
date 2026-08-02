@@ -97,10 +97,10 @@ const API = {
     return this.get(`/vendors/${id}`);
   },
 
-  // 表單（Mock）
+  // 表單（Mock，key 為 service_type）
   getForm(formId) {
     const FORMS = {
-      1: { id: 1, name: '餐廳訂位', groups: [
+      6: { id: 6, name: '餐廳訂位', groups: [
         { id: 1, name: '訂位資訊', topics: [
           { id: 1, type: '9', title: '希望訂位日期', is_required: '1' },
           { id: 2, type: '1', title: '用餐人數', is_required: '1', is_number_only: '1' },
@@ -110,7 +110,7 @@ const API = {
         ]},
         { id: 2, name: '聯絡資料', topics: [{ id: 6, type: '10', title: '聯絡資料', is_required: '1' }] },
       ]},
-      2: { id: 2, name: '商城購物', groups: [
+      11: { id: 11, name: '商城購物', groups: [
         { id: 3, name: '商品需求', topics: [
           { id: 7, type: '1', title: '商品名稱或類別', is_required: '1' },
           { id: 8, type: '2', title: '詳細需求', is_required: '1' },
@@ -119,58 +119,50 @@ const API = {
         ]},
         { id: 4, name: '配送資料', topics: [{ id: 11, type: '8', title: '聯絡與配送資料', is_required: '1' }] },
       ]},
-      3: { id: 3, name: '家事服務', groups: [
-        { id: 5, name: '服務需求', topics: [
-          { id: 12, type: '3', title: '服務項目', is_required: '1', options: ['一般居家清潔','家電清洗','收納整理','其他'] },
+      1: { id: 1, name: '居家清潔', groups: [
+        { id: 5, name: '清潔需求', topics: [
+          { id: 12, type: '3', title: '清潔類型', is_required: '1', options: ['一般清潔','深度清潔','搬遷清潔','其他'] },
           { id: 13, type: '1', title: '坪數', is_required: '0', is_number_only: '1' },
           { id: 14, type: '3', title: '希望時段', is_required: '1', options: ['越快越好（緊急）','本週內','彈性配合'] },
           { id: 15, type: '2', title: '需求說明', is_required: '0' },
         ]},
         { id: 6, name: '聯絡地址', topics: [{ id: 16, type: '8', title: '聯絡與服務地址', is_required: '1' }] },
       ]},
-      4: { id: 4, name: '水電修繕', groups: [
-        { id: 7, name: '修繕需求', topics: [
-          { id: 17, type: '3', title: '修繕類型', is_required: '1', options: ['水管漏水','馬桶堵塞','電路問題','熱水器維修','其他'] },
-          { id: 18, type: '3', title: '急迫程度', is_required: '1', options: ['緊急（當天）','本週內','可彈性安排'] },
-          { id: 19, type: '2', title: '問題描述', is_required: '1' },
+      2: { id: 2, name: '家電清洗', groups: [
+        { id: 7, name: '清洗需求', topics: [
+          { id: 17, type: '4', title: '清洗項目', is_required: '1', options: ['冷氣清洗','洗衣機清洗','冰箱清洗','抽油煙機清洗','其他'] },
+          { id: 18, type: '1', title: '數量（台）', is_required: '1', is_number_only: '1' },
+          { id: 19, type: '3', title: '希望時段', is_required: '1', options: ['越快越好（緊急）','本週內','彈性配合'] },
+          { id: 20, type: '2', title: '需求說明', is_required: '0' },
         ]},
-        { id: 8, name: '聯絡地址', topics: [{ id: 20, type: '8', title: '聯絡與服務地址', is_required: '1' }] },
+        { id: 8, name: '聯絡地址', topics: [{ id: 21, type: '8', title: '聯絡與服務地址', is_required: '1' }] },
       ]},
-      5: { id: 5, name: '社區服務', groups: [
-        { id: 9, name: '服務需求', topics: [
-          { id: 21, type: '3', title: '需求類型', is_required: '1', options: ['長者陪伴','居家照護','社區活動','其他'] },
-          { id: 22, type: '2', title: '需求詳細說明', is_required: '0' },
-          { id: 23, type: '9', title: '希望服務時間', is_required: '0' },
+      3: { id: 3, name: '包裹寄送', groups: [
+        { id: 9, name: '寄件資訊', topics: [
+          { id: 22, type: '3', title: '包裹大小', is_required: '1', options: ['小型（60cm以下）','中型（60-120cm）','大型（120cm以上）'] },
+          { id: 23, type: '1', title: '重量（公斤）', is_required: '0', is_number_only: '1' },
+          { id: 24, type: '3', title: '收件方式', is_required: '1', options: ['到府收件','自行送至門市'] },
+          { id: 25, type: '2', title: '寄件備註', is_required: '0' },
         ]},
-        { id: 10, name: '聯絡資料', topics: [{ id: 24, type: '10', title: '聯絡資料', is_required: '1' }] },
+        { id: 10, name: '收件人資料', topics: [{ id: 26, type: '8', title: '收件人聯絡與地址', is_required: '1' }] },
       ]},
-      6: { id: 6, name: '藥局代領', groups: [
-        { id: 11, name: '取藥需求', topics: [
-          { id: 25, type: '3', title: '需求類型', is_required: '1', options: ['慢性病處方代領','一般藥品購買','藥品諮詢'] },
-          { id: 26, type: '2', title: '藥品名稱或說明', is_required: '1' },
-          { id: 27, type: '9', title: '希望取藥時間', is_required: '0' },
+      9: { id: 9, name: '美食外送', groups: [
+        { id: 11, name: '外送需求', topics: [
+          { id: 27, type: '2', title: '想吃的餐點或餐廳', is_required: '1' },
+          { id: 28, type: '1', title: '用餐人數', is_required: '1', is_number_only: '1' },
+          { id: 29, type: '9', title: '希望送達時間', is_required: '1' },
+          { id: 30, type: '1', title: '預算上限（元）', is_required: '0', is_number_only: '1' },
+          { id: 31, type: '2', title: '其他備註（過敏原、忌口）', is_required: '0' },
         ]},
-        { id: 12, name: '聯絡資料', topics: [{ id: 28, type: '10', title: '聯絡資料', is_required: '1' }] },
+        { id: 12, name: '外送地址', topics: [{ id: 32, type: '8', title: '聯絡與外送地址', is_required: '1' }] },
       ]},
-      7: { id: 7, name: '叫車服務', groups: [
-        { id: 13, name: '乘車資訊', topics: [
-          { id: 29, type: '9', title: '乘車日期時間', is_required: '1' },
-          { id: 30, type: '1', title: '上車地點', is_required: '1' },
-          { id: 31, type: '1', title: '目的地', is_required: '1' },
-          { id: 32, type: '1', title: '乘車人數', is_required: '1', is_number_only: '1' },
-          { id: 33, type: '3', title: '特殊需求', is_required: '0', options: ['輪椅接送','大型行李','寵物同行','無'] },
+      10: { id: 10, name: '水電修繕', groups: [
+        { id: 13, name: '修繕需求', topics: [
+          { id: 33, type: '3', title: '修繕類型', is_required: '1', options: ['水管漏水','馬桶堵塞','電路問題','熱水器維修','冷氣安裝','其他'] },
+          { id: 34, type: '3', title: '急迫程度', is_required: '1', options: ['緊急（當天）','本週內','可彈性安排'] },
+          { id: 35, type: '2', title: '問題描述', is_required: '1' },
         ]},
-        { id: 14, name: '聯絡資料', topics: [{ id: 34, type: '10', title: '聯絡資料', is_required: '1' }] },
-      ]},
-      8: { id: 8, name: '影音娛樂', groups: [
-        { id: 15, name: '活動需求', topics: [
-          { id: 35, type: '3', title: '服務類型', is_required: '1', options: ['活動主持','樂團表演','影音設備租借','KTV包廂預約','其他'] },
-          { id: 36, type: '9', title: '活動日期時間', is_required: '1' },
-          { id: 37, type: '1', title: '活動地點', is_required: '1' },
-          { id: 38, type: '1', title: '預估參加人數', is_required: '0', is_number_only: '1' },
-          { id: 39, type: '2', title: '其他需求說明', is_required: '0' },
-        ]},
-        { id: 16, name: '聯絡資料', topics: [{ id: 40, type: '10', title: '聯絡資料', is_required: '1' }] },
+        { id: 14, name: '聯絡地址', topics: [{ id: 36, type: '8', title: '聯絡與服務地址', is_required: '1' }] },
       ]},
     };
     return Promise.resolve({ success: true, data: FORMS[formId] || null });
